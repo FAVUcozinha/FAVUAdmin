@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin FAVU | Comando</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1D2814">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="images/favu.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html { font-size: 90%; } 
+
+        :root {
+            --favu-beige: #F4E6CB; --favu-card: #FFF5EB; --favu-green: #1D2814; 
+            --favu-rust: #E09F41; --favu-moss: #46493A; --font-numbers: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --shadow-soft: 0 4px 15px rgba(0,0,0,0.05);
+            --radius-lg: 20px;
+        }
+        @font-face { font-family: 'Basic Choice'; src: url('fonts/Basic Choice 2.ttf') format('truetype'); font-display: swap; }
+        @font-face { font-family: 'Cocogoose'; src: url('fonts/Cocogoose-Pro-Darkmode-trial.ttf') format('truetype'); font-display: swap; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--favu-beige); color: var(--favu-green); font-family: 'Cocogoose', sans-serif; padding: 0; margin: 0; }
+        
+        .admin-wrapper { max-width: 1500px; margin: 0 auto; padding: 20px 15px; }
+        .font-display { font-family: 'Basic Choice', cursive !important; font-weight: normal; }
+        
+        input, select, textarea { font-family: var(--font-numbers); width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(224, 159, 65, 0.3); outline: none; background: white; font-size: 0.95rem; transition: 0.2s;}
+        input:focus, textarea:focus, select:focus { border-color: var(--favu-rust); }
+        input:disabled { background-color: #f0f0f0; color: #999; cursor: not-allowed; border-color: #ddd;}
+        input[type="color"] { padding: 5px; cursor: pointer; height: 50px; }
+        label { font-family: 'Basic Choice', cursive; font-size: 1.1rem; margin-bottom: 5px; display: block; color: var(--favu-moss); }
+        textarea { resize: vertical; } 
+
+        .btn { font-family: 'Basic Choice', cursive; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; }
+        .btn-primary { background: var(--favu-rust); color: white; }
+        .btn-secondary { background: var(--favu-green); color: white; }
+        .btn-danger { background: #E60000; color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--favu-rust); color: var(--favu-rust); }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+        .btn-action { width: 36px; height: 36px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; transition: 0.2s; color: white; }
+        .btn-action.edit { background: var(--favu-moss); }
+        .btn-action.toggle { background: transparent; border: 2px solid var(--favu-moss); color: var(--favu-moss); }
+        .btn-action.del { background: #E60000; }
+        .btn-action:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+        /* ================= SELEÇÃO EM MASSA ================= */
+        .bulk-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--favu-rust); }
+        .bulk-actions-bar { display: none; background: rgba(224, 159, 65, 0.1); padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; align-items: center; justify-content: space-between; border: 1px dashed var(--favu-rust); flex-wrap: wrap; gap: 10px; animation: fadeIn 0.3s; }
+        .bulk-actions-bar.active { display: flex; }
+        .bulk-actions-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        input[type="file"] { display: none; }
+        .custom-file-upload { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 15px; border-radius: 8px; background: rgba(224, 159, 65, 0.1); border: 1px dashed var(--favu-rust); color: var(--favu-rust); font-family: 'Basic Choice', cursive; cursor: pointer; transition: 0.2s; width: 100%; font-size: 1rem; text-align: center; }
+        .custom-file-upload:hover { background: rgba(224, 159, 65, 0.2); }
+        .file-name-display { font-family: var(--font-numbers); font-size: 0.8rem; color: #666; margin-top: 5px; display: block; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .bulk-file-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(224, 159, 65, 0.05); border: 1px dashed var(--favu-rust); color: var(--favu-rust); border-radius: 8px; height: 100%; min-height: 55px; cursor: pointer; transition: 0.2s; padding: 5px; text-align: center;}
+        .bulk-file-upload:hover { background: rgba(224, 159, 65, 0.15); }
+        .bulk-file-upload.has-file { background: rgba(40,167,69,0.1); border-color: #28a745; color: #28a745; }
+        .bulk-file-upload.has-file i::before { content: "\f00c"; } 
+
+        header { background-image: url('images/topo.png'); background-repeat: repeat-x; background-position: center top; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; background-color: var(--favu-beige); }
+        .menu-btn { background-color: white; width: 45px; height: 40px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #1D2814; cursor: pointer; box-shadow: var(--shadow-soft); transition: 0.2s; }
+        .header-logo { max-width: 100px; filter: drop-shadow(0 2px 5px rgba(224, 159, 65, 0.3)); margin: 0 auto; display: block; }
+        .header-spacer { width: 45px; }
+
+        #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1999; backdrop-filter: blur(2px); animation: fadeIn 0.3s; }
+        
+        .side-menu { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background-color: var(--favu-beige); z-index: 2000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 4px 0 20px rgba(0,0,0,0.3); padding: 30px 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        .side-menu.active { left: 0; }
+        .close-menu-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 2rem; color: #999; cursor: pointer; }
+        
+        .menu-logo-container { text-align: center; margin-bottom: 30px; }
+        .menu-logo-img { max-width: 120px; }
+        .side-menu-content { display: flex; flex-direction: column; height: 100%; }
+        
+        .nav-links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; flex-grow: 1;}
+        .menu-link { font-family: 'Basic Choice', cursive; font-size: 1.2rem; color: var(--favu-moss); display: flex; align-items: center; gap: 10px; transition: 0.3s; text-decoration: none; cursor: pointer; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: var(--shadow-soft); }
+        .menu-link.active { background: var(--favu-rust); color: white; border-color: var(--favu-rust); }
+        .menu-link:hover { transform: translateY(-2px); }
+        .menu-bottom { margin-top: auto; padding-top: 20px; border-top: 2px dashed rgba(224, 159, 65, 0.3); }
+
+        .panel-card { background: white; padding: 20px; border-radius: 15px; box-shadow: var(--shadow-soft); margin-bottom: 20px; border: 1px solid #eee; }
+        .tab-pane { display: none; animation: fadeIn 0.4s; background: var(--favu-card); padding: 25px; border-radius: 24px; box-shadow: var(--shadow-soft); margin-top: 15px; }
+        .tab-pane.active { display: block; }
+
+        .search-area { flex: 1; min-width: 250px; }
+        .search-bar { width: 100%; max-width: 400px; border-radius: 30px; border: 2px solid var(--favu-rust); }
+        .buttons-area { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; width: 100%; margin-bottom: 20px; }
+
+        /* ================= MODAIS (POPUPS) ================= */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(29, 40, 20, 0.7); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 15px; }
+        .modal-content { background: var(--favu-card); width: 100%; max-width: 600px; border-radius: var(--radius-lg); box-shadow: 0 15px 40px rgba(0,0,0,0.2); position: relative; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; }
+        .modal-content-large { max-width: 1200px; } 
+        .modal-content-small { max-width: 400px; }
+        .modal-header { padding: 25px 25px 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(224, 159, 65, 0.3); flex-shrink: 0; }
+        .modal-header h3 { font-family: 'Basic Choice', cursive; color: var(--favu-rust); margin: 0; font-size: 1.8rem; }
+        .close-modal { background: none; border: none; font-size: 2rem; color: #999; cursor: pointer; line-height: 1; margin-left: 10px;}
+        .close-modal:hover { color: #E60000; }
+        .modal-body { padding: 20px 25px 30px 25px; overflow-y: auto; flex-grow: 1; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 15px; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .favu-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .favu-table thead th { background: transparent; font-family: 'Basic Choice', cursive; color: var(--favu-rust); font-size: 1.1rem; padding: 12px 10px; border-bottom: 2px solid var(--favu-rust); text-transform: uppercase; white-space: nowrap;}
+        .favu-table th:last-child, .favu-table td:last-child { text-align: center; }
+        .action-btns-wrapper { display: inline-flex; gap: 5px; justify-content: center; width: 100%; }
+
+        .favu-table tbody tr { transition: 0.2s ease; border-bottom: 1px solid #ddd; }
+        .favu-table tbody tr:hover { background-color: rgba(224, 159, 65, 0.05); }
+        .favu-table td { padding: 15px 10px; font-family: var(--font-numbers); font-size: 0.9rem; color: var(--text-dark); vertical-align: middle; }
+        .img-preview { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
+        
+        .badge { font-family: var(--font-numbers); font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; color: white; display: inline-block; white-space: nowrap;}
+        .badge.ativo { background: #28a745; } 
+        .badge.inativo { background: #E60000; }
+        .badge.agendado { background: #E09F41; }
+        .badge.concluso { background: #666; }
+
+        /* LOTE DESKTOP */
+        .grid-header { display: grid; grid-template-columns: 60px 1.2fr 1.5fr 60px 1.5fr 1.5fr 2.5fr 30px; gap: 8px; padding: 10px; background: rgba(224, 159, 65, 0.1); border-radius: 8px; font-family: 'Cocogoose', sans-serif; font-size: 0.65rem; color: var(--favu-rust); margin-bottom: 10px; width: 100%; text-transform: uppercase; align-items: center;}
+        .grid-row { display: grid; grid-template-columns: 60px 1.2fr 1.5fr 60px 1.5fr 1.5fr 2.5fr 30px; gap: 8px; margin-bottom: 8px; width: 100%; align-items: start; background: white; padding-bottom: 10px; border-bottom: 1px solid #eee;}
+        .grid-row input, .grid-row select, .grid-row textarea { padding: 10px 5px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #ccc; background: #fff; width: 100%; font-family: var(--font-numbers); }
+
+        .prod-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .prod-tabs::-webkit-scrollbar { display: none; }
+        .prod-tab-btn { background: white; border: 1px solid #ddd; font-family: var(--font-numbers); font-weight: bold; font-size: 0.9rem; color: var(--favu-moss); padding: 10px 20px; border-radius: 30px; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: var(--shadow-soft); }
+        .prod-tab-btn.active { background: var(--favu-green); color: white; border-color: var(--favu-green); }
+
+        /* CARROSSEL DRAG */
+        .carrossel-item { position:relative; cursor: grab; transition: transform 0.2s; }
+        .carrossel-item:active { cursor: grabbing; }
+        .carrossel-item.dragging { opacity: 0.5; transform: scale(0.95); }
+
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 1024px) {
+            .hide-on-mobile { display: none !important; }
+            .favu-table thead { display: none; }
+            .favu-table, .favu-table tbody, .favu-table tr, .favu-table td { display: block; width: 100%; }
+            .favu-table tr { background: white; margin-bottom: 20px; border-radius: 16px; padding: 15px; box-shadow: var(--shadow-soft); border: 1px solid #eee; }
+            .favu-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; border: none; border-bottom: 1px dashed #eee; padding: 10px 0; font-family: var(--font-numbers) !important; }
+            .favu-table td:last-child { border-bottom: none; justify-content: space-between; text-align: left; } 
+            .action-btns-wrapper { justify-content: flex-end; width: auto; }
+            .favu-table td::before { content: attr(data-label); font-family: 'Basic Choice', cursive; color: var(--favu-rust); font-size: 1.1rem; text-align: left; margin-right: 15px; flex-shrink: 0; }
+            .buttons-area { justify-content: flex-start; }
+            .buttons-area .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="custom-alert" class="modal" style="z-index: 100000;">
+        <div class="modal-content modal-content-small" style="text-align: center; padding: 30px;">
+            <h3 id="alert-title" class="font-display" style="color: var(--favu-rust); font-size: 1.8rem; margin:0 0 15px 0;"></h3>
+            <p id="alert-msg" style="margin: 0 0 25px 0; font-family: var(--font-numbers); font-size: 1.1rem; color: var(--favu-moss);"></p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm" class="modal" style="z-index: 100000;">
+        <div class="modal-content modal-content-small" style="text-align: center; padding: 30px;">
+            <h3 id="confirm-title" class="font-display" style="color: #E60000; font-size: 1.8rem; margin:0 0 15px 0;">Atenção</h3>
+            <p id="confirm-msg" style="margin: 0 0 25px 0; font-family: var(--font-numbers); font-size: 1.1rem; color: var(--favu-moss);"></p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline" style="flex:1; border-color:#999; color:#666;" onclick="document.getElementById('custom-confirm').style.display='none'">Cancelar</button>
+                <button id="confirm-btn" class="btn btn-danger" style="flex:1;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-screen" style="max-width: 400px; margin: 8vh auto; background: var(--favu-card); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); text-align: center; animation: fadeIn 0.4s ease;">
+        <img src="images/favu.png" alt="FAVU" style="max-width: 140px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(224, 159, 65, 0.2));">
+        
+        <div style="margin-bottom: 15px; text-align: left;">
+            <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Login</label>
+            <input type="text" id="login-user" placeholder="Seu nome">
+        </div>
+        <div style="margin-bottom: 20px; text-align: left;">
+            <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Senha</label>
+            <input type="password" id="login-pass" placeholder="Sua senha">
+        </div>
+
+        <p id="login-error" style="color: #E60000; font-size: 0.85rem; display: none; margin-bottom: 15px; font-family: 'Cocogoose', sans-serif;">Login ou senha incorretos.</p>
+        <button class="btn btn-primary" style="width: 100%; font-size: 1.3rem; padding: 15px;" onclick="fazerLogin()">Entrar</button>
+    </div>
+
+    <div id="menu-overlay" onclick="toggleMenu(false)"></div>
+    <nav id="side-menu" class="side-menu">
+        <button id="close-menu-btn" class="close-menu-btn" onclick="toggleMenu(false)">&times;</button>
+        <div class="side-menu-content">
+            <div class="menu-logo-container">
+                <img src="images/favu.png" alt="Logo FAVU" class="menu-logo-img">
+            </div>
+            <ul class="nav-links">
+                <li><a class="menu-link active" onclick="switchTab('t-prods', this)"><i class="fas fa-box-open"></i> Produtos</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-cats', this)"><i class="fas fa-tags"></i> Categorias</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-avisos', this)"><i class="fas fa-bullhorn"></i> Comunicados</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-tema', this)"><i class="fas fa-paint-roller"></i> Layout</a></li>
+            </ul>
+            <div class="menu-bottom">
+                <a class="menu-link" style="color: #E60000; background: #fff0f0; border-color: #ffcccc;" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="admin-panel" style="display: none;">
+        
+        <header>
+            <button class="menu-btn" onclick="toggleMenu(true)"><i class="fas fa-bars"></i></button>
+            
+            <img src="images/favu.png" alt="FAVU" class="header-logo" style="margin: 0;">
+        </header>
+
+        <div class="admin-wrapper">
+
+            <div id="t-prods" class="tab-pane active">
+                
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="openModal('modal-add-prod')"><i class="fas fa-plus"></i> Adicionar produto</button>
+                    <button class="btn btn-secondary hide-on-mobile" onclick="openBulkModal()"><i class="fas fa-layer-group"></i>Adicionar produtos</button>
+                </div>
+
+                <div id="prod-cats-nav" class="prod-tabs"></div>
+
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Produtos Cadastrados</h2>
+                    <input type="text" id="search-prod" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar produto...">
+                </div>
+
+                <div id="bulk-actions-produtos" class="bulk-actions-bar">
+                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-produtos">0</strong> itens selecionados</span>
+                    <div class="bulk-actions-btns">
+                        <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('produtos', true)"><i class="fas fa-eye"></i> Exibir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('produtos', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
+                        <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('produtos')"><i class="fas fa-trash"></i> Excluir</button>
+                    </div>
+                </div>
+
+                <div class="panel-card table-responsive">
+                    <table class="favu-table" id="tbl-produtos">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-checkbox" onchange="window.toggleAll(this, 'produtos')"></th>
+                                <th style="width: 50px;">Foto</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th style="width: 6%;">Tam.</th>
+                                <th style="width: 6%;">Mín.</th>
+                                <th style="width: 10%;">Preço</th>
+                                <th>Desc. Produto</th>
+                                <th>Desc. Resumo</th>
+                                <th>Desc. Imagem</th>
+                                <th>Status</th>
+                                <th style="width: 120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="t-cats" class="tab-pane">
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="openModal('modal-add-cat')"><i class="fas fa-plus"></i> Nova Categoria</button>
+                </div>
+
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Categorias Cadastradas</h2>
+                    <input type="text" id="search-cat" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar categoria...">
+                </div>
+
+                <div id="bulk-actions-categorias" class="bulk-actions-bar">
+                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-categorias">0</strong> categorias selecionadas</span>
+                    <div class="bulk-actions-btns">
+                        <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('categorias', true)"><i class="fas fa-eye"></i> Exibir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('categorias', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
+                        <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('categorias')"><i class="fas fa-trash"></i> Excluir</button>
+                    </div>
+                </div>
+
+                <div class="panel-card table-responsive">
+                    <table class="favu-table" id="tbl-categorias">
+                        <thead><tr>
+                            <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-checkbox" onchange="window.toggleAll(this, 'categorias')"></th>
+                            <th>Categoria</th><th>Mínimo por categoria</th><th>Medida</th><th>Comunicado categoria</th><th>Status</th><th style="width: 120px;">Ações</th>
+                        </tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="t-avisos" class="tab-pane">
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="openModal('modal-add-aviso')"><i class="fas fa-bullhorn"></i> Agendar Aviso</button>
+                </div>
+
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Comunicados Cadastrados</h2>
+                    <input type="text" id="search-aviso" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar comunicado...">
+                </div>
+
+                <div id="bulk-actions-avisos" class="bulk-actions-bar">
+                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-avisos">0</strong> avisos selecionados</span>
+                    <div class="bulk-actions-btns">
+                        <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('avisos', true)"><i class="fas fa-eye"></i> Exibir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('avisos', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
+                        <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('avisos')"><i class="fas fa-trash"></i> Excluir</button>
+                    </div>
+                </div>
+
+                <div class="panel-card table-responsive">
+                    <table class="favu-table" id="tbl-avisos">
+                        <thead><tr>
+                            <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-checkbox" onchange="window.toggleAll(this, 'avisos')"></th>
+                            <th>Imagem</th><th>Título</th><th>Mensagem</th><th>Início</th><th>Fim</th><th>Status</th><th style="width: 120px;">Ação</th>
+                        </tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="t-tema" class="tab-pane">
+                <h2 class="font-display" style="color: var(--favu-rust); margin-top: 10px; margin-bottom: 20px; font-size: 2rem;">Cores do App</h2>
+                <form id="form-cores" class="form-grid panel-card">
+                    <div><label>Fundo Principal</label><input type="color" id="cor-bg" value="#F4E6CB"></div>
+                    <div><label>Fundo de Caixas/Menus</label><input type="color" id="cor-card" value="#FFF5EB"></div>
+                    <div><label>Cor dos Textos Base</label><input type="color" id="cor-txt" value="#1D2814"></div>
+                    <div><label>Cor de Destaque</label><input type="color" id="cor-acc" value="#E09F41"></div>
+                    <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1;">Salvar</button>
+                </form>
+
+                <h2 class="font-display" style="color: var(--favu-rust); margin-top: 40px; margin-bottom: 20px; font-size: 2rem;">Imagens do Carrossel</h2>
+                <form id="form-carrossel" class="panel-card" style="display:flex; flex-direction: column; gap:15px;">
+                    <div>
+                        <label>Enviar Fotos Novas (Múltiplas permitidas)</label>
+                        <label class="custom-file-upload">
+                            <i class="fas fa-camera"></i> Escolher Arquivos
+                            <input type="file" id="car-files" multiple accept="image/*" required onchange="document.getElementById('car-file-name').textContent = this.files.length + ' arquivo(s) selecionado(s)';">
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-secondary" id="btn-up-car" style="width: 100%;"><i class="fas fa-upload"></i> Adicionar ao Carrossel</button>
+                </form>
+                <div id="galeria-preview" class="panel-card" style="display: flex; gap: 15px; overflow-x: auto; margin-top: 20px; padding-bottom: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="modal-add-prod" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adesão Produto</h3>
+                <button class="close-modal" onclick="closeModal('modal-add-prod', 'form-add-prod')">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="form-add-prod">
+                    <div class="form-grid">
+                        <div><label>Nome do Produto</label><input type="text" id="a-nome" required></div>
+                        <div><label>Categoria</label><select class="cat-select" id="a-cat" required><option value="">Carregando...</option></select></div>
+                    </div>
+                    
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
+                        <div><label>Mínimo por produto</label><input type="number" id="a-min" value="1" required></div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div><label>Descrição do produto</label><textarea id="a-dmenu" rows="2" placeholder="Descrição complementar. Ex: Com goiabada"></textarea></div>
+                        <div><label>Descrição da imagem</label><textarea id="a-dpop" rows="2" placeholder="Descrição da imagem. Ao clicar no nome do produto."></textarea></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                            <label class="custom-file-upload" style="width: auto;">
+                                <i class="fas fa-image"></i> Escolher Foto
+                                <input type="file" id="a-file" accept="image/*" onchange="window.previewImage(this, 'a-img-preview', null, 'a-img-none', null); document.getElementById('a-file-name').textContent = this.files[0].name;">
+                            </label>
+                            <img id="a-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;">
+                            <span id="a-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
+                        </div>
+                        <span id="a-file-name" class="file-name-display" style="text-align: left;"></span>
+                    </div>
+
+                    <h4 class="font-display" style="color: var(--favu-moss); margin-top: 20px; margin-bottom: 10px; font-size: 1.5rem; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">Tamanhos e Valores</h4>
+                    
+                    <div id="variations-container"></div>
+
+                    <button type="button" id="btn-add-variation" class="btn btn-outline" style="width: 100%; margin-bottom: 25px; border-style: dashed; font-size: 1rem; display: none;" onclick="window.addVariation(true)">+ Adicionar Outro Tamanho</button>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-prod', 'form-add-prod')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:2;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-prod" class="modal">
+        <div class="modal-content" style="border: 2px solid var(--favu-moss);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-moss);">Editar Produto</h3>
+                <button class="close-modal" onclick="closeModal('modal-editar-prod', 'form-edit-prod')">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="form-edit-prod">
+                    <input type="hidden" id="e-id">
+                    <div class="form-grid">
+                        <div><label>Nome do Produto</label><input type="text" id="e-nome" required></div>
+                        <div><label>Categoria</label><select class="cat-select" id="e-cat" required></select></div>
+                    </div>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
+                        <div id="e-tam-container"><label>Tamanho</label><input type="text" id="e-tam"></div>
+                        <div><label>Preço (R$)</label><input type="number" step="0.01" id="e-preco" required></div>
+                        <div><label>Mín. Individual</label><input type="number" id="e-min" required></div>
+                    </div>
+                    <div class="form-grid">
+                        <div><label>Descrição na Tabela</label><textarea id="e-dmenu" rows="2"></textarea></div>
+                        <div><label>Descrição do Resumo</label><textarea id="e-dres" rows="2" required></textarea></div>
+                    </div>
+                    <div style="margin-bottom: 15px;"><label>Descrição do Popup</label><textarea id="e-dpop" rows="2"></textarea></div>
+                    
+                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <label style="font-size: 0.9rem;">Imagem Atual:</label>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <img id="e-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;">
+                            <button type="button" id="btn-remove-e-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('prod')"><i class="fas fa-trash"></i> </button>
+                            <span id="e-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem neste item.</span>
+                        </div>
+                        
+                        <label style="font-size: 0.9rem; margin-top: 10px;">Substituir/Adicionar Foto:</label>
+                        <label class="custom-file-upload">
+                            <i class="fas fa-camera"></i> Selecionar Imagem
+                            <input type="file" id="e-file" accept="image/*" onchange="window.previewImage(this, 'e-img-preview', 'btn-remove-e-img', 'e-img-none', 'e-remove-img'); document.getElementById('e-file-name').textContent = this.files[0].name;">
+                        </label>
+                        <span id="e-file-name" class="file-name-display"></span>
+                        <input type="hidden" id="e-remove-img" value="false">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-prod', 'form-edit-prod')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar Edição</button>
+                        <button type="submit" class="btn btn-secondary" style="flex:2;">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-bulk-prod" class="modal hide-on-mobile">
+        <div class="modal-content modal-content-large" style="border: 2px dashed var(--favu-rust);">
+            <div class="modal-header">
+                <h3>Adesão produtos</h3>
+                <button class="close-modal" onclick="document.getElementById('modal-bulk-prod').style.display='none'">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="grid-header">
+                    <div>FOTO</div><div>CATEGORIA</div><div>NOME PRODUTO</div><div>MÍN.</div><div>DESC. PRODUTO</div><div>DESC. IMAGEM</div><div>TAMANHO, PREÇO E DESC. RESUMO</div><div></div>
+                </div>
+                <div id="bulk-rows"></div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px;">
+                    <button class="btn btn-outline" onclick="window.addGridRow()"><i class="fas fa-plus"></i> Novo Item</button>
+                    <button class="btn btn-primary" id="btn-save-bulk" onclick="window.saveBulkItems()" style="flex:1; min-width: 200px;">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-cat" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Cadastrar Categoria</h3>
+                <button class="close-modal" onclick="closeModal('modal-add-cat', 'form-add-cat')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-add-cat">
+                    <div class="form-grid">
+                        <div><label>Nome</label><input type="text" id="ac-nome" required></div>
+                        <div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div>
+                    </div>
+                    <div style="margin-bottom: 15px;"><label>Medida</label><select id="ac-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
+                    <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-cat" class="modal">
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-moss);">Editar Categoria</h3>
+                <button class="close-modal" onclick="closeModal('modal-editar-cat', 'form-edit-cat')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-cat">
+                    <input type="hidden" id="ec-id">
+                    <div class="form-grid">
+                        <div><label>Nome</label><input type="text" id="ec-nome" required></div>
+                        <div><label>Mín. Total</label><input type="number" id="ec-min" required></div>
+                    </div>
+                    <div style="margin-bottom: 15px;"><label>Medida</label><select id="ec-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
+                    <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ec-obs" rows="2"></textarea></div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-cat', 'form-edit-cat')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar Categoria</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-aviso" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Novo Comunicado</h3>
+                <button class="close-modal" onclick="closeModal('modal-add-aviso', 'form-add-aviso')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-add-aviso">
+                    <div class="form-grid">
+                        <div><label>Título</label><input type="text" id="aa-tit" required></div>
+                    </div>
+
+                    <div style="margin-bottom: 15px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <label>Imagem</label>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                            <label class="custom-file-upload" style="width: auto;">
+                                <i class="fas fa-image"></i> Escolher Foto
+                                <input type="file" id="aa-file" accept="image/*" onchange="window.previewImage(this, 'aa-img-preview', null, 'aa-img-none', null); document.getElementById('aa-file-name').textContent = this.files[0].name;">
+                            </label>
+                            <img id="aa-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;">
+                            <span id="aa-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
+                        </div>
+                        <span id="aa-file-name" class="file-name-display" style="text-align: left;"></span>
+                    </div>
+
+                    <div style="margin-bottom: 15px;"><label>Mensagem</label><textarea id="aa-txt" rows="3" required></textarea></div>
+                    <div class="form-grid-2">
+                        <div><label>Início (Data)</label><input type="date" id="aa-inid" required></div>
+                        <div><label>Início (Hora)</label><input type="time" id="aa-inih" required></div>
+                    </div>
+                    <div class="form-grid-2">
+                        <div><label>Fim (Data)</label><input type="date" id="aa-fimd" required></div>
+                        <div><label>Fim (Hora)</label><input type="time" id="aa-fimh" required></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-aviso', 'form-add-aviso')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Agendar Aviso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-aviso" class="modal">
+        <div class="modal-content" style="max-width: 600px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-moss);">Editar Comunicado</h3>
+                <button class="close-modal" onclick="closeModal('modal-editar-aviso', 'form-edit-aviso')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-aviso">
+                    <input type="hidden" id="ea-id">
+                    <div class="form-grid">
+                        <div><label>Título</label><input type="text" id="ea-tit" required></div>
+                    </div>
+
+                    <div style="margin-bottom: 15px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <label style="font-size: 0.9rem;">Imagem Atual:</label>
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <img id="ea-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;">
+                            <button type="button" id="btn-remove-ea-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('aviso')"><i class="fas fa-trash"></i> </button>
+                            <span id="ea-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem.</span>
+                        </div>
+                        
+                        <label style="font-size: 0.9rem; margin-top:10px;">Substituir ou Adicionar Foto:</label>
+                        <label class="custom-file-upload">
+                            <i class="fas fa-camera"></i> Selecionar Nova Foto
+                            <input type="file" id="ea-file" accept="image/*" onchange="window.previewImage(this, 'ea-img-preview', 'btn-remove-ea-img', 'ea-img-none', 'ea-remove-img'); document.getElementById('ea-file-name').textContent = this.files[0].name;">
+                        </label>
+                        <span id="ea-file-name" class="file-name-display"></span>
+                        <input type="hidden" id="ea-remove-img" value="false">
+                    </div>
+
+                    <div style="margin-bottom: 15px;"><label>Mensagem</label><textarea id="ea-txt" rows="3" required></textarea></div>
+                    <div class="form-grid-2">
+                        <div><label>Início (Data)</label><input type="date" id="ea-inid" required></div>
+                        <div><label>Início (Hora)</label><input type="time" id="ea-inih" required></div>
+                    </div>
+                    <div class="form-grid-2">
+                        <div><label>Fim (Data)</label><input type="date" id="ea-fimd" required></div>
+                        <div><label>Fim (Hora)</label><input type="time" id="ea-fimh" required></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-aviso', 'form-edit-aviso')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary" style="flex:1;">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu(show) {
+            const sideMenu = document.getElementById('side-menu');
+            const overlay = document.getElementById('menu-overlay');
+            if(show) {
+                sideMenu.classList.add('active');
+                overlay.style.display = 'block';
+            } else {
+                sideMenu.classList.remove('active');
+                overlay.style.display = 'none';
+            }
+        }
+
+        function switchTab(id, btn) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(btn.classList.contains('menu-link')) btn.classList.add('active');
+            toggleMenu(false);
+            
+            // Oculta a barra de ações em massa se mudar de aba
+            document.querySelectorAll('.bulk-actions-bar').forEach(b => b.classList.remove('active'));
+        }
+
+        // Modais Globais e Resets
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        
+        function closeModal(id, formId) { 
+            document.getElementById(id).style.display = 'none'; 
+            if(formId) document.getElementById(formId).reset(); 
+
+            if(id === 'modal-add-prod') {
+                document.getElementById('a-img-preview').style.display = 'none';
+                document.getElementById('a-img-none').style.display = 'block';
+                document.getElementById('a-file-name').textContent = '';
+                document.getElementById('variations-container').innerHTML = '';
+                document.getElementById('btn-add-variation').style.display = 'none';
+                if(window.addVariation) window.addVariation(false); 
+            }
+            if(id === 'modal-add-aviso') {
+                document.getElementById('aa-img-preview').style.display = 'none';
+                document.getElementById('aa-img-none').style.display = 'block';
+                document.getElementById('aa-file-name').textContent = '';
+            }
+        }
+
+        function openBulkModal() {
+            openModal('modal-bulk-prod');
+            if(document.getElementById('bulk-rows').children.length === 0) window.addGridRow();
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => console.log('Admin PWA registrado!')).catch(err => console.log('Erro no PWA', err));
+            });
+        }
+    </script>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
