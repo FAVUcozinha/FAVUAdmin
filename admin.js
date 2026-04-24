@@ -19,28 +19,52 @@ let allAvisos = [];
 let currentCategoryFilter = '';
 
 // ==========================================
+// LÓGICA DE ORDENAÇÃO DE PRODUTOS
+// ==========================================
+const sortProducts = (a, b) => {
+    const nomeA = (a.nome || '').trim().toLowerCase();
+    const nomeB = (b.nome || '').trim().toLowerCase();
+    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB);
+
+    const getTamPeso = (tam) => {
+        if (!tam) return 99;
+        const t = tam.trim().toLowerCase();
+        if (t.startsWith('p')) return 1;
+        if (t.startsWith('m')) return 2;
+        if (t.startsWith('g')) return 3;
+        if (t.startsWith('u')) return 4;
+        return 99;
+    };
+    return getTamPeso(a.tamanho) - getTamPeso(b.tamanho);
+};
+
+// ==========================================
 // ALERTAS E CONFIRMAÇÕES CUSTOMIZADAS
 // ==========================================
 window.customAlert = function(msg, title = "Sucesso!") {
+    const modal = document.getElementById('custom-alert');
     document.getElementById('alert-title').textContent = title;
     document.getElementById('alert-msg').textContent = msg;
-    document.getElementById('custom-alert').style.display = 'flex';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
 }
 
 window.customConfirm = function(msg, onConfirm) {
+    const modal = document.getElementById('custom-confirm');
     document.getElementById('confirm-msg').textContent = msg;
-    document.getElementById('custom-confirm').style.display = 'flex';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
     
     const btn = document.getElementById('confirm-btn');
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
     
     newBtn.addEventListener('click', () => {
-        document.getElementById('custom-confirm').style.display = 'none';
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
         if(onConfirm) onConfirm();
     });
 }
-
 
 // ==========================================
 // SISTEMA DE LOGIN
@@ -149,6 +173,14 @@ window.checkSelection = function(type) {
     else bar.classList.remove('active');
 };
 
+window.clearSelection = function(type) {
+    const checkboxes = document.querySelectorAll(`#tbl-${type} .row-checkbox`);
+    checkboxes.forEach(cb => cb.checked = false);
+    const headerCb = document.querySelector(`#tbl-${type} th .bulk-checkbox`);
+    if(headerCb) headerCb.checked = false;
+    window.checkSelection(type);
+};
+
 window.bulkToggle = async function(type, status) {
     const checkboxes = document.querySelectorAll(`#tbl-${type} .row-checkbox:checked`);
     if(checkboxes.length === 0) return;
@@ -157,9 +189,7 @@ window.bulkToggle = async function(type, status) {
         await updateDoc(doc(db, type, cb.value), {ativo: status});
     }
     customAlert(`Status alterado com sucesso!`);
-    
-    document.querySelector(`#tbl-${type} th .bulk-checkbox`).checked = false;
-    document.getElementById(`bulk-actions-${type}`).classList.remove('active');
+    window.clearSelection(type);
 
     if(type === 'produtos') loadProds();
     if(type === 'categorias') syncCats();
@@ -175,9 +205,7 @@ window.bulkDelete = function(type) {
             await deleteDoc(doc(db, type, cb.value));
         }
         customAlert("Itens excluídos!");
-        
-        document.querySelector(`#tbl-${type} th .bulk-checkbox`).checked = false;
-        document.getElementById(`bulk-actions-${type}`).classList.remove('active');
+        window.clearSelection(type);
 
         if(type === 'produtos') loadProds();
         if(type === 'categorias') syncCats();
@@ -206,7 +234,11 @@ window.renderCatsTable = function() {
     const sorted = globalCategories.sort((a,b) => a.nome.localeCompare(b.nome));
     sorted.forEach(c => { opts += `<option value="${c.nome}">${c.nome}</option>`; });
 
-    const filtered = sorted.filter(c => c.nome.toLowerCase().includes(searchTerm));
+    const filtered = sorted.filter(c => {
+        const st = c.ativo ? 'ativa' : 'oculta';
+        const stt = `${c.nome} ${c.minTotal||0} ${c.tipoColuna} ${c.mensagemObs||''} ${st}`.toLowerCase();
+        return stt.includes(searchTerm);
+    });
 
     filtered.forEach(c => {
         const isAtivo = c.ativo !== false; 
@@ -243,7 +275,9 @@ window.openEditCat = async(id) => {
     document.getElementById('ec-id').value = id; document.getElementById('ec-nome').value = c.nome;
     document.getElementById('ec-min').value = c.minTotal; document.getElementById('ec-col').value = c.tipoColuna;
     document.getElementById('ec-obs').value = c.mensagemObs || ''; 
-    window.openModal('modal-editar-cat');
+    const modal = document.getElementById('modal-editar-cat');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
 };
 
 document.getElementById('form-edit-cat').onsubmit = async(e) => {
@@ -284,7 +318,7 @@ window.addVariation = (isSizeCategory = true) => {
         ${btnRemove}
         <div class="form-grid" style="grid-template-columns: ${isSizeCategory ? '1fr 1fr' : '1fr'}; margin-bottom: 10px;">
             ${sizeFieldHtml}
-            <div><label>Preço (R$)</label><input type="number" step="0.01" class="v-preco" required></div>
+            <div><label>Preço (R$)</label><input type="number" step="0.01" class="v-preco" required style="font-family: var(--font-numbers) !important;"></div>
         </div>
         <div>
             <label>Descrição do Resumo ${isSizeCategory ? '' : ''}</label><textarea class="v-dres" rows="1" required placeholder="${isSizeCategory ? 'Ex: Bolo de Ameixa - P' : 'Descrição para o resumo do pedido'}"></textarea>
@@ -357,7 +391,7 @@ window.addBulkVariation = (btn) => {
     div.style = "display:flex; gap:5px; align-items:center; margin-top:5px;";
     div.innerHTML = `
         <input type="text" class="b-tam" placeholder="Tam" style="width:60px;">
-        <input type="number" step="0.01" class="b-preco" placeholder="R$" style="width:75px;">
+        <input type="number" step="0.01" class="b-preco" placeholder="R$" style="width:75px; font-family: var(--font-numbers) !important;">
         <input type="text" class="b-dres" placeholder="Desc. Resumo" style="flex:1;">
         <button type="button" onclick="this.parentElement.remove()" style="background:#fcc; border:none; border-radius:4px; cursor:pointer; width:28px; height:28px; font-weight:bold; color:#E60000;" title="Remover Tamanho">&times;</button>
     `;
@@ -377,13 +411,13 @@ window.addGridRow = () => {
         </div>
         <div><select class="b-cat cat-select" onchange="window.handleBulkCategoryChange(this)">${opts}</select></div>
         <div><input type="text" class="b-nome" placeholder="Nome Produto"></div>
-        <div><input type="number" class="b-min" value="1"></div>
+        <div><input type="number" class="b-min" value="1" style="font-family: var(--font-numbers) !important;"></div>
         <div><textarea class="b-dmenu" rows="2" placeholder="Desc. Produto"></textarea></div>
         <div><textarea class="b-dpop" rows="2" placeholder="Desc. Imagem"></textarea></div>
         <div class="b-variations-container" style="display:flex; flex-direction:column;">
             <div class="b-var-row" style="display:flex; gap:5px; align-items:center;">
                 <input type="text" class="b-tam" placeholder="(P - 1,5KG)" style="width:60px;" disabled>
-                <input type="number" step="0.01" class="b-preco" placeholder="R$" style="width:75px;">
+                <input type="number" step="0.01" class="b-preco" placeholder="R$" style="width:75px; font-family: var(--font-numbers) !important;">
                 <input type="text" class="b-dres" placeholder="Desc. Resumo" style="flex:1;">
                 <button type="button" class="add-bulk-var-btn" onclick="window.addBulkVariation(this)" style="background:#eee; border:none; border-radius:4px; cursor:pointer; width:28px; height:28px; font-weight:bold; color:var(--favu-rust); display:none;" title="Adicionar Tamanho">+</button>
             </div>
@@ -418,7 +452,7 @@ window.saveBulkItems = async() => {
                 });
             }
         }
-        customAlert("Lote adicionado!"); document.getElementById('bulk-rows').innerHTML = ''; document.getElementById('modal-bulk-prod').style.display='none'; loadProds();
+        customAlert("Lote adicionado!"); document.getElementById('bulk-rows').innerHTML = ''; window.closeModal('modal-bulk-prod'); loadProds();
     } catch(err) { console.error(err); customAlert("Erro.", "Erro"); } finally { btn.innerHTML = 'Salvar'; btn.disabled = false; }
 };
 
@@ -428,6 +462,7 @@ async function loadProds() {
     const s = await getDocs(collection(db, "produtos"));
     allProducts = []; s.forEach(d => allProducts.push({id: d.id, ...d.data()}));
     renderProdTabs(); window.renderProdsTable();
+    window.renderOrcamentoMenu(); 
 }
 
 function renderProdTabs() {
@@ -447,26 +482,49 @@ window.renderProdsTable = function() {
     
     let filtered = allProducts;
     if (searchTerm) {
-        filtered = allProducts.filter(p => p.nome.toLowerCase().includes(searchTerm));
+        filtered = allProducts.filter(p => {
+            const st = p.ativo ? 'visível' : 'oculto';
+            const searchableText = `${p.nome} ${p.categoria} ${p.tamanho||''} ${p.min||1} ${p.preco} ${p.descricaoItem||''} ${p.descricaoResumo||''} ${p.descricaoPopup||''} ${st}`.toLowerCase();
+            return searchableText.includes(searchTerm);
+        });
     } else {
         filtered = allProducts.filter(p => (p.categoria || 'Sem Categoria') === currentCategoryFilter);
     }
 
-    filtered.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(p => {
+    let chaveAtual = null;
+    
+    filtered.sort(sortProducts).forEach((p, i, arr) => {
         const imgTag = p.imagemUrl ? `<img src="${p.imagemUrl}" class="img-preview">` : `<div class="img-preview" style="background:#eee; display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="color:#ccc;"></i></div>`;
         const eyeIcon = p.ativo ? 'eye' : 'eye-slash';
 
+        const isNewGroup = p.nome !== chaveAtual;
+        let rspan = 1;
+        if(isNewGroup) {
+            for(let j=i+1; j<arr.length; j++) {
+                if(arr[j].nome === p.nome) rspan++; else break;
+            }
+            chaveAtual = p.nome;
+        }
+
+        const tdFotoDesktop = isNewGroup ? `<td class="desktop-group-cell" rowspan="${rspan}" data-label="Foto:">${imgTag}</td>` : ``;
+        const tdNomeDesktop = isNewGroup ? `<td class="desktop-group-cell" rowspan="${rspan}" data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>` : ``;
+        
+        const tdFotoMobile = `<td class="mobile-only-cell" data-label="Foto:">${imgTag}</td>`;
+        const tdNomeMobile = `<td class="mobile-only-cell" data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>`;
+
         tb.innerHTML += `
-        <tr>
+        <tr class="${isNewGroup ? 'group-separator-top' : ''}">
             <td data-label="Sel:" style="text-align: center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${p.id}" onchange="window.checkSelection('produtos')"></td>
-            <td data-label="Foto:">${imgTag}</td>
-            <td data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>
+            ${tdFotoDesktop}
+            ${tdFotoMobile}
+            ${tdNomeDesktop}
+            ${tdNomeMobile}
             <td data-label="Categoria:">${p.categoria}</td>
             <td data-label="Tam:">${p.tamanho||'-'}</td>
             <td data-label="Mín:">${p.min||1}</td>
             <td data-label="Preço:">R$ ${p.preco.toFixed(2)}</td>
-            <td data-label="Tabela:"><small>${p.descricaoItem||'-'}</small></td>
-            <td data-label="WhatsApp:"><small>${p.descricaoResumo||'-'}</small></td>
+            <td data-label="Desc. Produto:"><small>${p.descricaoItem||'-'}</small></td>
+            <td data-label="Desc. Resumo:"><small>${p.descricaoResumo||'-'}</small></td>
             <td data-label="Desc. Imagem:"><small>${p.descricaoPopup||'-'}</small></td>
             <td data-label="Status:"><span class="badge ${p.ativo?'ativo':'inativo'}">${p.ativo?'Visível':'Oculto'}</span></td>
             <td data-label="Ações:">
@@ -519,7 +577,9 @@ window.openEditor = async(id) => {
         imgNone.style.display = 'block';
     }
     
-    window.openModal('modal-editar-prod');
+    const modal = document.getElementById('modal-editar-prod');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
 };
 
 document.getElementById('e-cat').addEventListener('change', function() {
@@ -556,7 +616,7 @@ window.togP = async(id, s) => { await updateDoc(doc(db, "produtos", id), {ativo:
 window.delP = async(id) => { customConfirm("Excluir item permanentemente?", async () => { await deleteDoc(doc(db, "produtos", id)); loadProds(); }); };
 
 // ==========================================
-// 3. AVISOS COM STATUS DINÂMICOS
+// 3. AVISOS COM STATUS DINÂMICOS E PESQUISA
 // ==========================================
 document.getElementById('search-aviso').addEventListener('input', () => { window.renderAvisosTable(); });
 
@@ -580,7 +640,18 @@ async function loadAvisos() {
 window.renderAvisosTable = function() {
     const tb = document.querySelector("#tbl-avisos tbody"); tb.innerHTML = "";
     const searchTerm = document.getElementById('search-aviso').value.toLowerCase();
-    const filtered = allAvisos.filter(a => a.titulo.toLowerCase().includes(searchTerm) || a.texto.toLowerCase().includes(searchTerm));
+    
+    const filtered = allAvisos.filter(a => {
+        const isAtivo = a.ativo !== false; const agora = Date.now();
+        let st = ""; 
+        if(!isAtivo) st = "oculto pausado";
+        else if(agora < a.inicio) st = "agendado";
+        else if (agora >= a.inicio && agora <= a.fim) st = "em andamento";
+        else st = "concluso";
+        
+        const stt = `${a.titulo} ${a.texto} ${st}`.toLowerCase();
+        return stt.includes(searchTerm);
+    });
 
     filtered.forEach(a => {
         const isAtivo = a.ativo !== false; const agora = Date.now();
@@ -639,7 +710,9 @@ window.openEditAviso = async(id) => {
         btnRemove.style.display = 'none'; imgNone.style.display = 'block';
     }
 
-    window.openModal('modal-editar-aviso');
+    const modal = document.getElementById('modal-editar-aviso');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
 };
 
 document.getElementById('form-edit-aviso').onsubmit = async(e) => {
@@ -658,6 +731,372 @@ document.getElementById('form-edit-aviso').onsubmit = async(e) => {
 };
 window.togA = async(id, s) => { await updateDoc(doc(db, "avisos", id), {ativo: s}); loadAvisos(); };
 
+
+// ==========================================
+// 4. ORÇAMENTOS (CALCULADORA ESTILO CARDÁPIO)
+// ==========================================
+let currentOrcCatFilter = '';
+let orcQtdState = {};
+
+window.getOrcQtd = function(id) {
+    return orcQtdState[id] || 0;
+};
+
+window.renderOrcamentoMenu = function() {
+    const container = document.getElementById('orc-menu-container');
+    const nav = document.getElementById('orc-cats-nav');
+    container.innerHTML = "";
+    nav.innerHTML = "";
+
+    const orcAgrupados = {};
+    allProducts.forEach(p => {
+        if(!p.ativo) return; 
+
+        const cat = p.categoria || 'Geral';
+        if(!orcAgrupados[cat]) orcAgrupados[cat] = [];
+        orcAgrupados[cat].push(p);
+    });
+
+    const categoriasOrdenadas = Object.keys(orcAgrupados).sort((a,b) => a.localeCompare(b));
+    if(categoriasOrdenadas.length > 0 && (!currentOrcCatFilter || !categoriasOrdenadas.includes(currentOrcCatFilter))) {
+        currentOrcCatFilter = categoriasOrdenadas[0];
+    }
+
+    categoriasOrdenadas.forEach(c => {
+        nav.innerHTML += `<a class="categoria-btn-orc ${currentOrcCatFilter === c ? 'active-link' : ''}" onclick="window.filterOrc('${c}')">${c}</a>`;
+    });
+
+    categoriasOrdenadas.forEach(nomeCat => {
+        if(nomeCat !== currentOrcCatFilter) return;
+
+        const catObj = globalCategories.find(c => c.nome === nomeCat) || { tipoColuna: 'Tamanho' };
+        const itens = orcAgrupados[nomeCat];
+
+        itens.sort(sortProducts);
+
+        let thSecundaria = '';
+        if (catObj.tipoColuna && catObj.tipoColuna !== 'Nenhuma') {
+            const lblMobile = catObj.tipoColuna === 'Mínimo' ? 'MÍN.' : 'TAM.';
+            const lblDesktop = catObj.tipoColuna === 'Mínimo' ? 'Mínimo' : 'Tamanho';
+            thSecundaria = `<th class="col-sec"><span class="th-mobile">${lblMobile}</span><span class="th-desktop">${lblDesktop}</span></th>`;
+        }
+
+        const cabecalho = `<tr>
+            <th class="col-item">ITEM</th>
+            <th class="col-icon"></th>
+            ${thSecundaria}
+            <th class="col-unid"><span class="th-mobile">UNID.</span><span class="th-desktop">Unidade</span></th>
+            <th class="col-qtd"><span class="th-mobile">QTD</span><span class="th-desktop">Quantidade</span></th>
+        </tr>`;
+
+        let htmlTabela = `
+        <div class="categoria-group-orc active-group" id="orc-grupo-${nomeCat.replace(/\s/g, '-')}">
+            <h2 class="categoria-title-orc">${nomeCat}</h2>
+            <div class="table-card-orc">
+                <table class="orc-table">
+                    <thead>${cabecalho}</thead>
+                    <tbody>
+        `;
+
+        let chaveAtual = null;
+        const agruparPorNome = (catObj.tipoColuna === 'Tamanho');
+        const contagemNomes = {};
+        if(agruparPorNome) {
+            itens.forEach(i => {
+                const chave = i.nome.trim();
+                contagemNomes[chave] = (contagemNomes[chave] || 0) + 1;
+            });
+        }
+
+        for(let i=0; i<itens.length; i++) {
+            const p = itens[i];
+            const itemId = p.id;
+            const nomeClean = p.nome.trim();
+            const chave = nomeClean;
+            const currentQtd = window.getOrcQtd(itemId);
+            const descResumo = p.descricaoResumo || p.nome;
+
+            const inputHtml = `
+                <div class="quantidade-input-group">
+                    <button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${itemId}', -1)">-</button>
+                    <input type="number" value="${currentQtd}" data-preco="${p.preco}" data-desc="${descResumo}" data-cat="${nomeCat}" data-item-id="${itemId}" class="quantidade-input orc-qtd-input" readonly>
+                    <button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${itemId}', 1)">+</button>
+                </div>`;
+
+            const temFoto = p.imagemUrl && p.imagemUrl.trim() !== "";
+            const temDescPopup = p.descricaoPopup && p.descricaoPopup.trim() !== "";
+            let iconeHint = '';
+            if (temFoto) iconeHint = `<i class="fas fa-camera foto-hint"></i>`;
+            else if (temDescPopup) iconeHint = `<i class="fas fa-info-circle foto-hint"></i>`;
+
+            const celulaNomeHTML = `
+                <div class="item-nome-texto" style="line-height: 1.2;">${nomeClean}</div>
+                ${p.descricaoItem ? `<div class="descricao-orc">${p.descricaoItem}</div>` : ''}
+            `;
+
+            let tdSec = '';
+            if (catObj.tipoColuna && catObj.tipoColuna !== 'Nenhuma') {
+                tdSec = `<td class="col-sec">${catObj.tipoColuna === 'Mínimo' ? (p.min||1) : (p.tamanho||'-')}</td>`;
+            }
+            const precoFormatado = p.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const celulasRestantes = `${tdSec}<td class="col-unid">R$ ${precoFormatado}</td><td class="col-qtd"><div class="quantidade-container">${inputHtml}</div></td>`;
+
+            if(agruparPorNome) {
+                if(chave !== chaveAtual) {
+                    chaveAtual = chave;
+                    const rows = contagemNomes[chave];
+                    htmlTabela += `<tr class="group-separator-top"><td rowspan="${rows}" class="col-item">${celulaNomeHTML}</td><td rowspan="${rows}" class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`;
+                } else {
+                    htmlTabela += `<tr><td style="display:none;"></td><td style="display:none;"></td>${celulasRestantes}</tr>`;
+                }
+            } else {
+                htmlTabela += `<tr class="group-separator-top"><td class="col-item">${celulaNomeHTML}</td><td class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`;
+            }
+        }
+
+        htmlTabela += `</tbody></table></div></div>`;
+        container.innerHTML += htmlTabela;
+    });
+
+    window.calcOrcamentoTotal();
+    configurarEventosDragOrcamento();
+};
+
+window.filterOrc = function(cat) {
+    currentOrcCatFilter = cat;
+    window.renderOrcamentoMenu();
+};
+
+window.alterarQtdOrcamento = function(itemId, delta) {
+    let val = (orcQtdState[itemId] || 0) + delta;
+    if(val < 0) val = 0;
+    orcQtdState[itemId] = val;
+    
+    const input = document.querySelector(`.orc-qtd-input[data-item-id="${itemId}"]`);
+    if(input) input.value = val;
+    
+    window.calcOrcamentoTotal();
+};
+
+window.removerItemOrcamento = function(itemId) {
+    orcQtdState[itemId] = 0;
+    window.renderOrcamentoMenu();
+    window.calcOrcamentoTotal();
+};
+
+window.calcOrcamentoTotal = function() {
+    let bruto = 0;
+    let totalItens = 0;
+    const resumoItensPopup = document.getElementById("popup-resumo-itens-orc");
+    if(resumoItensPopup) resumoItensPopup.innerHTML = '';
+    const gruposResumo = {};
+    
+    allProducts.forEach(p => {
+        const q = orcQtdState[p.id] || 0;
+        if(q > 0) {
+            bruto += (q * p.preco);
+            totalItens += q;
+            const cat = p.categoria || 'Geral';
+            if(!gruposResumo[cat]) gruposResumo[cat] = [];
+            gruposResumo[cat].push({ q, p: p.preco, desc: p.descricaoResumo || p.nome, id: p.id });
+        }
+    });
+
+    const desc = parseFloat(document.getElementById('orc-desconto').value) || 0;
+    let liq = bruto - desc;
+    if(liq < 0) liq = 0;
+
+    const orcBrutoTxt = document.getElementById('orc-bruto-txt');
+    const orcLiquidoTxt = document.getElementById('orc-liquido-txt');
+    if(orcBrutoTxt) orcBrutoTxt.textContent = bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    if(orcLiquidoTxt) orcLiquidoTxt.textContent = liq.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+    const btnSummary = document.getElementById('fixed-summary-orc');
+    if(bruto > 0) {
+        if(btnSummary) {
+            btnSummary.style.display = 'block';
+            document.getElementById('summary-total-orc').textContent = `R$ ${liq.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('summary-item-count-orc').textContent = `/ ${totalItens} itens`;
+        }
+        
+        if(resumoItensPopup) {
+            for(const grupo in gruposResumo) {
+                resumoItensPopup.innerHTML += `<div class="resumo-grupo-titulo">${grupo}:</div>`;
+                gruposResumo[grupo].forEach(item => {
+                    resumoItensPopup.innerHTML += `
+                    <div class="resumo-item-line">
+                        <div class="resumo-item-name">${item.desc} <small>R$ ${(item.q * item.p).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</small></div>
+                        <div class="resumo-item-input-group">
+                            <button type="button" class="resumo-qtd-btn" onclick="window.alterarQtdOrcamento('${item.id}', -1)">-</button>
+                            <input type="number" value="${item.q}" style="font-family: 'Basic Choice', cursive !important; font-size: 1.1rem;" readonly>
+                            <button type="button" class="resumo-qtd-btn" onclick="window.alterarQtdOrcamento('${item.id}', 1)">+</button>
+                        </div>
+                        <button type="button" class="btn-excluir" onclick="window.removerItemOrcamento('${item.id}')"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                });
+            }
+        }
+    } else {
+        if(btnSummary) btnSummary.style.display = 'none';
+        const modal = document.getElementById('modal-orcamento-pedido');
+        if(modal) {
+            modal.classList.remove('show');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        }
+    }
+};
+
+window.abrirModalOrcamento = function() {
+    const modal = document.getElementById('modal-orcamento-pedido');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.avancarDadosCliente = function() {
+    const modal1 = document.getElementById('modal-orcamento-pedido');
+    modal1.classList.remove('show');
+    setTimeout(() => { 
+        modal1.style.display = 'none'; 
+        const modal2 = document.getElementById('modal-orcamento-cliente');
+        modal2.style.display = 'flex';
+        setTimeout(() => modal2.classList.add('show'), 10);
+    }, 300);
+};
+
+window.voltarResumoOrcamento = function() {
+    const modal2 = document.getElementById('modal-orcamento-cliente');
+    modal2.classList.remove('show');
+    setTimeout(() => { 
+        modal2.style.display = 'none'; 
+        const modal1 = document.getElementById('modal-orcamento-pedido');
+        modal1.style.display = 'flex';
+        setTimeout(() => modal1.classList.add('show'), 10);
+    }, 300);
+};
+
+window.buscarContato = async function() {
+    const supported = ('contacts' in navigator && 'ContactsManager' in window);
+    if (!supported) {
+        return customAlert("Seu navegador não suporta a busca automática de contatos.", "Não Suportado");
+    }
+    try {
+        const props = ['name', 'tel'];
+        const opts = { multiple: false };
+        const contacts = await navigator.contacts.select(props, opts);
+        if (contacts.length > 0) {
+            const contato = contacts[0];
+            if (contato.name && contato.name.length > 0) {
+                document.getElementById('orc-nome').value = contato.name[0];
+            }
+            if (contato.tel && contato.tel.length > 0) {
+                let num = contato.tel[0].replace(/\D/g, '');
+                document.getElementById('orc-tel').value = num;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        customAlert("Erro ao acessar contatos.", "Erro");
+    }
+};
+
+window.gerarOrcamentoWA = function() {
+    let temItens = false;
+    const groups = {};
+    let bruto = 0;
+
+    allProducts.forEach(p => {
+        const q = orcQtdState[p.id] || 0;
+        if(q > 0) {
+            temItens = true;
+            const cat = p.categoria || 'Geral';
+            const desc = p.descricaoResumo || p.nome;
+            bruto += (q * p.preco);
+            
+            if(!groups[cat]) groups[cat] = [];
+            groups[cat].push({ q, p: p.preco, desc });
+        }
+    });
+
+    if(!temItens) return customAlert("Adicione itens ao orçamento primeiro.", "Atenção");
+    
+    const nm = document.getElementById('orc-nome').value.trim().toUpperCase();
+    const tel = document.getElementById('orc-tel').value.trim();
+    const dt = document.getElementById('orc-data').value;
+    const hr = document.getElementById('orc-hora').value;
+    const pag = document.getElementById('orc-pag').value;
+
+    if(!nm || !dt || !hr || !pag || !tel) return customAlert("Preencha todos os dados do cliente (incluindo número).", "Atenção");
+
+    let txt = `Segue o orçamento do seu pedido!\n\n*_- Resumo do pedido_:*\n\n`;
+
+    for(const cat in groups) {
+        txt += `*${cat}:*\n`;
+        groups[cat].forEach(i => {
+            const tot = i.p * i.q;
+            txt += `${i.desc} - ${i.q} un. (R$ ${i.p.toFixed(2).replace('.',',')} cada) = R$ ${tot.toFixed(2).replace('.',',')}\n`;
+        });
+        txt += `\n`;
+    }
+
+    const desc = parseFloat(document.getElementById('orc-desconto').value) || 0;
+    let liq = bruto - desc; if(liq < 0) liq = 0;
+
+    txt += `*- Valor dos Itens (Bruto)*: R$ ${bruto.toFixed(2).replace('.',',')}\n`;
+    if(desc > 0) {
+        txt += `*- Desconto Aplicado*: R$ ${desc.toFixed(2).replace('.',',')}\n`;
+    }
+    txt += `\n* - Valor final do Pedido_*: *R$ ${liq.toFixed(2).replace('.',',')}*\n\n\n`;
+    
+    txt += `*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*\n\n`;
+    txt += `_*- Informações do pedido:*_\n\n`;
+    
+    const dateParts = dt.split('-');
+    const dateFormatted = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+    txt += `*Nome*: ${nm}\n`;
+    txt += `*Data*: ${dateFormatted}\n`;
+    txt += `*Horário*: ${hr}\n`;
+    txt += `*Forma de Pagamento*: ${pag}`;
+
+    let cleanTel = tel.replace(/\D/g, '');
+    if(cleanTel.length >= 10 && !cleanTel.startsWith('55')) {
+        cleanTel = '55' + cleanTel;
+    }
+
+    window.open(`https://wa.me/${cleanTel}?text=${encodeURIComponent(txt)}`, '_blank');
+    
+    orcQtdState = {};
+    document.getElementById('orc-nome').value = '';
+    document.getElementById('orc-tel').value = '';
+    document.getElementById('orc-data').value = '';
+    document.getElementById('orc-hora').value = '';
+    document.getElementById('orc-pag').value = '';
+    document.getElementById('orc-desconto').value = '0';
+    window.renderOrcamentoMenu();
+    
+    const modal = document.getElementById('modal-orcamento-cliente');
+    modal.classList.remove('show');
+    setTimeout(() => { modal.style.display = 'none'; }, 300);
+};
+
+function configurarEventosDragOrcamento() {
+    const nav = document.getElementById('orc-cats-nav');
+    if(!nav) return;
+    let isDown = false; let startX, scrollLeft;
+    nav.addEventListener('mousedown', (e) => { isDown = true; startX = e.pageX - nav.offsetLeft; scrollLeft = nav.scrollLeft; });
+    nav.addEventListener('mouseleave', () => isDown = false); 
+    nav.addEventListener('mouseup', () => isDown = false);
+    nav.addEventListener('mousemove', (e) => { 
+        if (!isDown) return; 
+        e.preventDefault(); 
+        const x = e.pageX - nav.offsetLeft; 
+        nav.scrollLeft = scrollLeft - ((x - startX) * 2); 
+    });
+}
+
+// ==========================================
+// TEMA E CARROSSEL
+// ==========================================
 async function loadTema() {
     const t = await getDoc(doc(db, "config", "tema"));
     if(t.exists()) {
@@ -689,7 +1128,6 @@ document.getElementById('form-carrossel').onsubmit = async(e) => {
     } catch(err) { console.error(err); } finally { btn.innerHTML = '<i class="fas fa-upload"></i> Adicionar ao Carrossel'; btn.disabled = false; }
 };
 
-// DRAG AND DROP DO CARROSSEL
 let dragSrcEl = null;
 
 window.handleDragStart = function(e) {
