@@ -95,9 +95,11 @@
         .search-bar { width: 100%; max-width: 400px; border-radius: 30px; border: 2px solid var(--favu-rust); }
         .buttons-area { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; width: 100%; margin-bottom: 20px; }
 
-        /* ================= MODAIS (POPUPS) ================= */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(29, 40, 20, 0.7); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 15px; }
-        .modal-content { background: var(--favu-card); width: 100%; max-width: 600px; border-radius: var(--radius-lg); box-shadow: 0 15px 40px rgba(0,0,0,0.2); position: relative; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; }
+        /* ================= MODAIS PADRÃO (ADMIN) ================= */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(29, 40, 20, 0.7); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 15px; transition: 0.3s; opacity: 0; }
+        .modal.show { display: flex; opacity: 1; }
+        .modal-content { background: var(--favu-card); width: 100%; max-width: 600px; border-radius: var(--radius-lg); box-shadow: 0 15px 40px rgba(0,0,0,0.2); position: relative; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; transform: translateY(20px); transition: 0.3s;}
+        .modal.show .modal-content { transform: translateY(0); }
         .modal-content-large { max-width: 1200px; } 
         .modal-content-small { max-width: 400px; }
         .modal-header { padding: 25px 25px 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(224, 159, 65, 0.3); flex-shrink: 0; }
@@ -120,6 +122,10 @@
         .favu-table td { padding: 15px 10px; font-family: var(--font-numbers); font-size: 0.9rem; color: var(--text-dark); vertical-align: middle; }
         .img-preview { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
         
+        /* Agrupamento Híbrido */
+        .group-separator-top { border-top: 2px solid rgba(224, 159, 65, 0.4) !important; }
+        .mobile-only-cell { display: none; }
+        
         .badge { font-family: var(--font-numbers); font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; color: white; display: inline-block; white-space: nowrap;}
         .badge.ativo { background: #28a745; } 
         .badge.inativo { background: #E60000; }
@@ -136,19 +142,19 @@
         .prod-tab-btn { background: white; border: 1px solid #ddd; font-family: var(--font-numbers); font-weight: bold; font-size: 0.9rem; color: var(--favu-moss); padding: 10px 20px; border-radius: 30px; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: var(--shadow-soft); }
         .prod-tab-btn.active { background: var(--favu-green); color: white; border-color: var(--favu-green); }
 
-        /* CARROSSEL DRAG */
-        .carrossel-item { position:relative; cursor: grab; transition: transform 0.2s; }
-        .carrossel-item:active { cursor: grabbing; }
-        .carrossel-item.dragging { opacity: 0.5; transform: scale(0.95); }
-
         .hidden { display: none !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Media Query: Aplica Block Collapse APENAS para tabelas padrão (.favu-table), poupando o Orçamento */
         @media (max-width: 1024px) {
             .hide-on-mobile { display: none !important; }
             .favu-table thead { display: none; }
             .favu-table, .favu-table tbody, .favu-table tr, .favu-table td { display: block; width: 100%; }
             .favu-table tr { background: white; margin-bottom: 20px; border-radius: 16px; padding: 15px; box-shadow: var(--shadow-soft); border: 1px solid #eee; }
+            
+            .desktop-group-cell { display: none !important; }
+            .mobile-only-cell { display: flex !important; }
+            
             .favu-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; border: none; border-bottom: 1px dashed #eee; padding: 10px 0; font-family: var(--font-numbers) !important; }
             .favu-table td:last-child { border-bottom: none; justify-content: space-between; text-align: left; } 
             .action-btns-wrapper { justify-content: flex-end; width: auto; }
@@ -156,24 +162,160 @@
             .buttons-area { justify-content: flex-start; }
             .buttons-area .btn { width: 100%; }
         }
+
+
+        /* ================= CARDS E TABELA ORÇAMENTO (EXATO COMO CARDÁPIO) ================= */
+        .categorias-draggable { display: flex; overflow-x: auto; padding: 12px 15px; gap: 10px; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; user-select: none; -webkit-overflow-scrolling: touch; align-items: center; width: max-content; margin: 0 auto; max-width: 100%; }
+        .categorias-draggable::-webkit-scrollbar { display: none; }
+        .categorias-draggable:active { cursor: grabbing; }
+        .categoria-btn-orc { display: inline-flex; align-items: center; justify-content: center; padding: 6px 18px; height: auto; background-color: white; color: var(--text-dark); text-decoration: none; border-radius: 30px; font-size: 1rem; font-weight: normal; font-family: 'Basic Choice', cursive; white-space: nowrap; transition: 0.3s ease; border: 1px solid rgba(224, 159, 65, 0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.05); opacity: 1; text-transform: uppercase; cursor: pointer; }
+        .categoria-btn-orc:hover { transform: translateY(-2px); border-color: var(--favu-rust); }
+        .categoria-btn-orc.active-link { background-color: var(--favu-rust) !important; color: white !important; border-color: var(--favu-rust) !important; box-shadow: 0 4px 15px rgba(224, 159, 65, 0.3) !important; }
+
+        .categoria-group-orc { display: none; animation: fadeIn 0.4s ease; margin-bottom: 40px; width: 100%; }
+        .categoria-group-orc.active-group { display: block; }
+        .categoria-title-orc { font-family: 'Basic Choice', cursive; font-size: 2.6rem; color: var(--favu-rust); text-align: center; margin: 5px 0 25px 0; font-weight: normal; }
+        
+        .table-card-orc { background: var(--favu-card); border-radius: 16px; padding: 15px 10px; box-shadow: var(--shadow-soft); border: 1px solid rgba(255,255,255,0.5); width: 100%; overflow: hidden; margin: 0 auto; }
+        .orc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .orc-table thead th { font-family: 'Basic Choice', cursive; color: #1D2814; font-size: 1rem; padding-bottom: 12px; text-align: center; border-bottom: 2px solid rgba(29, 40, 20, 0.2); text-transform: uppercase; font-weight: normal;}
+        .orc-table th.col-item, .orc-table td.col-item { text-align: left; padding-left: 5px; width: 35%; word-wrap: break-word; }
+        .orc-table th.col-icon, .orc-table td.col-icon { width: 6%; text-align: center; vertical-align: middle; }
+        .orc-table th.col-sec, .orc-table td.col-sec { width: 19.6%; text-align: center; }
+        .orc-table th.col-unid, .orc-table td.col-unid { width: 19.6%; text-align: center; }
+        .orc-table th.col-qtd, .orc-table td.col-qtd { width: 19.6%; text-align: center; }
+        .orc-table tbody tr { border-bottom: 1px dashed rgba(224, 159, 65, 0.2); transition: background-color 0.2s ease; }
+        .orc-table tbody tr:hover { background-color: rgba(224, 159, 65, 0.05); }
+        .orc-table tbody tr.group-separator { border-bottom: 2px solid rgba(224, 159, 65, 0.4); }
+        .orc-table tbody tr:last-child { border-bottom: none; }
+        .orc-table td { padding: 12px 5px; vertical-align: middle; color: var(--text-dark); font-size: 0.95rem; font-family: 'Basic Choice', cursive; font-weight: normal; }
+        .orc-table td.col-item { font-size: 1.1rem; text-transform: uppercase; padding-right: 5px; }
+        .orc-table td.col-icon { padding: 12px 0; }
+        .descricao-orc { font-size: 0.8rem; color: var(--favu-moss); font-weight: normal; margin-top: 5px; line-height: 1.3; font-family: 'Basic Choice', cursive; text-transform: none; text-align: left; }
+        
+        .quantidade-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .quantidade-input-group { display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .qtd-btn-table { width: 25px; height: 30px; border: none; background: none; color: var(--favu-rust); font-size: 1.3rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: opacity 0.2s; line-height: 1; }
+        .qtd-btn-table:hover { opacity: 0.7; }
+        .orc-table input[type="number"] { width: 40px; height: 30px; text-align: center; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; color: var(--text-dark); font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; outline: none; transition: 0.2s; padding: 0; }
+        .orc-table input[type="number"]:focus { border-color: var(--favu-rust); }
+        
+        .th-mobile { display: inline; }
+        .th-desktop { display: none; }
+        .group-separator-top { border-top: 2px solid rgba(224, 159, 65, 0.4) !important; }
+
+        /* Media Queries - Orçamento Tabela Específica Ajustada para não vazar em telas pequenas */
+        @media (max-width: 1024px) {
+            .table-card-orc { padding: 10px 2px; }
+            .orc-table thead th { font-size: 0.7rem; padding: 6px 1px; letter-spacing: -0.5px; }
+            .orc-table td { font-size: 0.85rem; padding: 10px 1px; }
+            .orc-table th.col-item, .orc-table td.col-item { width: 35%; font-size: 0.85rem; padding-left: 2px; padding-right: 2px; text-align: left;}
+            .orc-table th.col-icon, .orc-table td.col-icon { width: 8%; }
+            .orc-table th.col-sec, .orc-table td.col-sec { width: 15%; font-size: 0.7rem; }
+            .orc-table th.col-unid, .orc-table td.col-unid { width: 17%; font-size: 0.75rem; }
+            .orc-table th.col-qtd, .orc-table td.col-qtd { width: 25%; padding-left: 2px; padding-right: 2px;}
+            .descricao-orc { font-size: 0.65rem; }
+            .orc-table .quantidade-input-group { gap: 1px; justify-content: center; }
+            .orc-table input[type="number"] { width: 26px; height: 24px; font-size: 0.95rem; padding: 0; font-family: 'Basic Choice', cursive !important; min-width: 0;}
+            .orc-table .qtd-btn-table { width: 18px; font-size: 1rem; }
+        }
+
+        @media (min-width: 1024px) {
+            .th-mobile { display: none; } .th-desktop { display: inline; }
+            .table-card-orc { padding: 25px 35px; max-width: 850px; margin: 0 auto; }
+            .categoria-title-orc { font-size: 3rem; margin: 5px auto 25px auto; }
+            .orc-table thead th { font-size: 0.95rem; padding-bottom: 10px; }
+            .orc-table td { font-size: 0.9rem; padding: 12px 5px; }
+            .orc-table td.col-item { font-size: 1.05rem; padding-right: 15px; } 
+            .orc-table th.col-icon, .orc-table td.col-icon { width: 5%; }
+            .descricao-orc { font-size: 0.75rem; margin-top: 4px; }
+            .categoria-btn-orc { font-size: 0.95rem; padding: 6px 18px; }
+            .orc-table input[type="number"] { width: 40px; height: 28px; font-size: 1.1rem; }
+            .orc-table .qtd-btn-table { font-size: 1.1rem; }
+        }
+
+        /* Botão Resumo Orçamento */
+        #fixed-summary-orc { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 540px; background-color: var(--favu-green); color: #fff; padding: 12px 30px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 1000; display: none; cursor: pointer; border: none; font-family: 'Basic Choice', cursive;}
+        .summary-content-orc { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        #summary-text-orc { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+        #summary-total-orc { font-weight: normal; font-size: 1.5rem; line-height: 1.2; font-family: 'Basic Choice', cursive !important; }
+        #summary-item-count-orc { font-size: 0.85rem; opacity: 0.9; font-family: 'Basic Choice', cursive !important; }
+        
+        .foto-hint { color: var(--favu-rust); opacity: 0.65; font-size: 0.95rem; transition: all 0.2s ease; }
+
+        /* Popups Orçamento (Resumo e Cliente) */
+        .popup-conteudo { background-color: var(--favu-card); padding: 30px 25px 25px 25px; border-radius: 20px; width: 90%; max-width: 440px; text-align: center; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Basic Choice', cursive; transform: translateY(20px); transition: 0.3s; margin: auto; }
+        .modal.show .popup-conteudo { transform: translateY(0); }
+        .popup-conteudo::-webkit-scrollbar { width: 6px; }
+        .popup-conteudo::-webkit-scrollbar-track { background: #EAEAEA; border-radius: 10px; margin: 15px 0; }
+        .popup-conteudo::-webkit-scrollbar-thumb { background: #C4C4C4; border-radius: 10px; }
+        .fechar { position: absolute; top: 15px; right: 20px; font-size: 1.4rem; color: #999; cursor: pointer; line-height: 1; font-family: sans-serif; z-index: 100; }
+        .fechar:hover { color: #333; }
+        .popup-conteudo h2 { color: var(--favu-rust); font-family: 'Basic Choice', cursive; font-size: 1.6rem; margin: 5px 0 15px 0; padding-bottom: 12px; border-bottom: 1px solid rgba(224, 159, 65, 0.2); text-transform: uppercase; }
+
+        .resumo-itens { border-top: none; padding-top: 0; }
+        .resumo-grupo-titulo { font-family: 'Basic Choice', cursive; color: var(--text-dark); font-size: 1.1rem; font-weight: normal; text-transform: uppercase; text-align: left; margin-top: 20px; margin-bottom: 8px; }
+        .resumo-item-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(29, 40, 20, 0.2); text-align: left; }
+        .resumo-item-name { flex: 1; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; padding-right: 10px; }
+        .resumo-item-name small { display: block; font-family: 'Basic Choice', cursive !important; font-size: 0.9rem; color: var(--text-light); font-weight: normal; margin-top: 2px; text-transform: none; }
+        .resumo-item-input-group { display: flex; align-items: center; gap: 5px; }
+        .resumo-qtd-btn { background: none; border: none; color: var(--favu-rust); font-size: 1.3rem; font-weight: bold; cursor: pointer; padding: 0 5px; }
+        .resumo-item-input-group input[type="number"] { width: 40px; height: 30px; border: 1px solid rgba(29, 40, 20, 0.2); border-radius: 6px; text-align: center; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; color: var(--text-dark); background: #fff; outline: none; padding: 0;}
+        .btn-excluir { background: none; border: none; color: #E60000; font-size: 1rem; cursor: pointer; margin-left: 6px; }
+
+        .resumo-footer-area { border-top: 1px solid rgba(224, 159, 65, 0.2); padding-top: 15px; margin-top: 15px;}
+        .resumo-total { text-align: right; font-family: 'Basic Choice', cursive !important; font-size: 1.4rem; font-weight: bold; color: var(--text-dark); margin-bottom: 15px; text-transform: uppercase; }
+
+        #form-pedido-orc { text-align: left; display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; width: 100%;}
+        .input-group { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden; }
+        #form-pedido-orc label { font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase; }
+        #form-pedido-orc input, #form-pedido-orc select, #form-pedido-orc textarea { width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: var(--font-numbers) !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark); }
+        #form-pedido-orc input::placeholder, #form-pedido-orc textarea::placeholder { font-family: var(--font-numbers); color: #aaa; }
+        #form-pedido-orc input:focus, #form-pedido-orc select:focus, #form-pedido-orc textarea:focus { border-color: var(--favu-rust); }
+
+        .popup-footer-actions { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(224, 159, 65, 0.2); padding-top: 15px;}
+        .popup-footer-actions-top { display: flex; flex-direction: row; gap: 8px; width: 100%; }
+
+        .btn-secondary-form { background-color: var(--favu-moss); color: #fff; border: none; padding: 10px; border-radius: 10px; font-family: 'Basic Choice', cursive; font-size: 0.85rem; cursor: pointer; flex: 1; text-transform: uppercase; transition: 0.2s;}
+        .btn-secondary-form:hover { opacity: 0.85; }
+        .btn-primary-large { background-color: var(--favu-rust); color: #fff; font-size: 1.1rem; padding: 12px; border-radius: 10px; width: 100%; font-family: 'Basic Choice', cursive; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
+        .btn-primary-large:hover { opacity: 0.85; }
+
+        @media (min-width: 1024px) {
+            .popup-conteudo { padding: 30px 25px 20px 25px; }
+            .popup-conteudo h2 { font-size: 1.4rem; }
+            .resumo-grupo-titulo { font-size: 1rem; }
+            .resumo-item-name { font-size: 0.9rem; }
+            .resumo-item-name small { font-size: 0.8rem; }
+            .resumo-item-input-group input[type="number"] { width: 34px; height: 28px; font-size: 1rem; }
+            .resumo-qtd-btn { font-size: 1.2rem; }
+            .btn-excluir { font-size: 0.95rem; }
+            .resumo-total { font-size: 1.2rem; margin-bottom: 10px; }
+            #form-pedido-orc label { font-size: 0.8rem; }
+            #form-pedido-orc input, #form-pedido-orc select, #form-pedido-orc textarea { font-size: 0.9rem; padding: 8px 10px; }
+            .btn-primary-large { font-size: 1rem; padding: 8px; margin-top: 5px; }
+            .btn-secondary-form { font-size: 0.9rem; padding: 8px; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="custom-alert" class="modal" style="z-index: 100000;">
-        <div class="modal-content modal-content-small" style="text-align: center; padding: 30px;">
+    <div id="custom-alert" class="modal" style="z-index: 100000;" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+        <div class="popup-conteudo" style="max-width: 400px; padding: 30px;">
+            <button class="close-modal" onclick="document.getElementById('custom-alert').classList.remove('show'); setTimeout(()=>document.getElementById('custom-alert').style.display='none', 300)">&times;</button>
             <h3 id="alert-title" class="font-display" style="color: var(--favu-rust); font-size: 1.8rem; margin:0 0 15px 0;"></h3>
-            <p id="alert-msg" style="margin: 0 0 25px 0; font-family: var(--font-numbers); font-size: 1.1rem; color: var(--favu-moss);"></p>
-            <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
+            <p id="alert-msg" style="margin: 0 0 25px 0; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; color: var(--favu-moss);"></p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="document.getElementById('custom-alert').classList.remove('show'); setTimeout(()=>document.getElementById('custom-alert').style.display='none', 300)">OK</button>
         </div>
     </div>
 
-    <div id="custom-confirm" class="modal" style="z-index: 100000;">
-        <div class="modal-content modal-content-small" style="text-align: center; padding: 30px;">
+    <div id="custom-confirm" class="modal" style="z-index: 100000;" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+        <div class="popup-conteudo" style="max-width: 400px; padding: 30px;">
+            <button class="close-modal" onclick="document.getElementById('custom-confirm').classList.remove('show'); setTimeout(()=>document.getElementById('custom-confirm').style.display='none', 300)">&times;</button>
             <h3 id="confirm-title" class="font-display" style="color: #E60000; font-size: 1.8rem; margin:0 0 15px 0;">Atenção</h3>
-            <p id="confirm-msg" style="margin: 0 0 25px 0; font-family: var(--font-numbers); font-size: 1.1rem; color: var(--favu-moss);"></p>
+            <p id="confirm-msg" style="margin: 0 0 25px 0; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; color: var(--favu-moss);"></p>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-outline" style="flex:1; border-color:#999; color:#666;" onclick="document.getElementById('custom-confirm').style.display='none'">Cancelar</button>
+                <button class="btn btn-outline" style="flex:1; border-color:#999; color:#666;" onclick="document.getElementById('custom-confirm').classList.remove('show'); setTimeout(()=>document.getElementById('custom-confirm').style.display='none', 300)">Cancelar</button>
                 <button id="confirm-btn" class="btn btn-danger" style="flex:1;">Confirmar</button>
             </div>
         </div>
@@ -207,6 +349,7 @@
                 <li><a class="menu-link" onclick="switchTab('t-cats', this)"><i class="fas fa-tags"></i> Categorias</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-avisos', this)"><i class="fas fa-bullhorn"></i> Comunicados</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-tema', this)"><i class="fas fa-paint-roller"></i> Layout</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-orcamentos', this)"><i class="fas fa-calculator"></i> Orçamentos</a></li>
             </ul>
             <div class="menu-bottom">
                 <a class="menu-link" style="color: #E60000; background: #fff0f0; border-color: #ffcccc;" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -215,17 +358,14 @@
     </nav>
 
     <div id="admin-panel" style="display: none;">
-        
         <header>
             <button class="menu-btn" onclick="toggleMenu(true)"><i class="fas fa-bars"></i></button>
-            
             <img src="images/favu.png" alt="FAVU" class="header-logo" style="margin: 0;">
         </header>
 
         <div class="admin-wrapper">
 
             <div id="t-prods" class="tab-pane active">
-                
                 <div class="buttons-area">
                     <button class="btn btn-primary" onclick="openModal('modal-add-prod')"><i class="fas fa-plus"></i> Adicionar produto</button>
                     <button class="btn btn-secondary hide-on-mobile" onclick="openBulkModal()"><i class="fas fa-layer-group"></i>Adicionar produtos</button>
@@ -235,15 +375,16 @@
 
                 <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Produtos Cadastrados</h2>
-                    <input type="text" id="search-prod" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar produto...">
+                    <input type="text" id="search-prod" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar em todos os campos...">
                 </div>
 
                 <div id="bulk-actions-produtos" class="bulk-actions-bar">
-                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-produtos">0</strong> itens selecionados</span>
+                    <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-produtos">0</strong> itens selecionados</span>
                     <div class="bulk-actions-btns">
                         <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('produtos', true)"><i class="fas fa-eye"></i> Exibir</button>
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('produtos', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
                         <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('produtos')"><i class="fas fa-trash"></i> Excluir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('produtos')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
 
@@ -281,11 +422,12 @@
                 </div>
 
                 <div id="bulk-actions-categorias" class="bulk-actions-bar">
-                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-categorias">0</strong> categorias selecionadas</span>
+                    <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-categorias">0</strong> categorias selecionadas</span>
                     <div class="bulk-actions-btns">
                         <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('categorias', true)"><i class="fas fa-eye"></i> Exibir</button>
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('categorias', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
                         <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('categorias')"><i class="fas fa-trash"></i> Excluir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('categorias')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
 
@@ -311,11 +453,12 @@
                 </div>
 
                 <div id="bulk-actions-avisos" class="bulk-actions-bar">
-                    <span style="font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-rust);"><strong id="count-avisos">0</strong> avisos selecionados</span>
+                    <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-avisos">0</strong> avisos selecionados</span>
                     <div class="bulk-actions-btns">
                         <button class="btn btn-secondary" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('avisos', true)"><i class="fas fa-eye"></i> Exibir</button>
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkToggle('avisos', false)"><i class="fas fa-eye-slash"></i> Ocultar</button>
                         <button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.95rem;" onclick="window.bulkDelete('avisos')"><i class="fas fa-trash"></i> Excluir</button>
+                        <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('avisos')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
 
@@ -348,10 +491,121 @@
                             <i class="fas fa-camera"></i> Escolher Arquivos
                             <input type="file" id="car-files" multiple accept="image/*" required onchange="document.getElementById('car-file-name').textContent = this.files.length + ' arquivo(s) selecionado(s)';">
                         </label>
+                        <span id="car-file-name" class="file-name-display">Nenhum arquivo escolhido</span>
                     </div>
                     <button type="submit" class="btn btn-secondary" id="btn-up-car" style="width: 100%;"><i class="fas fa-upload"></i> Adicionar ao Carrossel</button>
                 </form>
                 <div id="galeria-preview" class="panel-card" style="display: flex; gap: 15px; overflow-x: auto; margin-top: 20px; padding-bottom: 10px;"></div>
+            </div>
+
+            <div id="t-orcamentos" class="tab-pane" style="position: relative; padding-bottom: 80px; background-color: var(--bg-color);">
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Simulador de Orçamentos</h2>
+                </div>
+
+                <div class="categorias-nav-wrapper" style="margin-bottom: 20px;">
+                    <div id="orc-cats-nav" class="categorias-draggable"></div>
+                </div>
+
+                <div class="table-responsive" style="padding: 0; background: transparent; box-shadow: none; border: none;">
+                    <div id="orc-menu-container" style="width: 100%;"></div>
+                </div>
+
+                <button type="button" id="fixed-summary-orc" onclick="window.abrirModalOrcamento()">
+                    <div class="summary-content-orc">
+                        <div id="summary-text-orc">
+                            <span id="summary-total-orc">R$: 0,00</span>
+                            <span id="summary-item-count-orc">/ 0 itens</span>
+                        </div>
+                        <div id="summary-button-orc"><i class="fas fa-shopping-cart" style="font-size: 1.5rem;"></i></div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+        <div class="popup-conteudo" style="max-width: 500px;">
+            <span class="fechar" onclick="closeModal('modal-orcamento-pedido')">&times;</span>
+            <h2 class="font-display">RESUMO DO ORÇAMENTO</h2>
+            
+            <div id="popup-resumo-itens-orc" class="resumo-itens"></div>
+            
+            <div id="desconto-container" style="border: 1px dashed rgba(29, 40, 20, 0.3); border-radius: 12px; padding: 20px 15px 12px 15px; position: relative; margin: 25px 0 15px 0; text-align: center; background: transparent;">
+                <strong style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--favu-card); padding: 0 10px; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; white-space: nowrap;">DESCONTO (R$)</strong>
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <input type="number" step="0.01" id="orc-desconto" placeholder="0.00" value="0" oninput="window.calcOrcamentoTotal()" style="flex: 1; min-width: 130px; border: 1px solid rgba(29, 40, 20, 0.2); border-radius: 30px; padding: 8px 12px; font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--text-dark); text-align: center; outline: none;">
+                </div>
+            </div>
+            
+            <div class="resumo-footer-area">
+                <div class="resumo-total">
+                    <span style="font-size: 1rem; color: #666; font-family: 'Basic Choice', cursive !important; text-transform: none; font-weight: normal;">Bruto: R$ <span id="orc-bruto-txt">0,00</span></span><br>
+                    <span style="font-family: 'Basic Choice', cursive !important; font-weight: bold;">TOTAL: R$ <span id="orc-liquido-txt">0,00</span></span>
+                </div>
+            </div>
+
+            <div class="popup-footer-actions">
+                <div class="popup-footer-actions-top">
+                    <button type="button" class="btn-secondary-form" onclick="closeModal('modal-orcamento-pedido')">Adicionar itens</button>
+                    <button type="button" class="btn-secondary-form" style="background-color: var(--favu-rust);" onclick="window.avancarDadosCliente()">Adicionar dados</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-orcamento-cliente" class="modal" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+        <div class="popup-conteudo" style="max-width: 500px;">
+            <span class="fechar" onclick="closeModal('modal-orcamento-cliente')">&times;</span>
+            <h2 class="font-display">DADOS DO CLIENTE</h2>
+
+            <form id="form-pedido-orc" style="text-align: left; display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; width: 100%;">
+                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">NOME DO CLIENTE:</label>
+                    <input type="text" id="orc-nome" placeholder="NOME DO CLIENTE" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                </div>
+                
+                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">NÚMERO (WHATSAPP):</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="tel" id="orc-tel" placeholder="(DDD) 9XXXX-XXXX" style="flex: 1; width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                        <button type="button" class="btn btn-secondary" onclick="window.buscarContato()" title="Buscar nos contatos" style="padding: 10px; border-radius: 10px;"><i class="fas fa-address-book"></i></button>
+                    </div>
+                </div>
+                
+                <div class="form-grid-2" style="margin-bottom: 0;">
+                    <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                        <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">DATA:</label>
+                        <input type="date" id="orc-data" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                    </div>
+                    <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                        <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">HORÁRIO:</label>
+                        <input type="time" id="orc-hora" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                    </div>
+                </div>
+                
+                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">PAGAMENTO:</label>
+                    <select id="orc-pag" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                        <option value="">SELECIONE...</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão">Cartão</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
+                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">OBSERVAÇÕES:</label>
+                    <textarea id="orc-obs" placeholder="EX: RETIRAR CEBOLA, ALERGIAS, ETC." rows="2" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);"></textarea>
+                </div>
+            </form>
+
+            <div class="popup-footer-actions">
+                <div class="popup-footer-actions-top">
+                    <button type="button" class="btn-secondary-form" onclick="window.voltarResumoOrcamento()">Editar orçamento</button>
+                    <button type="button" class="btn-secondary-form" onclick="closeModal('modal-orcamento-cliente')">Adicionar itens</button>
+                </div>
+                <button type="button" class="btn-primary-large" onclick="window.gerarOrcamentoWA()"><i class="fab fa-whatsapp"></i> ENVIAR ORÇAMENTO</button>
             </div>
         </div>
     </div>
@@ -462,7 +716,7 @@
         <div class="modal-content modal-content-large" style="border: 2px dashed var(--favu-rust);">
             <div class="modal-header">
                 <h3>Adesão produtos</h3>
-                <button class="close-modal" onclick="document.getElementById('modal-bulk-prod').style.display='none'">&times;</button>
+                <button class="close-modal" onclick="document.getElementById('modal-bulk-prod').classList.remove('show'); setTimeout(()=>document.getElementById('modal-bulk-prod').style.display='none', 300)">&times;</button>
             </div>
             
             <div class="modal-body" style="padding-top: 10px;">
@@ -636,15 +890,21 @@
             if(btn.classList.contains('menu-link')) btn.classList.add('active');
             toggleMenu(false);
             
-            // Oculta a barra de ações em massa se mudar de aba
             document.querySelectorAll('.bulk-actions-bar').forEach(b => b.classList.remove('active'));
         }
 
-        // Modais Globais e Resets
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function openModal(id) { 
+            const modal = document.getElementById(id);
+            modal.style.display = 'flex'; 
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
         
         function closeModal(id, formId) { 
-            document.getElementById(id).style.display = 'none'; 
+            const modal = document.getElementById(id);
+            if(modal) {
+                modal.classList.remove('show'); 
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
             if(formId) document.getElementById(formId).reset(); 
 
             if(id === 'modal-add-prod') {
