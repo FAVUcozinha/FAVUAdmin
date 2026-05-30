@@ -493,32 +493,20 @@ window.renderProdsTable = function() {
 
     let chaveAtual = null;
     
-    filtered.sort(sortProducts).forEach((p, i, arr) => {
+    filtered.sort(sortProducts).forEach((p) => {
         const imgTag = p.imagemUrl ? `<img src="${p.imagemUrl}" class="img-preview">` : `<div class="img-preview" style="background:#eee; display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="color:#ccc;"></i></div>`;
         const eyeIcon = p.ativo ? 'eye' : 'eye-slash';
 
         const isNewGroup = p.nome !== chaveAtual;
-        let rspan = 1;
         if(isNewGroup) {
-            for(let j=i+1; j<arr.length; j++) {
-                if(arr[j].nome === p.nome) rspan++; else break;
-            }
             chaveAtual = p.nome;
         }
-
-        const tdFotoDesktop = isNewGroup ? `<td class="desktop-group-cell" rowspan="${rspan}" data-label="Foto:">${imgTag}</td>` : ``;
-        const tdNomeDesktop = isNewGroup ? `<td class="desktop-group-cell" rowspan="${rspan}" data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>` : ``;
-        
-        const tdFotoMobile = `<td class="mobile-only-cell" data-label="Foto:">${imgTag}</td>`;
-        const tdNomeMobile = `<td class="mobile-only-cell" data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>`;
 
         tb.innerHTML += `
         <tr class="${isNewGroup ? 'group-separator-top' : ''}">
             <td data-label="Sel:" style="text-align: center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${p.id}" onchange="window.checkSelection('produtos')"></td>
-            ${tdFotoDesktop}
-            ${tdFotoMobile}
-            ${tdNomeDesktop}
-            ${tdNomeMobile}
+            <td data-label="Foto:">${imgTag}</td>
+            <td data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>
             <td data-label="Categoria:">${p.categoria}</td>
             <td data-label="Tam:">${p.tamanho||'-'}</td>
             <td data-label="Mín:">${p.min||1}</td>
