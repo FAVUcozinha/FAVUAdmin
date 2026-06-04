@@ -19,6 +19,20 @@ let allAvisos = [];
 let currentCategoryFilter = '';
 
 // ==========================================
+// FORMATADOR DE TEXTO (QUEBRAS DE LINHA E MARKDOWN)
+// ==========================================
+window.formatText = function(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+};
+
+// ==========================================
 // LÓGICA DE ORDENAÇÃO DE PRODUTOS
 // ==========================================
 const sortProducts = (a, b) => {
@@ -511,9 +525,9 @@ window.renderProdsTable = function() {
             <td data-label="Tam:">${p.tamanho||'-'}</td>
             <td data-label="Mín:">${p.min||1}</td>
             <td data-label="Preço:">R$ ${p.preco.toFixed(2)}</td>
-            <td data-label="Desc. Produto:"><small>${p.descricaoItem||'-'}</small></td>
-            <td data-label="Desc. Resumo:"><small>${p.descricaoResumo||'-'}</small></td>
-            <td data-label="Desc. Imagem:"><small>${p.descricaoPopup||'-'}</small></td>
+            <td data-label="Desc. Produto:"><small>${p.descricaoItem ? window.formatText(p.descricaoItem) : '-'}</small></td>
+            <td data-label="Desc. Resumo:"><small>${p.descricaoResumo ? window.formatText(p.descricaoResumo) : '-'}</small></td>
+            <td data-label="Desc. Imagem:"><small>${p.descricaoPopup ? window.formatText(p.descricaoPopup) : '-'}</small></td>
             <td data-label="Status:"><span class="badge ${p.ativo?'ativo':'inativo'}">${p.ativo?'Visível':'Oculto'}</span></td>
             <td data-label="Ações:">
                 <div class="action-btns-wrapper">
@@ -661,7 +675,7 @@ window.renderAvisosTable = function() {
             <td data-label="Sel:" style="text-align: center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${a.id}" onchange="window.checkSelection('avisos')"></td>
             <td data-label="Capa:">${imgTag}</td>
             <td data-label="Título:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${a.titulo}</strong></td>
-            <td data-label="Mensagem:"><small>${a.texto}</small></td>
+            <td data-label="Mensagem:"><small>${a.texto ? window.formatText(a.texto) : '-'}</small></td>
             <td data-label="Início:">${new Date(a.inicio).toLocaleString()}</td>
             <td data-label="Fim:">${new Date(a.fim).toLocaleString()}</td>
             <td data-label="Status:"><span class="badge ${stClass}">${st}</span></td>
@@ -817,9 +831,10 @@ window.renderOrcamentoMenu = function() {
             if (temFoto) iconeHint = `<i class="fas fa-camera foto-hint"></i>`;
             else if (temDescPopup) iconeHint = `<i class="fas fa-info-circle foto-hint"></i>`;
 
+            const descMenuFormatado = p.descricaoItem ? window.formatText(p.descricaoItem) : '';
             const celulaNomeHTML = `
                 <div class="item-nome-texto" style="line-height: 1.2;">${nomeClean}</div>
-                ${p.descricaoItem ? `<div class="descricao-orc">${p.descricaoItem}</div>` : ''}
+                ${descMenuFormatado ? `<div class="descricao-orc">${descMenuFormatado}</div>` : ''}
             `;
 
             let tdSec = '';
