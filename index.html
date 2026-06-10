@@ -376,6 +376,37 @@
 
         <div class="admin-wrapper">
 
+            <div id="t-estoque" class="tab-pane">
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="window.openModal('modal-add-estoque')"><i class="fas fa-plus"></i> Novo Insumo</button>
+                </div>
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Controle de Estoque</h2>
+                    <input type="text" id="search-estoque" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar insumo...">
+                </div>
+
+                <div id="alertas-estoque" style="margin-bottom: 20px; display: none; background: #ffebee; border-left: 4px solid #E60000; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #E60000; margin-bottom: 5px; font-family: 'Basic Choice', cursive;">⚠️ Itens em Alerta / Pendentes</h4>
+                    <ul id="lista-faltas-estoque" style="color: #b71c1c; font-family: var(--font-numbers); font-size: 0.9rem; margin-left: 20px;"></ul>
+                </div>
+
+                <div class="panel-card table-responsive">
+                    <table class="favu-table" id="tbl-estoque">
+                        <thead>
+                            <tr>
+                                <th>Insumo</th>
+                                <th>Unidade de Medida</th>
+                                <th>Estoque Atual</th>
+                                <th>Estoque Mínimo</th>
+                                <th>Status</th>
+                                <th style="width: 120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div id="t-pedidos" class="tab-pane active">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Gestão de Pedidos</h2>
@@ -865,6 +896,100 @@
                 <h3 style="margin-bottom:20px; color:var(--favu-green); font-family:'Basic Choice', cursive; font-size:1.5rem;">Escolha o resumo</h3>
                 <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="window.gerarListaPedidos()">📋 Lista de pedidos (Inteira)</button>
                 <button class="btn btn-secondary" style="width:100%; justify-content:center;" onclick="window.gerarResumoItens()">📦 Lista de itens (Agrupados)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-estoque" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header"><h3>Cadastrar Insumo</h3><button class="close-modal" onclick="window.closeModal('modal-add-estoque', 'form-add-estoque')">&times;</button></div>
+            <div class="modal-body">
+                <form id="form-add-estoque">
+                    <div class="form-grid">
+                        <div><label>Nome do Insumo</label><input type="text" id="ae-nome" placeholder="Ex: Ovo, Farinha" required></div>
+                        <div><label>Unidade de Medida</label><select id="ae-unidade" required><option value="Unidade">Unidade (un)</option><option value="Kg">Quilograma (kg)</option><option value="Gramas">Gramas (g)</option><option value="Litros">Litros (L)</option><option value="Caixa">Caixa/Lata</option></select></div>
+                    </div>
+                    <div class="form-grid">
+                        <div><label>Estoque Atual</label><input type="number" step="0.01" id="ae-atual" value="0" required></div>
+                        <div><label>Alerta de Estoque Mínimo</label><input type="number" step="0.01" id="ae-minimo" value="10" required></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-estoque', 'form-add-estoque')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Salvar Insumo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-edit-estoque" class="modal">
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Insumo</h3><button class="close-modal" onclick="window.closeModal('modal-edit-estoque', 'form-edit-estoque')">&times;</button></div>
+            <div class="modal-body">
+                <form id="form-edit-estoque">
+                    <input type="hidden" id="ee-id">
+                    <div class="form-grid">
+                        <div><label>Nome do Insumo</label><input type="text" id="ee-nome" required></div>
+                        <div><label>Unidade de Medida</label><select id="ee-unidade" required><option value="Unidade">Unidade (un)</option><option value="Kg">Quilograma (kg)</option><option value="Gramas">Gramas (g)</option><option value="Litros">Litros (L)</option><option value="Caixa">Caixa/Lata</option></select></div>
+                    </div>
+                    <div class="form-grid">
+                        <div><label>Estoque Atual</label><input type="number" step="0.01" id="ee-atual" required></div>
+                        <div><label>Alerta de Estoque Mínimo</label><input type="number" step="0.01" id="ee-minimo" required></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="button" class="btn btn-outline" onclick="window.closeModal('modal-edit-estoque', 'form-edit-estoque')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-registrar-compra" class="modal">
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-rust);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-rust);">Lançar Compra</h3>
+                <button class="close-modal" onclick="window.closeModal('modal-registrar-compra', 'form-registrar-compra')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-registrar-compra">
+                    <input type="hidden" id="rc-insumo-id">
+                    <div style="margin-bottom: 15px;">
+                        <label>Insumo</label>
+                        <input type="text" id="rc-insumo-nome" disabled style="background: #eee; font-weight: bold; color: var(--favu-moss);">
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <label>Marca (Opcional)</label>
+                            <input type="text" id="rc-marca" placeholder="Ex: Dona Benta">
+                        </div>
+                        <div>
+                            <label>Valor Pago (R$)</label>
+                            <input type="number" step="0.01" id="rc-valor" required placeholder="0,00">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <label>Qtd Comprada</label>
+                            <input type="number" step="0.01" id="rc-qtd" required placeholder="Ex: 5">
+                        </div>
+                        <div>
+                            <label>Medida na Embalagem</label>
+                            <select id="rc-medida" required>
+                                <option value="Kg">Quilograma (kg)</option>
+                                <option value="Gramas">Gramas (g)</option>
+                                <option value="Litros">Litros (L)</option>
+                                <option value="Mililitros">Mililitros (ml)</option>
+                                <option value="Unidade">Unidade (un)</option>
+                                <option value="Caixa">Caixa/Lata</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="button" class="btn btn-outline" onclick="window.closeModal('modal-registrar-compra', 'form-registrar-compra')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fas fa-check"></i> Registrar Compra</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
