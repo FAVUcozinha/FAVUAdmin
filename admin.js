@@ -15,6 +15,7 @@ const db = getFirestore(app);
 
 let globalCategories = [];
 let allProducts = [];
+let allEstoque = []; // NOVA VARIÁVEL DO ESTOQUE
 let allAvisos = [];
 let currentCategoryFilter = '';
 
@@ -227,7 +228,6 @@ window.renderCatsTable = function() {
     let opts = `<option value="">Selecione...</option>`;
     const searchTerm = document.getElementById('search-cat').value.toLowerCase();
     
-    // Aplicada a regra de ordem alfabética aqui
     const sorted = globalCategories.sort((a, b) => window.sortAlfabetico(a.nome, b.nome));
     sorted.forEach(c => { opts += `<option value="${c.nome}">${c.nome}</option>`; });
 
@@ -385,7 +385,6 @@ async function loadProds() {
 function renderProdTabs() {
     const container = document.getElementById('prod-cats-nav');
     
-    // Aplicada a regra de ordem alfabética aqui (Abas de Produtos)
     const catsUsed = [...new Set(allProducts.map(p => p.categoria || 'Sem Categoria'))].sort(window.sortAlfabetico);
     
     if (!currentCategoryFilter || !catsUsed.includes(currentCategoryFilter)) currentCategoryFilter = catsUsed[0] || '';
@@ -511,7 +510,6 @@ window.renderOrcamentoMenu = function() {
     container.innerHTML = ""; nav.innerHTML = "";
     const orcAgrupados = {}; allProducts.filter(p=>p.ativo).forEach(p => { const cat = p.categoria || 'Geral'; if(!orcAgrupados[cat]) orcAgrupados[cat] = []; orcAgrupados[cat].push(p); });
     
-    // Aplicada a regra de ordem alfabética aqui (Abas de Orçamento)
     const categoriasOrdenadas = Object.keys(orcAgrupados).sort(window.sortAlfabetico);
     
     if(categoriasOrdenadas.length > 0 && (!currentOrcCatFilter || !categoriasOrdenadas.includes(currentOrcCatFilter))) currentOrcCatFilter = categoriasOrdenadas[0];
@@ -723,7 +721,13 @@ window.renderizar = function(pedidos) {
 
 window.atualizarDashboardPedidos = function() {
     let pedCalc = window.ticketsSelecionados.size > 0 ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p)) );
-    let tv = 0, tp = 0; pedCalc.forEach(p => { tp++; if (!(p.Status_do_Pedido || '').toLowerCase().includes('cancelado')) tv += calcularValorPedido(p); });
+    let tv = 0, tp = 0; 
+    pedCalc.forEach(p => { 
+        if (!(p.Status_do_Pedido || '').toLowerCase().includes('cancelado')) {
+            tp++; 
+            tv += calcularValorPedido(p); 
+        }
+    });
     if(document.querySelector('#dashboard-totals strong')) document.querySelector('#dashboard-totals strong').textContent = tv.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     if(document.getElementById('total-count')) document.getElementById('total-count').textContent = `${tp} pedido${tp !== 1 ? 's' : ''}`;
 }
@@ -872,7 +876,239 @@ window.fecharModalPedido = function(id) { document.getElementById(id).style.disp
 window.mostrarLoading = function(show) { document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none'; }
 window.showToast = function(msg, isError = false) { const t = document.getElementById('toast'); t.textContent = msg; t.style.backgroundColor = isError ? '#e74c3c' : '#28a745'; t.style.display = 'block'; setTimeout(() => { t.style.display = 'none'; }, 3000); }
 
+// ==========================================
+// MÓDULO DE ESTOQUE
+// ==========================================
+
+// Listener do campo de busca
+document.getElementById('search-estoque')?.addEventListener('input', () => { window.renderEstoqueTable(); });
+
+// Carregar Insumos
+async function loadEstoque() {
+    const s = await getDocs(collection(db, "estoque"));
+    allEstoque = [];
+    s.forEach(d => allEstoque.push({id: d.id, ...d.data()}));
+    window.renderEstoqueTable();
+    window.checarAlertasEstoque();
+}
+
+// Renderizar Tabela
+window.renderEstoqueTable = function() {
+    const tb = document.querySelector("#tbl-estoque tbody");
+    if (!tb) return;
+    tb.innerHTML = "";
+    
+    const searchInput = document.getElementById('search-estoque');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+    let filtered = allEstoque.filter(e => `${e.nome} ${e.unidade}`.toLowerCase().includes(searchTerm));
+
+    // Ordem alfabética
+    filtered.sort((a, b) => window.sortAlfabetico(a.nome, b.nome)).forEach(e => {
+        const isBaixo = parseFloat(e.quantidadeAtual) <= parseFloat(e.quantidadeMinima);
+        
+        tb.innerHTML += `<tr>
+            <td data-label="Insumo:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${e.nome}</strong></td>
+            <td data-label="Unidade:">${e.unidade}</td>
+            <td data-label="Atual:"><strong style="color: ${isBaixo ? '#E60000' : 'var(--favu-moss)'};">${e.quantidadeAtual}</strong></td>
+            <td data-label="Mínimo:">${e.quantidadeMinima}</td>
+            <td data-label="Status:"><span class="badge ${isBaixo ? 'inativo' : 'ativo'}">${isBaixo ? 'Baixo / Faltando' : 'Suficiente'}</span></td>
+            <td data-label="Ações:">
+                <div class="action-btns-wrapper">
+                    <button class="btn-action edit" onclick="window.openEditEstoque('${e.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action del" onclick="window.delEstoque('${e.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    });
+}
+
+// Checar Alertas para o Dashboard
+window.checarAlertasEstoque = function() {
+    const alertaDiv = document.getElementById('alertas-estoque');
+    const listaFaltas = document.getElementById('lista-faltas-estoque');
+    if (!alertaDiv || !listaFaltas) return;
+
+    listaFaltas.innerHTML = '';
+    let temAlerta = false;
+
+    allEstoque.forEach(e => {
+        if (parseFloat(e.quantidadeAtual) <= parseFloat(e.quantidadeMinima)) {
+            temAlerta = true;
+            listaFaltas.innerHTML += `<li><strong>${e.nome}:</strong> Restam apenas ${e.quantidadeAtual} ${e.unidade} (Mínimo: ${e.quantidadeMinima})</li>`;
+        }
+    });
+
+    alertaDiv.style.display = temAlerta ? 'block' : 'none';
+}
+
+// Adicionar Insumo
+const formAddEstoque = document.getElementById('form-add-estoque');
+if (formAddEstoque) {
+    formAddEstoque.onsubmit = async(e) => {
+        e.preventDefault(); 
+        const btn = e.target.querySelector('button[type="submit"]'); 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
+        try {
+            await addDoc(collection(db, "estoque"), {
+                nome: document.getElementById('ae-nome').value.trim(),
+                unidade: document.getElementById('ae-unidade').value,
+                quantidadeAtual: parseFloat(document.getElementById('ae-atual').value) || 0,
+                quantidadeMinima: parseFloat(document.getElementById('ae-minimo').value) || 0,
+                custo_medio_por_unidade: 0 // Campo preparado para a nova arquitetura
+            });
+            customAlert("Insumo Adicionado!");
+            window.closeModal('modal-add-estoque', 'form-add-estoque');
+            loadEstoque();
+        } catch(err) { 
+            customAlert("Erro ao salvar.", "Erro"); 
+        } finally { 
+            btn.innerHTML = 'Salvar Insumo'; btn.disabled = false; 
+        }
+    };
+}
+
+// Abrir Edição
+window.openEditEstoque = async(id) => {
+    const e = (await getDoc(doc(db,"estoque", id))).data();
+    document.getElementById('ee-id').value = id;
+    document.getElementById('ee-nome').value = e.nome;
+    document.getElementById('ee-unidade').value = e.unidade;
+    document.getElementById('ee-atual').value = e.quantidadeAtual;
+    document.getElementById('ee-minimo').value = e.quantidadeMinima;
+    window.openModal('modal-edit-estoque');
+};
+
+// Salvar Edição
+const formEditEstoque = document.getElementById('form-edit-estoque');
+if (formEditEstoque) {
+    formEditEstoque.onsubmit = async(e) => {
+        e.preventDefault(); 
+        const btn = e.target.querySelector('button[type="submit"]'); 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
+        try {
+            await updateDoc(doc(db, "estoque", document.getElementById('ee-id').value), {
+                nome: document.getElementById('ee-nome').value.trim(),
+                unidade: document.getElementById('ee-unidade').value,
+                quantidadeAtual: parseFloat(document.getElementById('ee-atual').value) || 0,
+                quantidadeMinima: parseFloat(document.getElementById('ee-minimo').value) || 0,
+            });
+            customAlert("Insumo Atualizado!");
+            window.closeModal('modal-edit-estoque', 'form-edit-estoque');
+            loadEstoque();
+        } catch(err) { 
+            customAlert("Erro.", "Erro"); 
+        } finally { 
+            btn.innerHTML = 'Atualizar'; btn.disabled = false; 
+        }
+    };
+}
+
+// Deletar
+window.delEstoque = async(id) => {
+    customConfirm("Excluir este insumo permanentemente?", async () => {
+        await deleteDoc(doc(db, "estoque", id));
+        loadEstoque();
+    });
+};
+
+// ==========================================
+// MÓDULO DE FICHAS TÉCNICAS E COMPRAS (NOVA ARQUITETURA)
+// ==========================================
+
+window.registrarCompra = async function(insumoId, marca, quantidadeComprada, unidadeMedida, valorTotal) {
+    try {
+        // 1. Converter para Unidade Base (ex: Kg para gramas)
+        let qtdConvertida = parseFloat(quantidadeComprada);
+        if (unidadeMedida === 'Kg' || unidadeMedida === 'L') {
+            qtdConvertida = qtdConvertida * 1000;
+        }
+
+        const custoDessaCompraPorBase = valorTotal / qtdConvertida;
+
+        // 2. Buscar o estoque atual do banco na coleção "estoque" (antiga, mas operante)
+        const insumoRef = doc(db, "estoque", insumoId);
+        const insumoSnap = await getDoc(insumoRef);
+        
+        if (!insumoSnap.exists()) {
+            customAlert("Insumo não encontrado no banco de dados.", "Erro");
+            return;
+        }
+        
+        const insumo = insumoSnap.data();
+
+        // 3. Calcular o novo custo médio ponderado
+        const estoqueAntigo = parseFloat(insumo.quantidadeAtual) || 0;
+        const custoMedioAntigo = parseFloat(insumo.custo_medio_por_unidade) || 0;
+        
+        const valorEmEstoque = estoqueAntigo * custoMedioAntigo;
+        const estoqueNovoTotal = estoqueAntigo + qtdConvertida;
+        
+        const novoCustoMedio = (valorEmEstoque + valorTotal) / estoqueNovoTotal;
+
+        // 4. Salvar atualização no banco
+        await updateDoc(insumoRef, {
+            quantidadeAtual: estoqueNovoTotal,
+            custo_medio_por_unidade: novoCustoMedio
+        });
+
+        // 5. Registrar no histórico de compras para relatórios financeiros futuros
+        await addDoc(collection(db, "historico_compras"), {
+            insumo_id: insumoId,
+            marca: marca,
+            data: Date.now(), 
+            qtd_convertida: qtdConvertida,
+            valor_total: valorTotal,
+            unidade_compra: unidadeMedida,
+            quantidade_comprada: quantidadeComprada
+        });
+
+        customAlert("Compra lançada e custo médio atualizado com sucesso!");
+        loadEstoque(); 
+    } catch (error) {
+        console.error("Erro ao processar a compra: ", error);
+        customAlert("Houve um erro ao registrar a compra.", "Erro");
+    }
+}
+
+window.calcularCustoProduto = async function(produtoId, precoVendaProduto) {
+    try {
+        const fichaRef = doc(db, "fichas_tecnicas", produtoId);
+        const fichaSnap = await getDoc(fichaRef);
+        
+        if(!fichaSnap.exists()) return null;
+        
+        const ficha = fichaSnap.data();
+        let custoTotalReceita = 0;
+
+        // Percorre os ingredientes (ex: Trigo, Manteiga) atrelados àquela receita
+        if (ficha.ingredientes && Array.isArray(ficha.ingredientes)) {
+            for (let ingrediente of ficha.ingredientes) {
+                const insumoSnap = await getDoc(doc(db, "estoque", ingrediente.insumo_id));
+                if (insumoSnap.exists()) {
+                    const insumo = insumoSnap.data();
+                    const custoInsumoPorUnidade = parseFloat(insumo.custo_medio_por_unidade) || 0;
+                    custoTotalReceita += (parseFloat(ingrediente.qtd_usada) * custoInsumoPorUnidade);
+                }
+            }
+        }
+
+        const rendimento = parseFloat(ficha.rendimento) || 1;
+        const custoPorUnidade = custoTotalReceita / rendimento;
+        const lucroBruto = precoVendaProduto - custoPorUnidade;
+        const margemLucro = (lucroBruto / precoVendaProduto) * 100;
+
+        return {
+            custoPorUnidade: custoPorUnidade,
+            lucroReais: lucroBruto,
+            margem: margemLucro.toFixed(2) + '%'
+        };
+    } catch (error) {
+        console.error("Erro ao calcular a Ficha Técnica: ", error);
+        return null;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => { let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { window.configurarAcordeaoColunas(); if (window.innerWidth > 768) document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('expanded')); }, 250); }); });
 
-async function init() { window.addVariation(false); await syncCats(); await loadProds(); loadAvisos(); loadTema(); loadCarrossel(); window.inicializarKanban(); listenPedidos(); }
+async function init() { window.addVariation(false); await syncCats(); await loadProds(); /* await loadEstoque(); */ loadAvisos(); loadTema(); loadCarrossel(); window.inicializarKanban(); listenPedidos(); }
 if (sessionStorage.getItem("favu_admin_logged") === "true") { document.getElementById("login-screen").style.display = "none"; document.getElementById("admin-panel").style.display = "block"; init(); }
