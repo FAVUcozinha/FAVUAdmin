@@ -14,19 +14,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         html { font-size: 90%; } 
-
         :root {
             --favu-beige: #F4E6CB; --favu-card: #FFF5EB; --favu-green: #1D2814; 
             --favu-rust: #E09F41; --favu-moss: #46493A; --font-numbers: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            --shadow-soft: 0 4px 15px rgba(0,0,0,0.05);
-            --radius-lg: 20px;
+            --shadow-soft: 0 4px 15px rgba(0,0,0,0.05); --radius-lg: 20px;
         }
         @font-face { font-family: 'Basic Choice'; src: url('fonts/Basic Choice 2.ttf') format('truetype'); font-display: swap; }
         @font-face { font-family: 'Cocogoose'; src: url('fonts/Cocogoose-Pro-Darkmode-trial.ttf') format('truetype'); font-display: swap; }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: var(--favu-beige); color: var(--favu-green); font-family: 'Cocogoose', sans-serif; padding: 0; margin: 0; }
-        
+        body { background-color: var(--favu-beige); color: var(--favu-green); font-family: 'Cocogoose', sans-serif; padding: 0; margin: 0; overflow-y: auto;}
         .admin-wrapper { max-width: 1500px; margin: 0 auto; padding: 20px 15px; }
         .font-display { font-family: 'Basic Choice', cursive !important; font-weight: normal; }
         
@@ -50,7 +47,6 @@
         .btn-action.del { background: #E60000; }
         .btn-action:hover { filter: brightness(1.2); transform: scale(1.05); }
 
-        /* ================= SELEÇÃO EM MASSA ================= */
         .bulk-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--favu-rust); }
         .bulk-actions-bar { display: none; background: rgba(224, 159, 65, 0.1); padding: 12px 20px; border-radius: 12px; margin-bottom: 15px; align-items: center; justify-content: space-between; border: 1px dashed var(--favu-rust); flex-wrap: wrap; gap: 10px; animation: fadeIn 0.3s; }
         .bulk-actions-bar.active { display: flex; }
@@ -60,27 +56,21 @@
         .custom-file-upload { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 15px; border-radius: 8px; background: rgba(224, 159, 65, 0.1); border: 1px dashed var(--favu-rust); color: var(--favu-rust); font-family: 'Basic Choice', cursive; cursor: pointer; transition: 0.2s; width: 100%; font-size: 1rem; text-align: center; }
         .custom-file-upload:hover { background: rgba(224, 159, 65, 0.2); }
         .file-name-display { font-family: var(--font-numbers); font-size: 0.8rem; color: #666; margin-top: 5px; display: block; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
         .bulk-file-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(224, 159, 65, 0.05); border: 1px dashed var(--favu-rust); color: var(--favu-rust); border-radius: 8px; height: 100%; min-height: 55px; cursor: pointer; transition: 0.2s; padding: 5px; text-align: center;}
         .bulk-file-upload:hover { background: rgba(224, 159, 65, 0.15); }
         .bulk-file-upload.has-file { background: rgba(40,167,69,0.1); border-color: #28a745; color: #28a745; }
-        .bulk-file-upload.has-file i::before { content: "\f00c"; } 
 
         header { background-image: url('images/topo.png'); background-repeat: repeat-x; background-position: center top; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; background-color: var(--favu-beige); }
         .menu-btn { background-color: white; width: 45px; height: 40px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #1D2814; cursor: pointer; box-shadow: var(--shadow-soft); transition: 0.2s; }
         .header-logo { max-width: 100px; filter: drop-shadow(0 2px 5px rgba(224, 159, 65, 0.3)); margin: 0 auto; display: block; }
-        .header-spacer { width: 45px; }
-
         #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1999; backdrop-filter: blur(2px); animation: fadeIn 0.3s; }
         
         .side-menu { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background-color: var(--favu-beige); z-index: 2000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 4px 0 20px rgba(0,0,0,0.3); padding: 30px 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .side-menu.active { left: 0; }
         .close-menu-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 2rem; color: #999; cursor: pointer; }
-        
         .menu-logo-container { text-align: center; margin-bottom: 30px; }
         .menu-logo-img { max-width: 120px; }
         .side-menu-content { display: flex; flex-direction: column; height: 100%; }
-        
         .nav-links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; flex-grow: 1;}
         .menu-link { font-family: 'Basic Choice', cursive; font-size: 1.2rem; color: var(--favu-moss); display: flex; align-items: center; gap: 10px; transition: 0.3s; text-decoration: none; cursor: pointer; background: #ffffff; padding: 12px 20px; border-radius: 12px; border: 1px solid #eee; box-shadow: var(--shadow-soft); }
         .menu-link.active { background: var(--favu-rust); color: white; border-color: var(--favu-rust); }
@@ -90,23 +80,61 @@
         .panel-card { background: white; padding: 20px; border-radius: 15px; box-shadow: var(--shadow-soft); margin-bottom: 20px; border: 1px solid #eee; }
         .tab-pane { display: none; animation: fadeIn 0.4s; background: var(--favu-card); padding: 25px; border-radius: 24px; box-shadow: var(--shadow-soft); margin-top: 15px; }
         .tab-pane.active { display: block; }
-
+        
         .search-area { flex: 1; min-width: 250px; }
         .search-bar { width: 100%; max-width: 400px; border-radius: 30px; border: 2px solid var(--favu-rust); }
         .buttons-area { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; width: 100%; margin-bottom: 20px; }
 
-        /* ================= MODAIS PADRÃO (ADMIN) ================= */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(29, 40, 20, 0.7); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 15px; transition: 0.3s; opacity: 0; }
+        /* MODAIS E SCROLLBAR */
+        .modal, .modal-direct { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(29, 40, 20, 0.7); z-index: 9999; 
+            justify-content: center; align-items: center; 
+            backdrop-filter: blur(4px); padding: 15px; 
+            overflow: hidden; 
+        }
         .modal.show { display: flex; opacity: 1; }
-        .modal-content { background: var(--favu-card); width: 100%; max-width: 600px; border-radius: var(--radius-lg); box-shadow: 0 15px 40px rgba(0,0,0,0.2); position: relative; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden; transform: translateY(20px); transition: 0.3s;}
+        .modal { transition: 0.3s; opacity: 0; }
+        
+        .modal-content { 
+            background: var(--favu-card); width: 100%; max-width: 600px; 
+            border-radius: var(--radius-lg); box-shadow: 0 15px 40px rgba(0,0,0,0.2); 
+            position: relative; display: flex; flex-direction: column; 
+            max-height: 85vh; 
+            overflow: hidden; 
+            transform: translateY(20px); transition: 0.3s;
+        }
         .modal.show .modal-content { transform: translateY(0); }
+        .modal-direct .modal-content { transform: none; }
         .modal-content-large { max-width: 1200px; } 
         .modal-content-small { max-width: 400px; }
+        
         .modal-header { padding: 25px 25px 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(224, 159, 65, 0.3); flex-shrink: 0; }
         .modal-header h3 { font-family: 'Basic Choice', cursive; color: var(--favu-rust); margin: 0; font-size: 1.8rem; }
         .close-modal { background: none; border: none; font-size: 2rem; color: #999; cursor: pointer; line-height: 1; margin-left: 10px;}
         .close-modal:hover { color: #E60000; }
-        .modal-body { padding: 20px 25px 30px 25px; overflow-y: auto; flex-grow: 1; }
+        
+        .modal-body { 
+            padding: 20px 25px 30px 25px; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            flex-grow: 1; 
+        }
+
+        .popup-conteudo { 
+            background-color: var(--favu-card); padding: 30px 25px 25px 25px; 
+            border-radius: 20px; width: 90%; max-width: 440px; text-align: center; 
+            position: relative; margin: auto; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            font-family: 'Basic Choice', cursive;  
+        }
+
+        .modal-body::-webkit-scrollbar, .popup-conteudo::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track, .popup-conteudo::-webkit-scrollbar-track { background: transparent; }
+        .modal-body::-webkit-scrollbar-thumb, .popup-conteudo::-webkit-scrollbar-thumb { background: rgba(224, 159, 65, 0.4); border-radius: 10px; }
 
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
         .form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 15px; }
@@ -114,17 +142,12 @@
         .table-responsive { width: 100%; overflow-x: auto; }
         .favu-table { width: 100%; border-collapse: collapse; text-align: left; }
         .favu-table thead th { background: transparent; font-family: 'Basic Choice', cursive; color: var(--favu-rust); font-size: 1.1rem; padding: 12px 10px; border-bottom: 2px solid var(--favu-rust); text-transform: uppercase; white-space: nowrap;}
-        .favu-table th:last-child, .favu-table td:last-child { text-align: center; }
         .action-btns-wrapper { display: inline-flex; gap: 5px; justify-content: center; width: 100%; }
-
         .favu-table tbody tr { transition: 0.2s ease; border-bottom: 1px solid #ddd; }
         .favu-table tbody tr:hover { background-color: rgba(224, 159, 65, 0.05); }
         .favu-table td { padding: 15px 10px; font-family: var(--font-numbers); font-size: 0.9rem; color: var(--text-dark); vertical-align: middle; }
         .img-preview { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #eee; }
-        
-        /* Agrupamento Híbrido */
         .group-separator-top { border-top: 2px solid rgba(224, 159, 65, 0.4) !important; }
-        .mobile-only-cell { display: none; }
         
         .badge { font-family: var(--font-numbers); font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; color: white; display: inline-block; white-space: nowrap;}
         .badge.ativo { background: #28a745; } 
@@ -132,173 +155,161 @@
         .badge.agendado { background: #E09F41; }
         .badge.concluso { background: #666; }
 
-        /* LOTE DESKTOP */
         .grid-header { display: grid; grid-template-columns: 60px 1.2fr 1.5fr 60px 1.5fr 1.5fr 2.5fr 30px; gap: 8px; padding: 10px; background: rgba(224, 159, 65, 0.1); border-radius: 8px; font-family: 'Cocogoose', sans-serif; font-size: 0.65rem; color: var(--favu-rust); margin-bottom: 10px; width: 100%; text-transform: uppercase; align-items: center;}
         .grid-row { display: grid; grid-template-columns: 60px 1.2fr 1.5fr 60px 1.5fr 1.5fr 2.5fr 30px; gap: 8px; margin-bottom: 8px; width: 100%; align-items: start; background: white; padding-bottom: 10px; border-bottom: 1px solid #eee;}
-        .grid-row input, .grid-row select, .grid-row textarea { padding: 10px 5px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #ccc; background: #fff; width: 100%; font-family: var(--font-numbers); }
+        .grid-row input, .grid-row select, .grid-row textarea { padding: 10px 5px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-family: var(--font-numbers); }
 
         .prod-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
         .prod-tabs::-webkit-scrollbar { display: none; }
         .prod-tab-btn { background: white; border: 1px solid #ddd; font-family: var(--font-numbers); font-weight: bold; font-size: 0.9rem; color: var(--favu-moss); padding: 10px 20px; border-radius: 30px; cursor: pointer; transition: 0.2s; white-space: nowrap; box-shadow: var(--shadow-soft); }
         .prod-tab-btn.active { background: var(--favu-green); color: white; border-color: var(--favu-green); }
 
-        .hidden { display: none !important; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Media Query: Aplica Block Collapse APENAS para tabelas padrão (.favu-table), poupando o Orçamento */
         @media (max-width: 1024px) {
             .hide-on-mobile { display: none !important; }
             .favu-table thead { display: none; }
             .favu-table, .favu-table tbody, .favu-table tr, .favu-table td { display: block; width: 100%; }
             .favu-table tr { background: white; margin-bottom: 20px; border-radius: 16px; padding: 15px; box-shadow: var(--shadow-soft); border: 1px solid #eee; }
-            
-            .desktop-group-cell { display: none !important; }
-            .mobile-only-cell { display: flex !important; }
-            
             .favu-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; border: none; border-bottom: 1px dashed #eee; padding: 10px 0; font-family: var(--font-numbers) !important; }
-            .favu-table td:last-child { border-bottom: none; justify-content: space-between; text-align: left; } 
+            .favu-table td:last-child { border-bottom: none; text-align: left; } 
             .action-btns-wrapper { justify-content: flex-end; width: auto; }
             .favu-table td::before { content: attr(data-label); font-family: 'Basic Choice', cursive; color: var(--favu-rust); font-size: 1.1rem; text-align: left; margin-right: 15px; flex-shrink: 0; }
             .buttons-area { justify-content: flex-start; }
             .buttons-area .btn { width: 100%; }
         }
 
-
-        /* ================= CARDS E TABELA ORÇAMENTO (EXATO COMO CARDÁPIO) ================= */
-        .categorias-draggable { display: flex; overflow-x: auto; padding: 12px 15px; gap: 10px; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; user-select: none; -webkit-overflow-scrolling: touch; align-items: center; width: max-content; margin: 0 auto; max-width: 100%; }
+        /* ORÇAMENTO */
+        .categorias-draggable { display: flex; overflow-x: auto; padding: 12px 15px; gap: 10px; scrollbar-width: none; cursor: grab; user-select: none; width: max-content; margin: 0 auto; max-width: 100%; }
         .categorias-draggable::-webkit-scrollbar { display: none; }
-        .categorias-draggable:active { cursor: grabbing; }
-        .categoria-btn-orc { display: inline-flex; align-items: center; justify-content: center; padding: 6px 18px; height: auto; background-color: white; color: var(--text-dark); text-decoration: none; border-radius: 30px; font-size: 1rem; font-weight: normal; font-family: 'Basic Choice', cursive; white-space: nowrap; transition: 0.3s ease; border: 1px solid rgba(224, 159, 65, 0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.05); opacity: 1; text-transform: uppercase; cursor: pointer; }
-        .categoria-btn-orc:hover { transform: translateY(-2px); border-color: var(--favu-rust); }
+        .categoria-btn-orc { display: inline-flex; align-items: center; justify-content: center; padding: 6px 18px; background-color: white; color: var(--text-dark); border-radius: 30px; font-size: 1rem; font-family: 'Basic Choice', cursive; white-space: nowrap; transition: 0.3s ease; border: 1px solid rgba(224, 159, 65, 0.3); box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-transform: uppercase; cursor: pointer; }
         .categoria-btn-orc.active-link { background-color: var(--favu-rust) !important; color: white !important; border-color: var(--favu-rust) !important; box-shadow: 0 4px 15px rgba(224, 159, 65, 0.3) !important; }
-
         .categoria-group-orc { display: none; animation: fadeIn 0.4s ease; margin-bottom: 40px; width: 100%; }
         .categoria-group-orc.active-group { display: block; }
         .categoria-title-orc { font-family: 'Basic Choice', cursive; font-size: 2.6rem; color: var(--favu-rust); text-align: center; margin: 5px 0 25px 0; font-weight: normal; }
-        
         .table-card-orc { background: var(--favu-card); border-radius: 16px; padding: 15px 10px; box-shadow: var(--shadow-soft); border: 1px solid rgba(255,255,255,0.5); width: 100%; overflow: hidden; margin: 0 auto; }
         .orc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .orc-table thead th { font-family: 'Basic Choice', cursive; color: #1D2814; font-size: 1rem; padding-bottom: 12px; text-align: center; border-bottom: 2px solid rgba(29, 40, 20, 0.2); text-transform: uppercase; font-weight: normal;}
         .orc-table th.col-item, .orc-table td.col-item { text-align: left; padding-left: 5px; width: 35%; word-wrap: break-word; }
-        .orc-table th.col-icon, .orc-table td.col-icon { width: 6%; text-align: center; vertical-align: middle; }
-        .orc-table th.col-sec, .orc-table td.col-sec { width: 19.6%; text-align: center; }
-        .orc-table th.col-unid, .orc-table td.col-unid { width: 19.6%; text-align: center; }
-        .orc-table th.col-qtd, .orc-table td.col-qtd { width: 19.6%; text-align: center; }
-        .orc-table tbody tr { border-bottom: 1px dashed rgba(224, 159, 65, 0.2); transition: background-color 0.2s ease; }
-        .orc-table tbody tr:hover { background-color: rgba(224, 159, 65, 0.05); }
-        .orc-table tbody tr.group-separator { border-bottom: 2px solid rgba(224, 159, 65, 0.4); }
-        .orc-table tbody tr:last-child { border-bottom: none; }
-        .orc-table td { padding: 12px 5px; vertical-align: middle; color: var(--text-dark); font-size: 0.95rem; font-family: 'Basic Choice', cursive; font-weight: normal; }
-        .orc-table td.col-item { font-size: 1.1rem; text-transform: uppercase; padding-right: 5px; }
-        .orc-table td.col-icon { padding: 12px 0; }
-        .descricao-orc { font-size: 0.8rem; color: var(--favu-moss); font-weight: normal; margin-top: 5px; line-height: 1.3; font-family: 'Basic Choice', cursive; text-transform: none; text-align: left; }
-        
+        .orc-table th.col-icon, .orc-table td.col-icon { width: 6%; text-align: center; }
+        .orc-table th.col-sec, .orc-table td.col-sec, .orc-table th.col-unid, .orc-table td.col-unid, .orc-table th.col-qtd, .orc-table td.col-qtd { width: 19.6%; text-align: center; }
+        .orc-table tbody tr { border-bottom: 1px dashed rgba(224, 159, 65, 0.2); transition: 0.2s ease; }
+        .orc-table td { padding: 12px 5px; color: var(--text-dark); font-size: 0.95rem; font-family: 'Basic Choice', cursive; }
+        .orc-table td.col-item { font-size: 1.1rem; text-transform: uppercase; }
+        .descricao-orc { font-size: 0.8rem; color: var(--favu-moss); margin-top: 5px; font-family: 'Basic Choice', cursive; text-align: left; }
         .quantidade-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .quantidade-input-group { display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .qtd-btn-table { width: 25px; height: 30px; border: none; background: none; color: var(--favu-rust); font-size: 1.3rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: opacity 0.2s; line-height: 1; }
-        .qtd-btn-table:hover { opacity: 0.7; }
-        .orc-table input[type="number"] { width: 40px; height: 30px; text-align: center; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; color: var(--text-dark); font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; outline: none; transition: 0.2s; padding: 0; }
-        .orc-table input[type="number"]:focus { border-color: var(--favu-rust); }
-        
-        .th-mobile { display: inline; }
-        .th-desktop { display: none; }
-        .group-separator-top { border-top: 2px solid rgba(224, 159, 65, 0.4) !important; }
+        .qtd-btn-table { width: 25px; height: 30px; border: none; background: none; color: var(--favu-rust); font-size: 1.3rem; font-weight: bold; cursor: pointer; padding: 0; }
+        .orc-table input[type="number"] { width: 40px; height: 30px; text-align: center; border: 1px solid #ddd; border-radius: 6px; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; outline: none; padding: 0; }
+        .th-mobile { display: inline; } .th-desktop { display: none; }
 
-        /* Media Queries - Orçamento Tabela Específica Ajustada para não vazar em telas pequenas */
         @media (max-width: 1024px) {
-            .table-card-orc { padding: 10px 2px; }
-            .orc-table thead th { font-size: 0.7rem; padding: 6px 1px; letter-spacing: -0.5px; }
-            .orc-table td { font-size: 0.85rem; padding: 10px 1px; }
-            .orc-table th.col-item, .orc-table td.col-item { width: 35%; font-size: 0.85rem; padding-left: 2px; padding-right: 2px; text-align: left;}
-            .orc-table th.col-icon, .orc-table td.col-icon { width: 8%; }
+            .orc-table th.col-item, .orc-table td.col-item { width: 35%; font-size: 0.85rem;}
             .orc-table th.col-sec, .orc-table td.col-sec { width: 15%; font-size: 0.7rem; }
             .orc-table th.col-unid, .orc-table td.col-unid { width: 17%; font-size: 0.75rem; }
-            .orc-table th.col-qtd, .orc-table td.col-qtd { width: 25%; padding-left: 2px; padding-right: 2px;}
-            .descricao-orc { font-size: 0.65rem; }
-            .orc-table .quantidade-input-group { gap: 1px; justify-content: center; }
-            .orc-table input[type="number"] { width: 26px; height: 24px; font-size: 0.95rem; padding: 0; font-family: 'Basic Choice', cursive !important; min-width: 0;}
-            .orc-table .qtd-btn-table { width: 18px; font-size: 1rem; }
+            .orc-table th.col-qtd, .orc-table td.col-qtd { width: 25%;}
+            .orc-table input[type="number"] { width: 30px; height: 26px; font-size: 0.95rem;}
         }
-
         @media (min-width: 1024px) {
             .th-mobile { display: none; } .th-desktop { display: inline; }
-            .table-card-orc { padding: 25px 35px; max-width: 850px; margin: 0 auto; }
-            .categoria-title-orc { font-size: 3rem; margin: 5px auto 25px auto; }
-            .orc-table thead th { font-size: 0.95rem; padding-bottom: 10px; }
-            .orc-table td { font-size: 0.9rem; padding: 12px 5px; }
-            .orc-table td.col-item { font-size: 1.05rem; padding-right: 15px; } 
-            .orc-table th.col-icon, .orc-table td.col-icon { width: 5%; }
-            .descricao-orc { font-size: 0.75rem; margin-top: 4px; }
-            .categoria-btn-orc { font-size: 0.95rem; padding: 6px 18px; }
-            .orc-table input[type="number"] { width: 40px; height: 28px; font-size: 1.1rem; }
-            .orc-table .qtd-btn-table { font-size: 1.1rem; }
+            .table-card-orc { padding: 25px 35px; max-width: 850px; }
+            .orc-table td.col-item { font-size: 1.05rem; } 
         }
 
-        /* Botão Resumo Orçamento */
         #fixed-summary-orc { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 540px; background-color: var(--favu-green); color: #fff; padding: 12px 30px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 1000; display: none; cursor: pointer; border: none; font-family: 'Basic Choice', cursive;}
         .summary-content-orc { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         #summary-text-orc { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        #summary-total-orc { font-weight: normal; font-size: 1.5rem; line-height: 1.2; font-family: 'Basic Choice', cursive !important; }
-        #summary-item-count-orc { font-size: 0.85rem; opacity: 0.9; font-family: 'Basic Choice', cursive !important; }
-        
-        .foto-hint { color: var(--favu-rust); opacity: 0.65; font-size: 0.95rem; transition: all 0.2s ease; }
+        #summary-total-orc { font-size: 1.5rem; font-family: 'Basic Choice', cursive !important; }
+        #summary-item-count-orc { font-size: 0.85rem; font-family: 'Basic Choice', cursive !important; }
+        .foto-hint { color: var(--favu-rust); opacity: 0.65; font-size: 0.95rem; }
 
-        /* Popups Orçamento (Resumo e Cliente) */
-        .popup-conteudo { background-color: var(--favu-card); padding: 30px 25px 25px 25px; border-radius: 20px; width: 90%; max-width: 440px; text-align: center; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Basic Choice', cursive; transform: translateY(20px); transition: 0.3s; margin: auto; }
-        .modal.show .popup-conteudo { transform: translateY(0); }
-        .popup-conteudo::-webkit-scrollbar { width: 6px; }
-        .popup-conteudo::-webkit-scrollbar-track { background: #EAEAEA; border-radius: 10px; margin: 15px 0; }
-        .popup-conteudo::-webkit-scrollbar-thumb { background: #C4C4C4; border-radius: 10px; }
         .fechar { position: absolute; top: 15px; right: 20px; font-size: 1.4rem; color: #999; cursor: pointer; line-height: 1; font-family: sans-serif; z-index: 100; }
-        .fechar:hover { color: #333; }
-        .popup-conteudo h2 { color: var(--favu-rust); font-family: 'Basic Choice', cursive; font-size: 1.6rem; margin: 5px 0 15px 0; padding-bottom: 12px; border-bottom: 1px solid rgba(224, 159, 65, 0.2); text-transform: uppercase; }
-
-        .resumo-itens { border-top: none; padding-top: 0; }
-        .resumo-grupo-titulo { font-family: 'Basic Choice', cursive; color: var(--text-dark); font-size: 1.1rem; font-weight: normal; text-transform: uppercase; text-align: left; margin-top: 20px; margin-bottom: 8px; }
+        .resumo-grupo-titulo { font-size: 1.1rem; text-align: left; margin-top: 20px; margin-bottom: 8px; }
         .resumo-item-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(29, 40, 20, 0.2); text-align: left; }
-        .resumo-item-name { flex: 1; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; padding-right: 10px; }
-        .resumo-item-name small { display: block; font-family: 'Basic Choice', cursive !important; font-size: 0.9rem; color: var(--text-light); font-weight: normal; margin-top: 2px; text-transform: none; }
-        .resumo-item-input-group { display: flex; align-items: center; gap: 5px; }
-        .resumo-qtd-btn { background: none; border: none; color: var(--favu-rust); font-size: 1.3rem; font-weight: bold; cursor: pointer; padding: 0 5px; }
-        .resumo-item-input-group input[type="number"] { width: 40px; height: 30px; border: 1px solid rgba(29, 40, 20, 0.2); border-radius: 6px; text-align: center; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; color: var(--text-dark); background: #fff; outline: none; padding: 0;}
+        .resumo-item-name { flex: 1; font-size: 1rem; }
+        .resumo-item-name small { display: block; font-family: 'Basic Choice', cursive !important; font-size: 0.9rem; color: #666; margin-top: 2px; }
+        .resumo-item-input-group input[type="number"] { width: 40px; height: 30px; border: 1px solid rgba(29, 40, 20, 0.2); border-radius: 6px; text-align: center; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; outline: none; padding: 0;}
         .btn-excluir { background: none; border: none; color: #E60000; font-size: 1rem; cursor: pointer; margin-left: 6px; }
-
         .resumo-footer-area { border-top: 1px solid rgba(224, 159, 65, 0.2); padding-top: 15px; margin-top: 15px;}
-        .resumo-total { text-align: right; font-family: 'Basic Choice', cursive !important; font-size: 1.4rem; font-weight: bold; color: var(--text-dark); margin-bottom: 15px; text-transform: uppercase; }
+        .resumo-total { text-align: right; font-family: 'Basic Choice', cursive !important; font-size: 1.4rem; font-weight: bold; margin-bottom: 15px; }
+        #form-pedido-orc input, #form-pedido-orc select, #form-pedido-orc textarea { font-family: var(--font-numbers) !important; font-size: 1rem; }
+        .popup-footer-actions-top { display: flex; gap: 8px; width: 100%; margin-bottom: 8px;}
+        .btn-secondary-form { background-color: var(--favu-moss); color: #fff; border: none; padding: 10px; border-radius: 10px; font-family: 'Basic Choice', cursive; font-size: 0.85rem; cursor: pointer; flex: 1; transition: 0.2s;}
+        .btn-primary-large { background-color: var(--favu-rust); color: #fff; font-size: 1.1rem; padding: 12px; border-radius: 10px; width: 100%; font-family: 'Basic Choice', cursive; border: none; cursor: pointer; transition: 0.2s;}
 
-        #form-pedido-orc { text-align: left; display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; width: 100%;}
-        .input-group { display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden; }
-        #form-pedido-orc label { font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase; }
-        #form-pedido-orc input, #form-pedido-orc select, #form-pedido-orc textarea { width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: var(--font-numbers) !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark); }
-        #form-pedido-orc input::placeholder, #form-pedido-orc textarea::placeholder { font-family: var(--font-numbers); color: #aaa; }
-        #form-pedido-orc input:focus, #form-pedido-orc select:focus, #form-pedido-orc textarea:focus { border-color: var(--favu-rust); }
-
-        .popup-footer-actions { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(224, 159, 65, 0.2); padding-top: 15px;}
-        .popup-footer-actions-top { display: flex; flex-direction: row; gap: 8px; width: 100%; }
-
-        .btn-secondary-form { background-color: var(--favu-moss); color: #fff; border: none; padding: 10px; border-radius: 10px; font-family: 'Basic Choice', cursive; font-size: 0.85rem; cursor: pointer; flex: 1; text-transform: uppercase; transition: 0.2s;}
-        .btn-secondary-form:hover { opacity: 0.85; }
-        .btn-primary-large { background-color: var(--favu-rust); color: #fff; font-size: 1.1rem; padding: 12px; border-radius: 10px; width: 100%; font-family: 'Basic Choice', cursive; border: none; cursor: pointer; text-transform: uppercase; transition: 0.2s;}
-        .btn-primary-large:hover { opacity: 0.85; }
+        /* KANBAN PEDIDOS */
+        .filter-bar { background-color: var(--favu-card); padding: 15px 20px; display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(224, 159, 65, 0.3); }
+        .filter-group-main { display: flex; gap: 20px; flex-wrap: wrap; flex: 1; }
+        .filter-group-additional { display: flex; gap: 20px; flex-wrap: wrap; }
+        .filter-bar .filter-item { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
+        .filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; cursor: pointer; }
+        #kanban-board { display: flex; gap: 15px; height: 100%; padding-bottom: 10px; width: 100%; }
+        .kanban-column { background-color: var(--favu-card); min-width: 300px; width: 300px; border-radius: 12px; display: flex; flex-direction: column; border: 1px solid rgba(224, 159, 65, 0.2); max-height: 70vh;}
+        .column-header { padding: 15px; border-bottom: 2px solid var(--favu-rust); font-family: 'Basic Choice', cursive; color: var(--favu-green); display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; cursor: default; }
+        .column-toggle { display: none; font-size: 1.2em; margin-left: 10px; transition: transform 0.3s; }
+        .kanban-column.collapsed .column-toggle { transform: rotate(-90deg); }
+        .column-select-all-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--favu-rust); }
+        .column-content { padding: 10px; overflow-y: auto; flex: 1; }
+        .pedido-card { background-color: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; border-left: 5px solid #ccc; cursor: grab; transition: transform 0.2s; display: flex; flex-direction: column; gap: 5px; }
+        .pedido-card.selected { border: 2px solid var(--favu-rust); }
+        .observacao-tag { display: inline-block; background-color: #fff9c4; color: #f57f17; font-size: 0.65em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; margin-top: 2px; }
+        .status-Pedidos-Orçados { border-left-color: #E09F41; } .status-Pedido-Recebido { border-left-color: #3498db; } .status-Pedido-Confirmado { border-left-color: #f39c12; } .status-Aguardando-Retirada { border-left-color: #9b59b6; } .status-Entregue { border-left-color: #28a745; } .status-Cancelado { border-left-color: #e74c3c; opacity: 0.6; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .card-checkbox { cursor: pointer; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--favu-rust); }
+        .card-id { font-size: 0.75em; color: #888; font-family: var(--font-numbers); font-weight: bold; }
+        .card-title { font-weight: bold; font-family: 'Basic Choice', cursive; font-size: 1.1em; color: var(--favu-green); margin-bottom: 5px; }
+        .card-info-box { font-size: 0.9em; font-family: var(--font-numbers); color: #555; display: flex; flex-direction: column; gap: 5px; }
+        .card-numero-btn { background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: inherit; font-family: inherit; text-decoration: underline; text-decoration-style: dotted; }
+        .card-cupom { font-size: 0.85em; font-family: var(--font-numbers); color: var(--favu-rust); margin-top: 5px; margin-bottom: 3px; }
+        .card-price { font-weight: bold; font-family: var(--font-numbers); color: var(--favu-green); font-size: 0.9em; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .payment-type-tag { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 0.7em; font-weight: bold; font-family: var(--font-numbers); }
+        .payment-type-tag.pix { background-color: #32CD32; color: white; } .payment-type-tag.dinheiro { background-color: #f1c40f; color: #333; } .payment-type-tag.cartao { background-color: #4169E1; color: white; }
+        .card-status-pagamento select { width: 100%; padding: 6px 10px; border-radius: 6px; border: none; font-size: 0.85em; font-weight: bold; font-family: var(--font-numbers); cursor: pointer; text-align: center; color: white; }
+        .card-status-pagamento select.pg-pendente { background-color: #ffb3b3; color: #8b0000; } .card-status-pagamento select.pg-pago { background-color: #a8e6a8; color: #006400; } .card-status-pagamento select.pg-parcial { background-color: #ffeb9c; color: #8b6914; }
 
         @media (min-width: 1024px) {
-            .popup-conteudo { padding: 30px 25px 20px 25px; }
-            .popup-conteudo h2 { font-size: 1.4rem; }
-            .resumo-grupo-titulo { font-size: 1rem; }
-            .resumo-item-name { font-size: 0.9rem; }
-            .resumo-item-name small { font-size: 0.8rem; }
-            .resumo-item-input-group input[type="number"] { width: 34px; height: 28px; font-size: 1rem; }
-            .resumo-qtd-btn { font-size: 1.2rem; }
-            .btn-excluir { font-size: 0.95rem; }
-            .resumo-total { font-size: 1.2rem; margin-bottom: 10px; }
-            #form-pedido-orc label { font-size: 0.8rem; }
-            #form-pedido-orc input, #form-pedido-orc select, #form-pedido-orc textarea { font-size: 0.9rem; padding: 8px 10px; }
-            .btn-primary-large { font-size: 1rem; padding: 8px; margin-top: 5px; }
-            .btn-secondary-form { font-size: 0.9rem; padding: 8px; }
+            #t-pedidos.active { display: flex; flex-direction: column; height: calc(100vh - 100px); }
+            #main-content-pedidos { flex: 1; overflow: hidden; display: flex; }
+            #kanban-board { display: flex; gap: 10px; width: 100%; height: 100%; overflow-x: hidden; }
+            .kanban-column { flex: 1 1 0; min-width: 0; width: auto; max-width: 16.666%; display: flex; flex-direction: column; max-height: 100%;}
+            .column-content { overflow-y: auto; flex: 1; }
         }
+        @media (max-width: 768px) {
+            #kanban-board { flex-direction: column; overflow-y: auto; overflow-x: hidden; max-height: none;}
+            .kanban-column { width: 100%; min-width: 100%; margin-bottom: 10px; max-height: none; }
+            #filter-toggle-btn { display: block !important; padding: 10px; background: var(--favu-card); border-radius: 8px; text-align: center; cursor: pointer; border: 1px solid var(--favu-rust); margin-bottom: 10px;}
+            .filter-bar { flex-direction: column; align-items: stretch; display: none; }
+            .filter-bar.show { display: flex; }
+            .kanban-column:not(.expanded) .column-content { display: none !important; }
+            .column-header { cursor: pointer; }
+            .column-toggle { display: inline-block; }
+            #bulk-actions-bar-pedidos { flex-wrap: wrap; justify-content: center; bottom: 10px; position: fixed; left: 50%; transform: translateX(-50%); width: 90%; z-index: 2000;}
+        }
+
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 10000; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--favu-rust); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #toast { position: fixed; top: 20px; right: 20px; background-color: #28a745; color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; display: none; font-family: var(--font-numbers); font-weight: bold;}
+
+        /* Calendário Modal */
+        .date-picker-content { background-color: var(--favu-card); border-radius: 20px; padding: 25px; max-width: 380px; width: 90%; margin: auto;}
+        .date-picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: bold; font-size: 1.1em; font-family: 'Basic Choice', cursive; color: var(--favu-green);}
+        .date-picker-nav { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--favu-rust); padding: 5px 10px; font-weight: bold; }
+        .date-picker-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 20px; font-family: var(--font-numbers); }
+        .date-picker-weekday { text-align: center; padding: 8px; font-size: 0.85em; color: var(--favu-rust); font-weight: bold; }
+        .date-picker-day { text-align: center; padding: 12px 8px; border-radius: 8px; cursor: pointer; background-color: #fff; min-height: 40px; }
+        .date-picker-day.selected { background-color: #ddd; border: 2px solid var(--favu-rust); }
+        .date-picker-day.in-range { background-color: #ddd; }
+        .date-picker-day.range-start, .date-picker-day.range-end { background-color: #ccc; border: 2px solid var(--favu-rust); }
+        .date-picker-day.today { border: 2px solid var(--favu-rust); }
+        .date-picker-buttons-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .date-picker-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Basic Choice', cursive; color: white;}
     </style>
 </head>
 <body>
+
+    <div id="loading-overlay"><div class="spinner"></div><p style="color:var(--favu-green); font-weight:bold; margin-top:10px; font-family: 'Basic Choice', cursive;">Sincronizando...</p></div>
+    <div id="toast">Operação realizada!</div>
 
     <div id="custom-alert" class="modal" style="z-index: 100000;" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
         <div class="popup-conteudo" style="max-width: 400px; padding: 30px;">
@@ -322,8 +333,7 @@
     </div>
 
     <div id="login-screen" style="max-width: 400px; margin: 8vh auto; background: var(--favu-card); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); text-align: center; animation: fadeIn 0.4s ease;">
-        <img src="images/favu.png" alt="FAVU" style="max-width: 140px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(224, 159, 65, 0.2));">
-        
+        <img src="images/favu.png" alt="FAVU" style="max-width: 140px; margin-bottom: 15px;">
         <div style="margin-bottom: 15px; text-align: left;">
             <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Login</label>
             <input type="text" id="login-user" placeholder="Seu nome">
@@ -332,29 +342,27 @@
             <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Senha</label>
             <input type="password" id="login-pass" placeholder="Sua senha">
         </div>
-
         <p id="login-error" style="color: #E60000; font-size: 0.85rem; display: none; margin-bottom: 15px; font-family: 'Cocogoose', sans-serif;">Login ou senha incorretos.</p>
-        <button class="btn btn-primary" style="width: 100%; font-size: 1.3rem; padding: 15px;" onclick="fazerLogin()">Entrar</button>
+        <button class="btn btn-primary" style="width: 100%; font-size: 1.3rem; padding: 15px;" onclick="window.fazerLogin()">Entrar</button>
     </div>
 
     <div id="menu-overlay" onclick="toggleMenu(false)"></div>
     <nav id="side-menu" class="side-menu">
         <button id="close-menu-btn" class="close-menu-btn" onclick="toggleMenu(false)">&times;</button>
         <div class="side-menu-content">
-            <div class="menu-logo-container">
-                <img src="images/favu.png" alt="Logo FAVU" class="menu-logo-img">
-            </div>
+            <div class="menu-logo-container"><img src="images/favu.png" alt="Logo FAVU" class="menu-logo-img"></div>
             
             <ul class="nav-links">
                 <li><a class="menu-link" onclick="switchTab('t-cats', this)"><i class="fas fa-tags"></i> Categorias</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-avisos', this)"><i class="fas fa-bullhorn"></i> Comunicados</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-tema', this)"><i class="fas fa-paint-roller"></i> Layout</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-orcamentos', this)"><i class="fas fa-calculator"></i> Orçamentos</a></li>
-                <li><a class="menu-link active" onclick="switchTab('t-prods', this)"><i class="fas fa-box-open"></i> Produtos</a></li>
+                <li><a class="menu-link active" onclick="switchTab('t-pedidos', this)"><i class="fas fa-clipboard-list"></i> Pedidos</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-prods', this)"><i class="fas fa-box-open"></i> Produtos</a></li>
             </ul>
-            
+
             <div class="menu-bottom">
-                <a class="menu-link" style="color: #E60000; background: #fff0f0; border-color: #ffcccc;" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                <a class="menu-link" style="color: #E60000; background: #fff0f0; border-color: #ffcccc;" onclick="window.fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
             </div>
         </div>
     </nav>
@@ -363,23 +371,83 @@
         <header>
             <button class="menu-btn" onclick="toggleMenu(true)"><i class="fas fa-bars"></i></button>
             <img src="images/favu.png" alt="FAVU" class="header-logo" style="margin: 0;">
+            <div class="header-spacer" style="width:45px;"></div>
         </header>
 
         <div class="admin-wrapper">
 
-            <div id="t-prods" class="tab-pane active">
-                <div class="buttons-area">
-                    <button class="btn btn-primary" onclick="openModal('modal-add-prod')"><i class="fas fa-plus"></i> Adicionar produto</button>
-                    <button class="btn btn-secondary hide-on-mobile" onclick="openBulkModal()"><i class="fas fa-layer-group"></i>Adicionar produtos</button>
+            <div id="t-pedidos" class="tab-pane active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Gestão de Pedidos</h2>
+                    <div id="dashboard-totals" style="text-align: right; background: white; padding: 10px 20px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--favu-rust);">
+                        <strong style="display: block; font-size: 1.4rem; color: var(--favu-rust); font-family: var(--font-numbers);">R$ 0,00</strong>
+                        <span id="total-count" style="font-size: 0.9em; color: #555; font-family: var(--font-numbers);">Carregando...</span>
+                    </div>
                 </div>
 
-                <div id="prod-cats-nav" class="prod-tabs"></div>
+                <div id="filter-toggle-btn" style="display: none;" onclick="document.getElementById('filter-bar-pedidos').classList.toggle('show')">
+                    <span style="font-weight: bold; color: var(--favu-rust); font-family: 'Basic Choice', cursive; font-size: 1.1rem;"><i class="fas fa-filter"></i> Filtros</span>
+                </div>
+                
+                <div class="filter-bar" id="filter-bar-pedidos">
+                    <div class="filter-group-main">
+                        <div class="filter-item">
+                            <label>Buscar</label>
+                            <input type="text" id="search-input-pedidos" placeholder="ID, nome ou telefone" oninput="window.filtrarPedidos()">
+                        </div>
+                        <div class="filter-item">
+                            <label>Data de Entrega</label>
+                            <input type="hidden" id="date-input" onchange="window.filtrarPedidos()">
+                            <input type="text" id="date-filter-display" readonly placeholder="Filtrar por Data" onclick="window.openDatePicker()" style="background:white; cursor:pointer;">
+                        </div>
+                    </div>
+                    <div class="filter-group-additional">
+                        <div class="filter-item">
+                            <label>Status Pagamento</label>
+                            <select id="filter-status-pagamento" onchange="window.filtrarPedidos()">
+                                <option value="">Todos</option><option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Forma Pagamento</label>
+                            <select id="filter-forma-pagamento" onchange="window.filtrarPedidos()">
+                                <option value="">Todas</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label>Observação</label>
+                            <select id="filter-observacao" onchange="window.filtrarPedidos()">
+                                <option value="">Todos</option><option value="com">Com Observação</option><option value="sem">Sem Observação</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
+                <div id="main-content-pedidos" style="margin-top: 15px;">
+                    <div id="kanban-board"></div>
+                </div>
+
+                <div id="bulk-actions-bar-pedidos" class="bulk-actions-bar" style="display: none; border-color: transparent;">
+                    <span id="selected-count-pedidos" style="color:var(--favu-green); font-weight:bold; font-family:var(--font-numbers); font-size:1.1rem;">0 itens</span>
+                    <div class="bulk-actions-btns">
+                        <button class="btn btn-secondary" onclick="window.abrirBulkMove()"><i class="fas fa-arrows-alt"></i> Etapa</button>
+                        <button class="btn btn-primary" onclick="window.abrirBulkPayment()"><i class="fas fa-dollar-sign"></i> Pagamento</button>
+                        <button class="btn btn-outline" style="background-color: var(--favu-moss); border-color:var(--favu-moss); color: white;" onclick="window.abrirModalResumos()"><i class="fas fa-clipboard-check"></i> Resumos</button>
+                        <button class="btn btn-danger" onclick="window.limparSelecaoPedidos()"><i class="fas fa-times"></i> Limpar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="t-prods" class="tab-pane">
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="window.openModal('modal-add-prod')"><i class="fas fa-plus"></i> Adicionar produto</button>
+                    <button class="btn btn-secondary hide-on-mobile" onclick="window.openBulkModal()"><i class="fas fa-layer-group"></i>Adicionar produtos</button>
+                </div>
+                <div id="prod-cats-nav" class="prod-tabs"></div>
                 <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Produtos Cadastrados</h2>
                     <input type="text" id="search-prod" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar em todos os campos...">
                 </div>
-
                 <div id="bulk-actions-produtos" class="bulk-actions-bar">
                     <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-produtos">0</strong> itens selecionados</span>
                     <div class="bulk-actions-btns">
@@ -389,23 +457,12 @@
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('produtos')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
-
                 <div class="panel-card table-responsive">
                     <table class="favu-table" id="tbl-produtos">
                         <thead>
                             <tr>
                                 <th style="width: 40px; text-align: center;"><input type="checkbox" class="bulk-checkbox" onchange="window.toggleAll(this, 'produtos')"></th>
-                                <th style="width: 50px;">Foto</th>
-                                <th>Nome</th>
-                                <th>Categoria</th>
-                                <th style="width: 6%;">Tam.</th>
-                                <th style="width: 6%;">Mín.</th>
-                                <th style="width: 10%;">Preço</th>
-                                <th>Desc. Produto</th>
-                                <th>Desc. Resumo</th>
-                                <th>Desc. Imagem</th>
-                                <th>Status</th>
-                                <th style="width: 120px;">Ações</th>
+                                <th style="width: 50px;">Foto</th><th>Nome</th><th>Categoria</th><th style="width: 6%;">Tam.</th><th style="width: 6%;">Mín.</th><th style="width: 10%;">Preço</th><th>Desc. Produto</th><th>Desc. Resumo</th><th>Desc. Imagem</th><th>Status</th><th style="width: 120px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -414,15 +471,11 @@
             </div>
 
             <div id="t-cats" class="tab-pane">
-                <div class="buttons-area">
-                    <button class="btn btn-primary" onclick="openModal('modal-add-cat')"><i class="fas fa-plus"></i> Nova Categoria</button>
-                </div>
-
+                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-cat')"><i class="fas fa-plus"></i> Nova Categoria</button></div>
                 <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Categorias Cadastradas</h2>
                     <input type="text" id="search-cat" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar categoria...">
                 </div>
-
                 <div id="bulk-actions-categorias" class="bulk-actions-bar">
                     <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-categorias">0</strong> categorias selecionadas</span>
                     <div class="bulk-actions-btns">
@@ -432,7 +485,6 @@
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('categorias')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
-
                 <div class="panel-card table-responsive">
                     <table class="favu-table" id="tbl-categorias">
                         <thead><tr>
@@ -445,15 +497,11 @@
             </div>
 
             <div id="t-avisos" class="tab-pane">
-                <div class="buttons-area">
-                    <button class="btn btn-primary" onclick="openModal('modal-add-aviso')"><i class="fas fa-bullhorn"></i> Agendar Aviso</button>
-                </div>
-
+                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-aviso')"><i class="fas fa-bullhorn"></i> Agendar Aviso</button></div>
                 <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Comunicados Cadastrados</h2>
                     <input type="text" id="search-aviso" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="🔍 Buscar comunicado...">
                 </div>
-
                 <div id="bulk-actions-avisos" class="bulk-actions-bar">
                     <span style="font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--favu-rust);"><strong id="count-avisos">0</strong> avisos selecionados</span>
                     <div class="bulk-actions-btns">
@@ -463,7 +511,6 @@
                         <button class="btn btn-outline" style="padding: 8px 15px; font-size: 0.95rem; border-color: #999; color: #666;" onclick="window.clearSelection('avisos')"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </div>
-
                 <div class="panel-card table-responsive">
                     <table class="favu-table" id="tbl-avisos">
                         <thead><tr>
@@ -504,160 +551,108 @@
                 <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Simulador de Orçamentos</h2>
                 </div>
-
                 <div class="categorias-nav-wrapper" style="margin-bottom: 20px;">
                     <div id="orc-cats-nav" class="categorias-draggable"></div>
                 </div>
-
                 <div class="table-responsive" style="padding: 0; background: transparent; box-shadow: none; border: none;">
                     <div id="orc-menu-container" style="width: 100%;"></div>
                 </div>
-
                 <button type="button" id="fixed-summary-orc" onclick="window.abrirModalOrcamento()">
                     <div class="summary-content-orc">
-                        <div id="summary-text-orc">
-                            <span id="summary-total-orc">R$: 0,00</span>
-                            <span id="summary-item-count-orc">/ 0 itens</span>
-                        </div>
+                        <div id="summary-text-orc"><span id="summary-total-orc">R$: 0,00</span><span id="summary-item-count-orc">/ 0 itens</span></div>
                         <div id="summary-button-orc"><i class="fas fa-shopping-cart" style="font-size: 1.5rem;"></i></div>
                     </div>
                 </button>
             </div>
+
         </div>
     </div>
 
-    <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+    <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-pedido')">
         <div class="popup-conteudo" style="max-width: 500px;">
-            <span class="fechar" onclick="closeModal('modal-orcamento-pedido')">&times;</span>
+            <span class="fechar" onclick="window.closeModal('modal-orcamento-pedido')">&times;</span>
             <h2 class="font-display">RESUMO DO ORÇAMENTO</h2>
-            
             <div id="popup-resumo-itens-orc" class="resumo-itens"></div>
-            
             <div id="desconto-container" style="border: 1px dashed rgba(29, 40, 20, 0.3); border-radius: 12px; padding: 20px 15px 12px 15px; position: relative; margin: 25px 0 15px 0; text-align: center; background: transparent;">
                 <strong style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--favu-card); padding: 0 10px; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; white-space: nowrap;">DESCONTO (R$)</strong>
                 <div style="display: flex; gap: 8px; justify-content: center;">
                     <input type="number" step="0.01" id="orc-desconto" placeholder="0.00" value="0" oninput="window.calcOrcamentoTotal()" style="flex: 1; min-width: 130px; border: 1px solid rgba(29, 40, 20, 0.2); border-radius: 30px; padding: 8px 12px; font-family: 'Basic Choice', cursive !important; font-size: 1rem; color: var(--text-dark); text-align: center; outline: none;">
                 </div>
             </div>
-            
             <div class="resumo-footer-area">
                 <div class="resumo-total">
                     <span style="font-size: 1rem; color: #666; font-family: 'Basic Choice', cursive !important; text-transform: none; font-weight: normal;">Bruto: R$ <span id="orc-bruto-txt">0,00</span></span><br>
                     <span style="font-family: 'Basic Choice', cursive !important; font-weight: bold;">TOTAL: R$ <span id="orc-liquido-txt">0,00</span></span>
                 </div>
             </div>
-
             <div class="popup-footer-actions">
                 <div class="popup-footer-actions-top">
-                    <button type="button" class="btn-secondary-form" onclick="closeModal('modal-orcamento-pedido')">Adicionar itens</button>
+                    <button type="button" class="btn-secondary-form" onclick="window.closeModal('modal-orcamento-pedido')">Adicionar itens</button>
                     <button type="button" class="btn-secondary-form" style="background-color: var(--favu-rust);" onclick="window.avancarDadosCliente()">Adicionar dados</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-orcamento-cliente" class="modal" onclick="if(event.target === this) { this.classList.remove('show'); setTimeout(()=>this.style.display='none', 300); }">
+    <div id="modal-orcamento-cliente" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-cliente')">
         <div class="popup-conteudo" style="max-width: 500px;">
-            <span class="fechar" onclick="closeModal('modal-orcamento-cliente')">&times;</span>
+            <span class="fechar" onclick="window.closeModal('modal-orcamento-cliente')">&times;</span>
             <h2 class="font-display">DADOS DO CLIENTE</h2>
-
-            <form id="form-pedido-orc" style="text-align: left; display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; width: 100%;">
-                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">NOME DO CLIENTE:</label>
-                    <input type="text" id="orc-nome" placeholder="NOME DO CLIENTE" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+            <form id="form-pedido-orc">
+                <div class="input-group">
+                    <label>NOME DO CLIENTE:</label>
+                    <input type="text" id="orc-nome" placeholder="NOME DO CLIENTE">
                 </div>
-                
-                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">NÚMERO (WHATSAPP):</label>
+                <div class="input-group">
+                    <label>NÚMERO (WHATSAPP):</label>
                     <div style="display: flex; gap: 5px;">
-                        <input type="tel" id="orc-tel" placeholder="(DDD) 9XXXX-XXXX" style="flex: 1; width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
+                        <input type="tel" id="orc-tel" placeholder="(DDD) 9XXXX-XXXX">
                         <button type="button" class="btn btn-secondary" onclick="window.buscarContato()" title="Buscar nos contatos" style="padding: 10px; border-radius: 10px;"><i class="fas fa-address-book"></i></button>
                     </div>
                 </div>
-                
                 <div class="form-grid-2" style="margin-bottom: 0;">
-                    <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                        <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">DATA:</label>
-                        <input type="date" id="orc-data" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
-                    </div>
-                    <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                        <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">HORÁRIO:</label>
-                        <input type="time" id="orc-hora" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
-                    </div>
+                    <div class="input-group"><label>DATA:</label><input type="date" id="orc-data"></div>
+                    <div class="input-group"><label>HORÁRIO:</label><input type="time" id="orc-hora"></div>
                 </div>
-                
-                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">PAGAMENTO:</label>
-                    <select id="orc-pag" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);">
-                        <option value="">SELECIONE...</option>
-                        <option value="Pix">Pix</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Cartão">Cartão</option>
-                    </select>
+                <div class="input-group">
+                    <label>PAGAMENTO:</label>
+                    <select id="orc-pag"><option value="">SELECIONE...</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select>
                 </div>
-
-                <div class="input-group" style="display: flex; flex-direction: column; gap: 5px; width: 100%; max-width: 100%; overflow: hidden;">
-                    <label style="font-weight: normal; font-size: 0.9rem; color: var(--text-dark); font-family: 'Basic Choice', cursive; text-transform: uppercase;">OBSERVAÇÕES:</label>
-                    <textarea id="orc-obs" placeholder="EX: RETIRAR CEBOLA, ALERGIAS, ETC." rows="2" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(29, 40, 20, 0.2); font-family: 'Basic Choice', cursive !important; font-size: 1rem; outline: none; background: #fff; color: var(--text-dark);"></textarea>
+                <div class="input-group">
+                    <label>OBSERVAÇÕES:</label>
+                    <textarea id="orc-obs" placeholder="EX: RETIRAR CEBOLA, ALERGIAS, ETC." rows="2"></textarea>
                 </div>
             </form>
-
             <div class="popup-footer-actions">
                 <div class="popup-footer-actions-top">
                     <button type="button" class="btn-secondary-form" onclick="window.voltarResumoOrcamento()">Editar orçamento</button>
-                    <button type="button" class="btn-secondary-form" onclick="closeModal('modal-orcamento-cliente')">Adicionar itens</button>
+                    <button type="button" class="btn-secondary-form" onclick="window.closeModal('modal-orcamento-cliente')">Adicionar itens</button>
                 </div>
-                <button type="button" class="btn-primary-large" onclick="window.gerarOrcamentoWA()"><i class="fab fa-whatsapp"></i> ENVIAR ORÇAMENTO</button>
+                <button type="button" class="btn-primary-large" onclick="window.gerarOrcamentoWA()"><i class="fab fa-whatsapp"></i> GERAR PEDIDO / WHATSAPP</button>
             </div>
         </div>
     </div>
 
-
     <div id="modal-add-prod" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Adesão Produto</h3>
-                <button class="close-modal" onclick="closeModal('modal-add-prod', 'form-add-prod')">&times;</button>
-            </div>
-            
+            <div class="modal-header"><h3>Adesão Produto</h3><button class="close-modal" onclick="window.closeModal('modal-add-prod', 'form-add-prod')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-prod">
-                    <div class="form-grid">
-                        <div><label>Nome do Produto</label><input type="text" id="a-nome" required></div>
-                        <div><label>Categoria</label><select class="cat-select" id="a-cat" required><option value="">Carregando...</option></select></div>
-                    </div>
-                    
-                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
-                        <div><label>Mínimo por produto</label><input type="number" id="a-min" value="1" required></div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div><label>Descrição do produto</label><textarea id="a-dmenu" rows="2" placeholder="Descrição complementar. Ex: Com goiabada"></textarea></div>
-                        <div><label>Descrição da imagem</label><textarea id="a-dpop" rows="2" placeholder="Descrição da imagem. Ao clicar no nome do produto."></textarea></div>
-                    </div>
-                    
+                    <div class="form-grid"><div><label>Nome do Produto</label><textarea id="a-nome" rows="2" required></textarea></div><div><label>Categoria</label><select class="cat-select" id="a-cat" required></select></div></div>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));"><div><label>Mínimo por produto</label><input type="number" id="a-min" value="1" required></div></div>
+                    <div class="form-grid"><div><label>Descrição do produto</label><textarea id="a-dmenu" rows="2"></textarea></div><div><label>Descrição da imagem</label><textarea id="a-dpop" rows="2"></textarea></div></div>
                     <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
                         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-                            <label class="custom-file-upload" style="width: auto;">
-                                <i class="fas fa-image"></i> Escolher Foto
-                                <input type="file" id="a-file" accept="image/*" onchange="window.previewImage(this, 'a-img-preview', null, 'a-img-none', null); document.getElementById('a-file-name').textContent = this.files[0].name;">
-                            </label>
+                            <label class="custom-file-upload" style="width: auto;"><i class="fas fa-image"></i> Escolher Foto<input type="file" id="a-file" accept="image/*" onchange="window.previewImage(this, 'a-img-preview', null, 'a-img-none', null); document.getElementById('a-file-name').textContent = this.files[0].name;"></label>
                             <img id="a-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;">
                             <span id="a-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
                         </div>
                         <span id="a-file-name" class="file-name-display" style="text-align: left;"></span>
                     </div>
-
                     <h4 class="font-display" style="color: var(--favu-moss); margin-top: 20px; margin-bottom: 10px; font-size: 1.5rem; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">Tamanhos e Valores</h4>
-                    
                     <div id="variations-container"></div>
-
                     <button type="button" id="btn-add-variation" class="btn btn-outline" style="width: 100%; margin-bottom: 25px; border-style: dashed; font-size: 1rem; display: none;" onclick="window.addVariation(true)">+ Adicionar Outro Tamanho</button>
-
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-prod', 'form-add-prod')" style="flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="flex:2;">Salvar</button>
-                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-prod', 'form-add-prod')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:2;">Salvar</button></div>
                 </form>
             </div>
         </div>
@@ -665,93 +660,47 @@
 
     <div id="modal-editar-prod" class="modal">
         <div class="modal-content" style="border: 2px solid var(--favu-moss);">
-            <div class="modal-header">
-                <h3 style="color: var(--favu-moss);">Editar Produto</h3>
-                <button class="close-modal" onclick="closeModal('modal-editar-prod', 'form-edit-prod')">&times;</button>
-            </div>
-
+            <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Produto</h3><button class="close-modal" onclick="window.closeModal('modal-editar-prod', 'form-edit-prod')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-edit-prod">
                     <input type="hidden" id="e-id">
-                    <div class="form-grid">
-                        <div><label>Nome do Produto</label><input type="text" id="e-nome" required></div>
-                        <div><label>Categoria</label><select class="cat-select" id="e-cat" required></select></div>
-                    </div>
-                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
-                        <div id="e-tam-container"><label>Tamanho</label><input type="text" id="e-tam"></div>
-                        <div><label>Preço (R$)</label><input type="number" step="0.01" id="e-preco" required></div>
-                        <div><label>Mín. Individual</label><input type="number" id="e-min" required></div>
-                    </div>
-                    <div class="form-grid">
-                        <div><label>Descrição na Tabela</label><textarea id="e-dmenu" rows="2"></textarea></div>
-                        <div><label>Descrição do Resumo</label><textarea id="e-dres" rows="2" required></textarea></div>
-                    </div>
+                    <div class="form-grid"><div><label>Nome do Produto</label><textarea id="e-nome" rows="2" required></textarea></div><div><label>Categoria</label><select class="cat-select" id="e-cat" required></select></div></div>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));"><div id="e-tam-container"><label>Tamanho</label><input type="text" id="e-tam"></div><div><label>Preço (R$)</label><input type="number" step="0.01" id="e-preco" required></div><div><label>Mín. Individual</label><input type="number" id="e-min" required></div></div>
+                    <div class="form-grid"><div><label>Descrição na Tabela</label><textarea id="e-dmenu" rows="2"></textarea></div><div><label>Descrição do Resumo</label><textarea id="e-dres" rows="2" required></textarea></div></div>
                     <div style="margin-bottom: 15px;"><label>Descrição do Popup</label><textarea id="e-dpop" rows="2"></textarea></div>
-                    
                     <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
                         <label style="font-size: 0.9rem;">Imagem Atual:</label>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                            <img id="e-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;">
-                            <button type="button" id="btn-remove-e-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('prod')"><i class="fas fa-trash"></i> </button>
-                            <span id="e-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem neste item.</span>
-                        </div>
-                        
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;"><img id="e-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;"><button type="button" id="btn-remove-e-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('prod')"><i class="fas fa-trash"></i> </button><span id="e-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem.</span></div>
                         <label style="font-size: 0.9rem; margin-top: 10px;">Substituir/Adicionar Foto:</label>
-                        <label class="custom-file-upload">
-                            <i class="fas fa-camera"></i> Selecionar Imagem
-                            <input type="file" id="e-file" accept="image/*" onchange="window.previewImage(this, 'e-img-preview', 'btn-remove-e-img', 'e-img-none', 'e-remove-img'); document.getElementById('e-file-name').textContent = this.files[0].name;">
-                        </label>
-                        <span id="e-file-name" class="file-name-display"></span>
-                        <input type="hidden" id="e-remove-img" value="false">
+                        <label class="custom-file-upload"><i class="fas fa-camera"></i> Selecionar Imagem<input type="file" id="e-file" accept="image/*" onchange="window.previewImage(this, 'e-img-preview', 'btn-remove-e-img', 'e-img-none', 'e-remove-img'); document.getElementById('e-file-name').textContent = this.files[0].name;"></label>
+                        <span id="e-file-name" class="file-name-display"></span><input type="hidden" id="e-remove-img" value="false">
                     </div>
-
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-prod', 'form-edit-prod')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar Edição</button>
-                        <button type="submit" class="btn btn-secondary" style="flex:2;">Salvar Alterações</button>
-                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-prod', 'form-edit-prod')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar Edição</button><button type="submit" class="btn btn-secondary" style="flex:2;">Salvar Alterações</button></div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div id="modal-bulk-prod" class="modal hide-on-mobile">
+    <div id="modal-bulk-prod" class="modal-direct hide-on-mobile">
         <div class="modal-content modal-content-large" style="border: 2px dashed var(--favu-rust);">
-            <div class="modal-header">
-                <h3>Adesão produtos</h3>
-                <button class="close-modal" onclick="document.getElementById('modal-bulk-prod').classList.remove('show'); setTimeout(()=>document.getElementById('modal-bulk-prod').style.display='none', 300)">&times;</button>
-            </div>
-            
+            <div class="modal-header"><h3>Adesão produtos em lote</h3><button class="close-modal" onclick="window.closeModal('modal-bulk-prod')">&times;</button></div>
             <div class="modal-body" style="padding-top: 10px;">
-                <div class="grid-header">
-                    <div>FOTO</div><div>CATEGORIA</div><div>NOME PRODUTO</div><div>MÍN.</div><div>DESC. PRODUTO</div><div>DESC. IMAGEM</div><div>TAMANHO, PREÇO E DESC. RESUMO</div><div></div>
-                </div>
+                <div class="grid-header"><div>FOTO</div><div>CATEGORIA</div><div>NOME PRODUTO</div><div>MÍN.</div><div>DESC. PRODUTO</div><div>DESC. IMAGEM</div><div>TAMANHO E PREÇO</div><div></div></div>
                 <div id="bulk-rows"></div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px;">
-                    <button class="btn btn-outline" onclick="window.addGridRow()"><i class="fas fa-plus"></i> Novo Item</button>
-                    <button class="btn btn-primary" id="btn-save-bulk" onclick="window.saveBulkItems()" style="flex:1; min-width: 200px;">Salvar</button>
-                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px;"><button class="btn btn-outline" onclick="window.addGridRow()"><i class="fas fa-plus"></i> Novo Item</button><button class="btn btn-primary" id="btn-save-bulk" onclick="window.saveBulkItems()" style="flex:1; min-width: 200px;">Salvar</button></div>
             </div>
         </div>
     </div>
 
     <div id="modal-add-cat" class="modal">
         <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3>Cadastrar Categoria</h3>
-                <button class="close-modal" onclick="closeModal('modal-add-cat', 'form-add-cat')">&times;</button>
-            </div>
+            <div class="modal-header"><h3>Cadastrar Categoria</h3><button class="close-modal" onclick="window.closeModal('modal-add-cat', 'form-add-cat')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-cat">
-                    <div class="form-grid">
-                        <div><label>Nome</label><input type="text" id="ac-nome" required></div>
-                        <div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div>
-                    </div>
+                    <div class="form-grid"><div><label>Nome</label><input type="text" id="ac-nome" required></div><div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div></div>
                     <div style="margin-bottom: 15px;"><label>Medida</label><select id="ac-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
                     <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button>
-                    </div>
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button></div>
                 </form>
             </div>
         </div>
@@ -759,182 +708,204 @@
 
     <div id="modal-editar-cat" class="modal">
         <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
-            <div class="modal-header">
-                <h3 style="color: var(--favu-moss);">Editar Categoria</h3>
-                <button class="close-modal" onclick="closeModal('modal-editar-cat', 'form-edit-cat')">&times;</button>
-            </div>
+            <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Categoria</h3><button class="close-modal" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-edit-cat">
                     <input type="hidden" id="ec-id">
-                    <div class="form-grid">
-                        <div><label>Nome</label><input type="text" id="ec-nome" required></div>
-                        <div><label>Mín. Total</label><input type="number" id="ec-min" required></div>
-                    </div>
+                    <div class="form-grid"><div><label>Nome</label><input type="text" id="ec-nome" required></div><div><label>Mín. Total</label><input type="number" id="ec-min" required></div></div>
                     <div style="margin-bottom: 15px;"><label>Medida</label><select id="ec-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
                     <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ec-obs" rows="2"></textarea></div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-cat', 'form-edit-cat')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar Categoria</button>
-                    </div>
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button><button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar</button></div>
                 </form>
             </div>
         </div>
     </div>
 
     <div id="modal-add-aviso" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3>Novo Comunicado</h3>
-                <button class="close-modal" onclick="closeModal('modal-add-aviso', 'form-add-aviso')">&times;</button>
-            </div>
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header"><h3>Agendar Aviso</h3><button class="close-modal" onclick="window.closeModal('modal-add-aviso', 'form-add-aviso')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-aviso">
-                    <div class="form-grid">
-                        <div><label>Título</label><input type="text" id="aa-tit" required></div>
+                    <div class="form-grid"><div><label>Título do Aviso</label><input type="text" id="aa-tit" required></div><div style="grid-column: 1 / -1;"><label>Texto do Aviso</label><textarea id="aa-txt" rows="3"></textarea></div></div>
+                    <div class="form-grid"><div><label>Data Início</label><input type="date" id="aa-inid" required></div><div><label>Hora Início</label><input type="time" id="aa-inih" required></div></div>
+                    <div class="form-grid"><div><label>Data Fim</label><input type="date" id="aa-fimd" required></div><div><label>Hora Fim</label><input type="time" id="aa-fimh" required></div></div>
+                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;"><label class="custom-file-upload" style="width: auto;"><i class="fas fa-image"></i> Foto (Opcional)<input type="file" id="aa-file" accept="image/*" onchange="window.previewImage(this, 'aa-img-preview', null, 'aa-img-none', null); document.getElementById('aa-file-name').textContent = this.files[0].name;"></label><img id="aa-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;"><span id="aa-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span></div><span id="aa-file-name" class="file-name-display" style="text-align: left;"></span>
                     </div>
-
-                    <div style="margin-bottom: 15px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
-                        <label>Imagem</label>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-                            <label class="custom-file-upload" style="width: auto;">
-                                <i class="fas fa-image"></i> Escolher Foto
-                                <input type="file" id="aa-file" accept="image/*" onchange="window.previewImage(this, 'aa-img-preview', null, 'aa-img-none', null); document.getElementById('aa-file-name').textContent = this.files[0].name;">
-                            </label>
-                            <img id="aa-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;">
-                            <span id="aa-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
-                        </div>
-                        <span id="aa-file-name" class="file-name-display" style="text-align: left;"></span>
-                    </div>
-
-                    <div style="margin-bottom: 15px;"><label>Mensagem</label><textarea id="aa-txt" rows="3" required></textarea></div>
-                    <div class="form-grid-2">
-                        <div><label>Início (Data)</label><input type="date" id="aa-inid" required></div>
-                        <div><label>Início (Hora)</label><input type="time" id="aa-inih" required></div>
-                    </div>
-                    <div class="form-grid-2">
-                        <div><label>Fim (Data)</label><input type="date" id="aa-fimd" required></div>
-                        <div><label>Fim (Hora)</label><input type="time" id="aa-fimh" required></div>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-add-aviso', 'form-add-aviso')" style="flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="flex:1;">Agendar Aviso</button>
-                    </div>
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-aviso', 'form-add-aviso')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Agendar</button></div>
                 </form>
             </div>
         </div>
     </div>
 
     <div id="modal-editar-aviso" class="modal">
-        <div class="modal-content" style="max-width: 600px; border: 2px solid var(--favu-moss);">
-            <div class="modal-header">
-                <h3 style="color: var(--favu-moss);">Editar Comunicado</h3>
-                <button class="close-modal" onclick="closeModal('modal-editar-aviso', 'form-edit-aviso')">&times;</button>
-            </div>
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Aviso</h3><button class="close-modal" onclick="window.closeModal('modal-editar-aviso', 'form-edit-aviso')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-edit-aviso">
                     <input type="hidden" id="ea-id">
-                    <div class="form-grid">
-                        <div><label>Título</label><input type="text" id="ea-tit" required></div>
+                    <div class="form-grid"><div><label>Título do Aviso</label><input type="text" id="ea-tit" required></div><div style="grid-column: 1 / -1;"><label>Texto do Aviso</label><textarea id="ea-txt" rows="3"></textarea></div></div>
+                    <div class="form-grid"><div><label>Data Início</label><input type="date" id="ea-inid" required></div><div><label>Hora Início</label><input type="time" id="ea-inih" required></div></div>
+                    <div class="form-grid"><div><label>Data Fim</label><input type="date" id="ea-fimd" required></div><div><label>Hora Fim</label><input type="time" id="ea-fimh" required></div></div>
+                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                        <label style="font-size: 0.9rem;">Imagem Atual:</label><div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;"><img id="ea-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;"><button type="button" id="btn-remove-ea-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('aviso')"><i class="fas fa-trash"></i> </button><span id="ea-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem.</span></div>
+                        <label style="font-size: 0.9rem; margin-top: 10px;">Substituir/Adicionar Foto:</label><label class="custom-file-upload"><i class="fas fa-camera"></i> Selecionar Imagem<input type="file" id="ea-file" accept="image/*" onchange="window.previewImage(this, 'ea-img-preview', 'btn-remove-ea-img', 'ea-img-none', 'ea-remove-img'); document.getElementById('ea-file-name').textContent = this.files[0].name;"></label><span id="ea-file-name" class="file-name-display"></span><input type="hidden" id="ea-remove-img" value="false">
                     </div>
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-aviso', 'form-edit-aviso')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button><button type="submit" class="btn btn-secondary" style="flex:1;">Salvar Alterações</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                    <div style="margin-bottom: 15px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
-                        <label style="font-size: 0.9rem;">Imagem Atual:</label>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                            <img id="ea-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;">
-                            <button type="button" id="btn-remove-ea-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('aviso')"><i class="fas fa-trash"></i> </button>
-                            <span id="ea-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem.</span>
+    <div id="edit-modal-pedido" class="modal" onclick="if(event.target === this) window.fecharModalPedido('edit-modal-pedido')">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Editar Pedido</h3><button class="close-modal" onclick="window.fecharModalPedido('edit-modal-pedido')">&times;</button></div>
+            <div class="modal-body">
+                <div id="modal-id-display" style="font-size:1.1rem; color:var(--favu-moss); font-family: var(--font-numbers); font-weight: bold; margin-bottom: 15px; border-bottom: 1px dashed rgba(224,159,65,0.3); padding-bottom: 10px;"></div>
+                <form id="edit-form-pedido" onsubmit="window.submitEditForm(event)">
+                    <input type="hidden" id="edit-id-pedido">
+                    <label>Nome do Cliente:</label> <input type="text" id="edit-nome-pedido" required style="margin-bottom:10px;">
+                    <label>Telefone:</label> <input type="text" id="edit-telefone-pedido" required style="margin-bottom:10px;">
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <div style="flex:1;"><label>Data Entrega:</label> <input type="date" id="edit-data-pedido" required></div>
+                        <div style="flex:1;"><label>Horário:</label> <input type="time" id="edit-hora-pedido" required></div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <div style="flex:1;"><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                        <div style="flex:1;"><label>Status Pagamento:</label><select id="edit-status-pgto-pedido"><option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option></select></div>
+                    </div>
+                    <label>Cupom:</label> <input type="text" id="edit-cupom-pedido" style="margin-bottom:10px;">
+                    <label>Total Final (R$):</label> <input type="text" id="edit-total-pedido" required style="margin-bottom:10px;">
+                    <label>Observações:</label> <textarea id="edit-obs-pedido" rows="2" style="margin-bottom:10px;"></textarea>
+                    
+                    <fieldset style="border: 2px solid var(--favu-rust); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                        <legend style="font-weight: bold; color: var(--favu-rust); padding: 0 10px;">Adicionar Item</legend>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                            <div style="flex: 2; min-width: 200px;"><label style="font-size:0.9em;">Produto:</label><select id="add-produto-select" onchange="window.toggleCamposOutros()"></select></div>
+                            <div id="add-nome-outros-container" style="flex: 2; min-width: 200px; display: none;"><label style="font-size:0.9em;">Nome do Item:</label><input type="text" id="add-nome-outros" placeholder="Nome"></div>
+                            <div style="flex: 1; min-width: 80px;"><label style="font-size:0.9em;">Qtd:</label><input type="number" id="add-qtd" value="1" min="1"></div>
+                            <div style="flex: 1; min-width: 100px;"><label style="font-size:0.9em;">Preço (R$):</label><input type="text" id="add-preco" placeholder="0,00"></div>
+                            <div><button type="button" class="btn btn-secondary" onclick="window.adicionarItemAoResumoPedido()">Add</button></div>
                         </div>
-                        
-                        <label style="font-size: 0.9rem; margin-top:10px;">Substituir ou Adicionar Foto:</label>
-                        <label class="custom-file-upload">
-                            <i class="fas fa-camera"></i> Selecionar Nova Foto
-                            <input type="file" id="ea-file" accept="image/*" onchange="window.previewImage(this, 'ea-img-preview', 'btn-remove-ea-img', 'ea-img-none', 'ea-remove-img'); document.getElementById('ea-file-name').textContent = this.files[0].name;">
-                        </label>
-                        <span id="ea-file-name" class="file-name-display"></span>
-                        <input type="hidden" id="ea-remove-img" value="false">
-                    </div>
+                    </fieldset>
 
-                    <div style="margin-bottom: 15px;"><label>Mensagem</label><textarea id="ea-txt" rows="3" required></textarea></div>
-                    <div class="form-grid-2">
-                        <div><label>Início (Data)</label><input type="date" id="ea-inid" required></div>
-                        <div><label>Início (Hora)</label><input type="time" id="ea-inih" required></div>
-                    </div>
-                    <div class="form-grid-2">
-                        <div><label>Fim (Data)</label><input type="date" id="ea-fimd" required></div>
-                        <div><label>Fim (Hora)</label><input type="time" id="ea-fimh" required></div>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('modal-editar-aviso', 'form-edit-aviso')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-secondary" style="flex:1;">Salvar Alterações</button>
+                    <label>Itens do Pedido:</label> <textarea id="edit-resumo-pedido" rows="4"></textarea>
+                    <div style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
+                        <button type="button" class="btn btn-outline" style="flex:1; border-color:var(--favu-moss); color:var(--favu-moss);" onclick="window.fecharModalPedido('edit-modal-pedido')">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <div id="bulk-move-modal" class="modal-direct">
+        <div class="modal-content modal-content-small" style="text-align:center;">
+            <div class="modal-body">
+                <h3 style="color:var(--favu-rust); font-family:'Basic Choice', cursive; margin-bottom:15px;">Mover para...</h3>
+                <select id="bulk-move-select" style="width:100%; margin: 10px 0 20px 0;"></select>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('bulk-move-modal').style.display='none'">Cancelar</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="window.executarBulkMove()">Mover</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bulk-payment-modal" class="modal-direct">
+        <div class="modal-content modal-content-small" style="text-align:center;">
+            <div class="modal-body">
+                <h3 style="color:var(--favu-rust); font-family:'Basic Choice', cursive; margin-bottom:15px;">Alterar Pagamento</h3>
+                <select id="bulk-payment-select" style="width:100%; margin: 10px 0 20px 0;">
+                    <option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
+                </select>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('bulk-payment-modal').style.display='none'">Cancelar</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="window.executarBulkPayment()">Alterar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="date-picker-modal" class="modal-direct" onclick="if(event.target === this) window.closeDatePicker()">
+        <div class="date-picker-content">
+            <div class="date-picker-header">
+                <button class="date-picker-nav" onclick="window.mudarMes(-1)">‹</button>
+                <div id="month-year-display"></div>
+                <button class="date-picker-nav" onclick="window.mudarMes(1)">›</button>
+            </div>
+            <div class="date-picker-calendar" id="calendar-grid"></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div class="date-picker-buttons-row">
+                    <button class="date-picker-btn" style="background:#A5D6A7; color:#1D2814;" onclick="window.selecionarHoje()">Hoje</button>
+                    <button class="date-picker-btn" style="background:var(--favu-green);" onclick="window.filtrarMesAtual()">Mês Atual</button>
+                </div>
+                <div class="date-picker-buttons-row">
+                    <button class="date-picker-btn" style="background:#E60000;" onclick="window.limparFiltros(); window.closeDatePicker();">Limpar Filtros</button>
+                    <button class="date-picker-btn" style="background:var(--favu-rust);" onclick="window.aplicarFiltroData()">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="whatsapp-confirm-modal" class="modal-direct" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content modal-content-small" style="text-align:center;">
+            <button class="close-modal" style="position:absolute; right:15px; top:15px;" onclick="document.getElementById('whatsapp-confirm-modal').style.display='none'">&times;</button>
+            <div class="modal-body" style="padding-top:40px;">
+                <h3 id="whatsapp-confirm-title" style="margin-bottom:15px; color:var(--favu-green); font-family:'Basic Choice', cursive; font-size:1.5rem;"></h3>
+                <div id="whatsapp-confirm-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resumos-modal" class="modal-direct" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content modal-content-small" style="text-align:center;">
+            <button class="close-modal" style="position:absolute; right:15px; top:15px;" onclick="document.getElementById('resumos-modal').style.display='none'">&times;</button>
+            <div class="modal-body" style="padding-top:40px;">
+                <h3 style="margin-bottom:20px; color:var(--favu-green); font-family:'Basic Choice', cursive; font-size:1.5rem;">Escolha o resumo</h3>
+                <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="window.gerarListaPedidos()">📋 Lista de pedidos (Inteira)</button>
+                <button class="btn btn-secondary" style="width:100%; justify-content:center;" onclick="window.gerarResumoItens()">📦 Lista de itens (Agrupados)</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        function toggleMenu(show) {
-            const sideMenu = document.getElementById('side-menu');
+        window.toggleMenu = function(show) {
+            const menu = document.getElementById('side-menu');
             const overlay = document.getElementById('menu-overlay');
-            if(show) {
-                sideMenu.classList.add('active');
-                overlay.style.display = 'block';
-            } else {
-                sideMenu.classList.remove('active');
-                overlay.style.display = 'none';
-            }
-        }
-
-        function switchTab(id, btn) {
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.menu-link').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(btn.classList.contains('menu-link')) btn.classList.add('active');
-            toggleMenu(false);
-            
-            document.querySelectorAll('.bulk-actions-bar').forEach(b => b.classList.remove('active'));
-        }
-
-        function openModal(id) { 
-            const modal = document.getElementById(id);
-            modal.style.display = 'flex'; 
-            setTimeout(() => modal.classList.add('show'), 10);
-        }
+            if (show) { menu.classList.add('active'); overlay.style.display = 'block'; } 
+            else { menu.classList.remove('active'); overlay.style.display = 'none'; }
+        };
         
-        function closeModal(id, formId) { 
-            const modal = document.getElementById(id);
-            if(modal) {
-                modal.classList.remove('show'); 
-                setTimeout(() => modal.style.display = 'none', 300);
-            }
-            if(formId) document.getElementById(formId).reset(); 
-
-            if(id === 'modal-add-prod') {
-                document.getElementById('a-img-preview').style.display = 'none';
-                document.getElementById('a-img-none').style.display = 'block';
-                document.getElementById('a-file-name').textContent = '';
-                document.getElementById('variations-container').innerHTML = '';
-                document.getElementById('btn-add-variation').style.display = 'none';
-                if(window.addVariation) window.addVariation(false); 
-            }
-            if(id === 'modal-add-aviso') {
-                document.getElementById('aa-img-preview').style.display = 'none';
-                document.getElementById('aa-img-none').style.display = 'block';
-                document.getElementById('aa-file-name').textContent = '';
-            }
-        }
-
-        function openBulkModal() {
-            openModal('modal-bulk-prod');
-            if(document.getElementById('bulk-rows').children.length === 0) window.addGridRow();
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => console.log('Admin PWA registrado!')).catch(err => console.log('Erro no PWA', err));
+        window.switchTab = function(tabId, element) {
+            document.querySelectorAll('.tab-pane').forEach(t => {
+                t.classList.remove('active');
+                t.style.display = 'none';
             });
-        }
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+            
+            const target = document.getElementById(tabId);
+            target.classList.add('active');
+            target.style.display = '';
+
+            if(element) element.classList.add('active');
+            window.toggleMenu(false);
+        };
+        
+        window.openModal = function(id) {
+            const m = document.getElementById(id);
+            m.style.display = 'flex';
+            setTimeout(() => m.classList.add('show'), 10);
+        };
+        window.closeModal = function(id, formId) {
+            const m = document.getElementById(id);
+            m.classList.remove('show');
+            setTimeout(() => { m.style.display = 'none'; if(formId) document.getElementById(formId).reset(); }, 300);
+        };
+        window.openBulkModal = function() { window.openModal('modal-bulk-prod'); };
     </script>
+
     <script type="module" src="admin.js"></script>
+
 </body>
 </html>
