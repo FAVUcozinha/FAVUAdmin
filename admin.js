@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const IMGBB_KEY = "25f8ca3ee7fbf1f1a8c0a669d54b9db8";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const app = initializeApp({
     apiKey: "AIzaSyD5JlV7R2w629uiescD4AiixNAr-Qt0qI0",
@@ -11,11 +11,14 @@ const app = initializeApp({
     messagingSenderId: "793414871188",
     appId: "1:793414871188:web:07ab447df44d742e022c81"
 });
+
 const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
 let globalCategories = [];
 let allProducts = [];
-let allEstoque = []; // NOVA VARIÁVEL DO ESTOQUE
+let allEstoque = []; 
 let allAvisos = [];
 let currentCategoryFilter = '';
 
@@ -39,7 +42,7 @@ window.STATUS_FLOW = [
 ];
 
 // ==========================================
-// FORMATADOR DE TEXTO (Negrito, Itálico e Quebras de Linha)
+// FORMATADOR DE TEXTO 
 // ==========================================
 window.formatText = function(text) {
     if (!text) return '';
@@ -53,7 +56,7 @@ window.formatText = function(text) {
 };
 
 // ==========================================
-// REGRA RESTRITA DE ORDEM ALFABÉTICA (PARA ABAS)
+// REGRA RESTRITA DE ORDEM ALFABÉTICA 
 // ==========================================
 window.sortAlfabetico = (a, b) => {
     return (a || '').toString().localeCompare((b || '').toString(), 'pt-BR', { sensitivity: 'base' });
@@ -104,46 +107,139 @@ window.customConfirm = function(msg, onConfirm) {
 }
 
 // ==========================================
-// SISTEMA DE LOGIN
+// SISTEMA DE LOGIN SEGURO (FIREBASE AUTH)
 // ==========================================
-const USUARIOS_PERMITIDOS = [
-    { login: "Guilherme Almeida", senha: "01091996" },
-    { login: "Flávio Moraes", senha: "16091992" }
-];
-
-window.fazerLogin = function() {
-    const user = document.getElementById("login-user").value.trim();
+window.fazerLogin = async function() {
+    const email = document.getElementById("login-user").value.trim();
     const pass = document.getElementById("login-pass").value.trim();
     const errorMsg = document.getElementById("login-error");
+    const btn = document.querySelector("#login-screen .btn-primary");
 
-    const validUser = USUARIOS_PERMITIDOS.find(u => u.login === user && u.senha === pass);
-
-    if (validUser) {
-        sessionStorage.setItem("favu_admin_logged", "true");
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("admin-panel").style.display = "block";
-        init(); 
-    } else {
+    if (!email || !pass) {
+        errorMsg.textContent = "Preencha e-mail e senha.";
         errorMsg.style.display = "block";
+        return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    btn.disabled = true;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        errorMsg.style.display = "none";
+    } catch (error) {
+        console.error("Erro no login:", error);
+        errorMsg.textContent = "Credenciais inválidas ou sem permissão.";
+        errorMsg.style.display = "block";
+    } finally {
+        btn.innerHTML = 'Entrar';
+        btn.disabled = false;
     }
 };
 
-window.fazerLogout = function() {
-    sessionStorage.removeItem("favu_admin_logged");
-    document.getElementById("login-screen").style.display = "block";
-    document.getElementById("admin-panel").style.display = "none";
-    document.getElementById("login-user").value = "";
-    document.getElementById("login-pass").value = "";
-    window.toggleMenu(false); 
+window.fazerLogout = async function() {
+    try {
+        await signOut(auth);
+        window.toggleMenu(false); 
+    } catch (error) {
+        console.error("Erro ao sair:", error);
+    }
 };
 
+
+// ==========================================
+// MOSTRAR/OCULTAR SENHA
+// ==========================================
+window.togglePasswordVisibility = function() {
+    const passInput = document.getElementById("login-pass");
+    const eyeIcon = document.getElementById("eye-icon");
+    if (passInput.type === "password") {
+        passInput.type = "text";
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
+    } else {
+        passInput.type = "password";
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
+    }
+};
+
+// ==========================================
+// RECUPERAÇÃO DE SENHA (POPUP DEDICADO)
+// ==========================================
+window.abrirModalRecuperarSenha = function() {
+    // Pega o e-mail que o usuário já tentou digitar na tela de login e preenche automaticamente
+    const emailDigitado = document.getElementById("login-user").value.trim();
+    document.getElementById("recuperar-email").value = emailDigitado;
+    
+    // Reseta as mensagens de erro/sucesso do popup toda vez que ele é aberto
+    const msgEl = document.getElementById("recuperar-msg");
+    msgEl.style.display = "none";
+    msgEl.textContent = "";
+    
+    // Volta o botão ao estado normal
+    const btn = document.getElementById("btn-enviar-recuperacao");
+    btn.innerHTML = 'Enviar link de acesso';
+    btn.disabled = false;
+    
+    window.openModal('modal-recuperar-senha');
+};
+
+window.enviarEmailRecuperacao = async function() {
+    const email = document.getElementById("recuperar-email").value.trim();
+    const msgEl = document.getElementById("recuperar-msg");
+    const btn = document.getElementById("btn-enviar-recuperacao");
+
+    if (!email) {
+        msgEl.textContent = "Por favor, digite um e-mail válido.";
+        msgEl.style.color = "#E60000"; // Vermelho para erro
+        msgEl.style.display = "block";
+        return;
+    }
+
+    // Efeito visual de carregamento
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+    btn.disabled = true;
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        
+        // Mensagem de sucesso limpa usando a fonte do sistema
+        msgEl.textContent = "E-mail enviado! Verifique sua caixa de entrada e sua pasta de Spam.";
+        msgEl.style.color = "#28a745"; // Verde para sucesso
+        msgEl.style.display = "block";
+        
+        // Fecha o modal automaticamente após 4 segundos para UX mais fluida
+        setTimeout(() => {
+            window.closeModal('modal-recuperar-senha');
+        }, 4000);
+        
+    } catch (error) {
+        console.error("Erro ao enviar e-mail de recuperação:", error);
+        msgEl.textContent = "Erro ao enviar. Verifique se o e-mail digitado está correto.";
+        msgEl.style.color = "#E60000"; // Vermelho para erro
+        msgEl.style.display = "block";
+        
+        btn.innerHTML = 'Enviar link de acesso';
+        btn.disabled = false;
+    }
+};
+
+// ==========================================
+// UPLOAD DE IMAGEM SEGURO (FIREBASE STORAGE)
+// ==========================================
 async function upImg(file) {
     try {
-        const fd = new FormData(); fd.append("image", file);
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: "POST", body: fd });
-        const d = await res.json();
-        return d.success ? d.data.url : "";
-    } catch(e) { customAlert("Erro no upload da imagem.", "Atenção"); return ""; }
+        const filename = `imagens/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, filename);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        return downloadURL;
+    } catch(e) { 
+        console.error("Erro no upload:", e);
+        customAlert("Erro no upload da imagem.", "Atenção"); 
+        return ""; 
+    }
 }
 
 window.previewImage = function(input, imgId, btnId, noneId, hiddenFlagId) {
@@ -879,11 +975,8 @@ window.showToast = function(msg, isError = false) { const t = document.getElemen
 // ==========================================
 // MÓDULO DE ESTOQUE
 // ==========================================
-
-// Listener do campo de busca
 document.getElementById('search-estoque')?.addEventListener('input', () => { window.renderEstoqueTable(); });
 
-// Carregar Insumos
 async function loadEstoque() {
     const s = await getDocs(collection(db, "estoque"));
     allEstoque = [];
@@ -892,7 +985,6 @@ async function loadEstoque() {
     window.checarAlertasEstoque();
 }
 
-// Renderizar Tabela
 window.renderEstoqueTable = function() {
     const tb = document.querySelector("#tbl-estoque tbody");
     if (!tb) return;
@@ -902,7 +994,6 @@ window.renderEstoqueTable = function() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     let filtered = allEstoque.filter(e => `${e.nome} ${e.unidade}`.toLowerCase().includes(searchTerm));
 
-    // Ordem alfabética
     filtered.sort((a, b) => window.sortAlfabetico(a.nome, b.nome)).forEach(e => {
         const isBaixo = parseFloat(e.quantidadeAtual) <= parseFloat(e.quantidadeMinima);
         
@@ -922,7 +1013,6 @@ window.renderEstoqueTable = function() {
     });
 }
 
-// Checar Alertas para o Dashboard
 window.checarAlertasEstoque = function() {
     const alertaDiv = document.getElementById('alertas-estoque');
     const listaFaltas = document.getElementById('lista-faltas-estoque');
@@ -941,7 +1031,6 @@ window.checarAlertasEstoque = function() {
     alertaDiv.style.display = temAlerta ? 'block' : 'none';
 }
 
-// Adicionar Insumo
 const formAddEstoque = document.getElementById('form-add-estoque');
 if (formAddEstoque) {
     formAddEstoque.onsubmit = async(e) => {
@@ -954,7 +1043,7 @@ if (formAddEstoque) {
                 unidade: document.getElementById('ae-unidade').value,
                 quantidadeAtual: parseFloat(document.getElementById('ae-atual').value) || 0,
                 quantidadeMinima: parseFloat(document.getElementById('ae-minimo').value) || 0,
-                custo_medio_por_unidade: 0 // Campo preparado para a nova arquitetura
+                custo_medio_por_unidade: 0
             });
             customAlert("Insumo Adicionado!");
             window.closeModal('modal-add-estoque', 'form-add-estoque');
@@ -967,7 +1056,6 @@ if (formAddEstoque) {
     };
 }
 
-// Abrir Edição
 window.openEditEstoque = async(id) => {
     const e = (await getDoc(doc(db,"estoque", id))).data();
     document.getElementById('ee-id').value = id;
@@ -978,7 +1066,6 @@ window.openEditEstoque = async(id) => {
     window.openModal('modal-edit-estoque');
 };
 
-// Salvar Edição
 const formEditEstoque = document.getElementById('form-edit-estoque');
 if (formEditEstoque) {
     formEditEstoque.onsubmit = async(e) => {
@@ -1003,7 +1090,6 @@ if (formEditEstoque) {
     };
 }
 
-// Deletar
 window.delEstoque = async(id) => {
     customConfirm("Excluir este insumo permanentemente?", async () => {
         await deleteDoc(doc(db, "estoque", id));
@@ -1011,21 +1097,14 @@ window.delEstoque = async(id) => {
     });
 };
 
-// ==========================================
-// MÓDULO DE FICHAS TÉCNICAS E COMPRAS (NOVA ARQUITETURA)
-// ==========================================
-
 window.registrarCompra = async function(insumoId, marca, quantidadeComprada, unidadeMedida, valorTotal) {
     try {
-        // 1. Converter para Unidade Base (ex: Kg para gramas)
         let qtdConvertida = parseFloat(quantidadeComprada);
         if (unidadeMedida === 'Kg' || unidadeMedida === 'L') {
             qtdConvertida = qtdConvertida * 1000;
         }
 
         const custoDessaCompraPorBase = valorTotal / qtdConvertida;
-
-        // 2. Buscar o estoque atual do banco na coleção "estoque" (antiga, mas operante)
         const insumoRef = doc(db, "estoque", insumoId);
         const insumoSnap = await getDoc(insumoRef);
         
@@ -1035,23 +1114,17 @@ window.registrarCompra = async function(insumoId, marca, quantidadeComprada, uni
         }
         
         const insumo = insumoSnap.data();
-
-        // 3. Calcular o novo custo médio ponderado
         const estoqueAntigo = parseFloat(insumo.quantidadeAtual) || 0;
         const custoMedioAntigo = parseFloat(insumo.custo_medio_por_unidade) || 0;
-        
         const valorEmEstoque = estoqueAntigo * custoMedioAntigo;
         const estoqueNovoTotal = estoqueAntigo + qtdConvertida;
-        
         const novoCustoMedio = (valorEmEstoque + valorTotal) / estoqueNovoTotal;
 
-        // 4. Salvar atualização no banco
         await updateDoc(insumoRef, {
             quantidadeAtual: estoqueNovoTotal,
             custo_medio_por_unidade: novoCustoMedio
         });
 
-        // 5. Registrar no histórico de compras para relatórios financeiros futuros
         await addDoc(collection(db, "historico_compras"), {
             insumo_id: insumoId,
             marca: marca,
@@ -1080,7 +1153,6 @@ window.calcularCustoProduto = async function(produtoId, precoVendaProduto) {
         const ficha = fichaSnap.data();
         let custoTotalReceita = 0;
 
-        // Percorre os ingredientes (ex: Trigo, Manteiga) atrelados àquela receita
         if (ficha.ingredientes && Array.isArray(ficha.ingredientes)) {
             for (let ingrediente of ficha.ingredientes) {
                 const insumoSnap = await getDoc(doc(db, "estoque", ingrediente.insumo_id));
@@ -1110,5 +1182,32 @@ window.calcularCustoProduto = async function(produtoId, precoVendaProduto) {
 
 document.addEventListener("DOMContentLoaded", () => { let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { window.configurarAcordeaoColunas(); if (window.innerWidth > 768) document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('expanded')); }, 250); }); });
 
-async function init() { window.addVariation(false); await syncCats(); await loadProds(); /* await loadEstoque(); */ loadAvisos(); loadTema(); loadCarrossel(); window.inicializarKanban(); listenPedidos(); }
-if (sessionStorage.getItem("favu_admin_logged") === "true") { document.getElementById("login-screen").style.display = "none"; document.getElementById("admin-panel").style.display = "block"; init(); }
+async function init() { 
+    window.addVariation(false); 
+    await syncCats(); 
+    await loadProds(); 
+    loadAvisos(); 
+    loadTema(); 
+    loadCarrossel(); 
+    window.inicializarKanban(); 
+    listenPedidos(); 
+}
+
+// O onAuthStateChanged gerencia tudo, se ele detectar login ele mostra o painel e roda o init()
+onAuthStateChanged(auth, (user) => {
+    const loginScreen = document.getElementById("login-screen");
+    const adminPanel = document.getElementById("admin-panel");
+    
+    if (user) {
+        // Usuário logado
+        loginScreen.style.display = "none";
+        adminPanel.style.display = "block";
+        init();
+    } else {
+        // Usuário não logado
+        loginScreen.style.display = "block";
+        adminPanel.style.display = "none";
+        document.getElementById("login-user").value = "";
+        document.getElementById("login-pass").value = "";
+    }
+});
