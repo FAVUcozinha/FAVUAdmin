@@ -335,15 +335,41 @@
     <div id="login-screen" style="max-width: 400px; margin: 8vh auto; background: var(--favu-card); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); text-align: center; animation: fadeIn 0.4s ease;">
         <img src="images/favu.png" alt="FAVU" style="max-width: 140px; margin-bottom: 15px;">
         <div style="margin-bottom: 15px; text-align: left;">
-            <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Login</label>
-            <input type="text" id="login-user" placeholder="Seu nome">
+            <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">E-mail</label>
+            <input type="email" id="login-user" placeholder="seu@email.com">
         </div>
-        <div style="margin-bottom: 20px; text-align: left;">
+        <div style="margin-bottom: 5px; text-align: left; position: relative;">
             <label style="font-family: 'Cocogoose', sans-serif; font-size: 0.8rem; text-transform: uppercase;">Senha</label>
-            <input type="password" id="login-pass" placeholder="Sua senha">
+            <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" id="login-pass" placeholder="Sua senha secreta" style="padding-right: 40px;">
+                <button type="button" onclick="window.togglePasswordVisibility()" style="position: absolute; right: 10px; background: none; border: none; color: var(--favu-rust); cursor: pointer; font-size: 1.1rem; padding: 5px;">
+                    <i id="eye-icon" class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        <div style="text-align: right; margin-bottom: 20px;">
+            <a href="#" onclick="window.abrirModalRecuperarSenha(); return false;" style="font-family: 'Arial', sans-serif; font-size: 0.85rem; color: var(--favu-moss); text-decoration: underline;">Esqueci minha senha</a>
         </div>
         <p id="login-error" style="color: #E60000; font-size: 0.85rem; display: none; margin-bottom: 15px; font-family: 'Cocogoose', sans-serif;">Login ou senha incorretos.</p>
         <button class="btn btn-primary" style="width: 100%; font-size: 1.3rem; padding: 15px;" onclick="window.fazerLogin()">Entrar</button>
+    </div>
+
+    <div id="modal-recuperar-senha" class="modal" style="z-index: 100000;" onclick="if(event.target === this) window.closeModal('modal-recuperar-senha')">
+        <div class="popup-conteudo" style="max-width: 400px; padding: 35px 30px 30px 30px; text-align: left; position: relative;">
+            <button class="close-modal" style="position: absolute; right: 20px; top: 15px;" onclick="window.closeModal('modal-recuperar-senha')">&times;</button>
+            
+            <h3 style="color: var(--favu-rust); font-family: 'Cocogoose', sans-serif !important; font-size: 1.6rem; margin:0 0 15px 0;">Recuperar Senha</h3>
+            
+            <p style="margin: 0 0 20px 0; font-family: var(--font-numbers); font-size: 1rem; color: var(--favu-moss); line-height: 1.4;">
+                Digite seu e-mail abaixo. Enviaremos um link seguro para você criar uma nova senha.
+            </p>
+            
+            <input type="email" id="recuperar-email" placeholder="Digite seu e-mail..." style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+            
+            <p id="recuperar-msg" style="display: none; font-family: var(--font-numbers); font-size: 0.95rem; margin-bottom: 15px; font-weight: bold; text-align: center;"></p>
+            
+            <button class="btn btn-primary" id="btn-enviar-recuperacao" style="width: 100%; justify-content: center;" onclick="window.enviarEmailRecuperacao()">Enviar link de acesso</button>
+        </div>
     </div>
 
     <div id="menu-overlay" onclick="toggleMenu(false)"></div>
