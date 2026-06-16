@@ -244,7 +244,16 @@
         .filter-bar .filter-item { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
         .filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; cursor: pointer; }
         #kanban-board { display: flex; gap: 15px; height: 100%; padding-bottom: 10px; width: 100%; }
-        .kanban-column { background-color: var(--favu-card); min-width: 300px; width: 300px; border-radius: 12px; display: flex; flex-direction: column; border: 1px solid rgba(224, 159, 65, 0.2); max-height: 70vh;}
+        .kanban-column { 
+            background-color: var(--favu-card); 
+            flex: 1; /* Permite que todas as colunas dividam o espaço igualmente */
+            min-width: 140px; /* Reduz o limite para caberem 6 colunas sem quebrar */
+            border-radius: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid rgba(224, 159, 65, 0.2); 
+            max-height: none;
+        }
         .column-header { padding: 15px; border-bottom: 2px solid var(--favu-rust); font-family: 'Basic Choice', cursive; color: var(--favu-green); display: flex; justify-content: space-between; align-items: center; font-size: 1.1em; cursor: default; }
         .column-toggle { display: none; font-size: 1.2em; margin-left: 10px; transition: transform 0.3s; }
         .kanban-column.collapsed .column-toggle { transform: rotate(-90deg); }
@@ -268,38 +277,47 @@
         .card-status-pagamento select.pg-pendente { background-color: #ffb3b3; color: #8b0000; } .card-status-pagamento select.pg-pago { background-color: #a8e6a8; color: #006400; } .card-status-pagamento select.pg-parcial { background-color: #ffeb9c; color: #8b6914; }
 
         @media (min-width: 1024px) {
-            #t-pedidos.active { 
-                display: flex; 
-                flex-direction: column; 
-                min-height: calc(100vh - 100px); 
-            }
-            #main-content-pedidos { 
-                flex: 1; 
-                display: flex; 
-                /* Garante a altura vertical confortável para os cards não esmagarem */
-                min-height: 65vh; 
-            }
-            #kanban-board { 
-                display: flex; 
-                gap: 10px; /* Espaçamento menor para caberem todas as 6 colunas */
-                width: 100%; 
-                overflow-x: hidden; /* Trava a rolagem horizontal */
-            }
-            .kanban-column { 
-                flex: 1 1 0; /* Divide a tela em partes iguais para todas as colunas */
-                min-width: 0; /* Permite que a coluna se esprema na horizontal para caber */
-                width: auto; 
-                display: flex; 
-                flex-direction: column; 
-                height: 100%; 
-                max-height: none; 
-            }
-            .column-content { 
-                overflow-y: auto; /* Rolagem APENAS na vertical dentro de cada etapa */
-                flex: 1; 
-                padding-right: 5px; 
-            }
-        }
+    /* Faz a aba de pedidos esticar verticalmente de forma natural */
+    #t-pedidos.active { 
+        display: flex; 
+        flex-direction: column; 
+        height: auto;
+        min-height: calc(100vh - 120px); 
+    }
+
+    /* O container intermediário também deve aceitar o crescimento vertical */
+    #main-content-pedidos { 
+        display: flex;
+        flex: 1;
+        height: auto;
+        align-items: stretch; 
+    }
+
+    /* O Tabuleiro Kanban - Força o alinhamento vertical uniforme sem afetar as larguras */
+    #kanban-board { 
+        display: flex; 
+        gap: 12px;
+        width: 100%; /* Substitua 100vw por 100% para respeitar as margens da página */
+        max-width: 100%; 
+        height: auto;
+        align-items: stretch; 
+        overflow-x: auto; 
+        padding-bottom: 20px;
+        box-sizing: border-box; 
+    }
+
+    /* A área interna onde os cards são soltos expande até o final da nova altura da coluna */
+    .column-content { 
+        flex: 1; /* Preenche todo o fundo da coluna, mesmo se não houver pedidos */
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        height: auto;
+        overflow-y: visible; /* Tira a barra de rolagem individual interna para o fundo crescer limpo */
+        min-height: 200px; /* Margem de segurança visual para colunas zeradas */
+    }
+}
         @media (max-width: 768px) {
             #kanban-board { flex-direction: column; overflow-y: auto; overflow-x: hidden; max-height: none;}
             .kanban-column { width: 100%; min-width: 100%; margin-bottom: 10px; max-height: none; }
@@ -443,11 +461,17 @@
 /* =========================================================================
    UX: BARRA FLUTUANTE DE AÇÕES (FIXA NO RODAPÉ)
    ========================================================================= */
+@keyframes fadeInCenter {
+    from { opacity: 0; transform: translate(-50%, 20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 #bulk-actions-bar-pedidos {
-    position: fixed; /* Essa é a âncora mágica que estava faltando */
-    bottom: 25px; /* Desgruda do fundo */
+    position: fixed; 
+    bottom: 25px; 
     left: 50%;
     transform: translateX(-50%);
+    animation: fadeInCenter 0.3s ease-out !important; /* Impede que a animação desalinhe a barra */
     z-index: 2000;
     
     background: white;
@@ -456,7 +480,6 @@
     padding: 15px 30px;
     border-radius: 20px;
     
-    /* Centraliza a contagem e os botões */
     align-items: center;
     justify-content: center;
     gap: 20px;
@@ -490,7 +513,45 @@
         margin: 0;
     }
 }
+
+.colunas-fechamento {
+    display: flex;
+    gap: 20px;
+}
+
+/* Quando a tela for menor que 768px (celulares e tablets pequenos), ele empilha */
+@media (max-width: 768px) {
+    .colunas-fechamento {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
     
+
+.colunas-fechamento {
+    display: flex;
+    gap: 20px;
+}
+
+.valores-resumo-fechamento {
+    margin: 15px 0;
+    padding: 12px;
+    background: #fdfaf5;
+    border-radius: 8px;
+    border: 1px solid #ebd9be;
+}
+
+.valores-resumo-fechamento p {
+    margin: 6px 0;
+    font-size: 1.05rem;
+}
+
+@media (max-width: 768px) {
+    .colunas-fechamento {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
     </style>
 </head>
 <body>
@@ -571,6 +632,7 @@
                 <li><a class="menu-link" onclick="switchTab('t-tema', this)"><i class="fas fa-paint-roller"></i> Layout</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-orcamentos', this)"><i class="fas fa-calculator"></i> Orçamentos</a></li>
                 <li><a class="menu-link active" onclick="switchTab('t-pedidos', this)"><i class="fas fa-clipboard-list"></i> Pedidos</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-horarios', this)"><i class="fas fa-calendar-alt"></i> Horários</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-prods', this)"><i class="fas fa-box-open"></i> Produtos</a></li>
             </ul>
 
@@ -679,16 +741,12 @@
                 <div id="bulk-actions-bar-pedidos" class="bulk-actions-bar" style="display: none; border-color: transparent;">
                     <span id="selected-count-pedidos" style="color:var(--favu-green); font-weight:bold; font-family:var(--font-numbers); font-size:1.1rem;">0 itens</span>
                     <div class="bulk-actions-btns">
-                        <button class="btn btn-secondary" onclick="window.abrirBulkMove()"><i class="fas fa-arrows-alt"></i> Etapa</button>
-                        <button class="btn btn-primary" onclick="window.abrirBulkPayment()"><i class="fas fa-dollar-sign"></i> Pagamento</button>
-                        <button class="btn btn-outline" style="background-color: var(--favu-moss); border-color:var(--favu-moss); color: white;" onclick="window.abrirModalResumos()"><i class="fas fa-clipboard-check"></i> Resumos</button>
-                        <button class="btn btn-danger" onclick="window.limparSelecaoPedidos()"><i class="fas fa-times"></i> Limpar</button>
+                        <button class="btn btn-secondary" onclick="window.abrirBulkMove()">Etapa</button>
+                        <button class="btn btn-primary" onclick="window.abrirBulkPayment()">Pagamento</button>
+                        <button class="btn btn-outline" style="background-color: var(--favu-moss); border-color:var(--favu-moss); color: white;" onclick="window.abrirModalResumos()">Resumos</button>
+                        <button class="btn btn-danger" onclick="window.limparSelecaoPedidos()">Limpar</button>
                     </div>
-                </div>
-            </div>
-
-            <div id="t-prods" class="tab-pane">
-                <div class="buttons-area">
+                </div> </div> <div id="t-prods" class="tab-pane"> <div class="buttons-area">
                     <button class="btn btn-primary" onclick="window.openModal('modal-add-prod')"><i class="fas fa-plus"></i> Adicionar produto</button>
                     <button class="btn btn-secondary hide-on-mobile" onclick="window.openBulkModal()"><i class="fas fa-layer-group"></i>Adicionar produtos</button>
                 </div>
@@ -815,6 +873,21 @@
             </div>
 
         </div>
+
+        <!-- NOVA ABA DE HORÁRIOS RESTRITOS -->
+            <div id="t-horarios" class="tab-pane">
+                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-agenda')"><i class="fas fa-plus"></i> Restringir Nova Data</button></div>
+                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Horários Restritos por Data</h2>
+                    <p style="font-family: var(--font-numbers); font-size: 0.9rem; color: var(--text-light); margin:0;">Defina quais horários os clientes podem escolher em datas específicas (Ex: Natal, São João).</p>
+                </div>
+                <div class="panel-card table-responsive">
+                    <table class="favu-table" id="tbl-horarios">
+                        <thead><tr><th>Data Restrita</th><th>Horários Permitidos</th><th style="width: 120px;">Ações</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
     </div>
 
     <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-pedido')">
@@ -989,22 +1062,27 @@
                     <div class="form-grid"><div><label>Nome</label><input type="text" id="ac-nome" required></div><div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div></div>
                     <div style="margin-bottom: 15px;">
                         <label>Medida</label>
-                        <select id="ac-col">
-                            <option value="Nenhuma">Nenhuma</option>
-                            <option value="Tamanho">Tamanho</option>
-                            <option value="Mínimo">Mínimo</option>
-                            <!-- NOVA OPÇÃO AQUI -->
-                            <option value="Tamanho/Minimo">Tamanho/Mínimo</option>
-                        </select>
+                        <select id="ac-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option><option value="Tamanho/Minimo">Tamanho/Mínimo</option></select>
                     </div>
-                    <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
+                    <div style="margin-bottom: 15px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
+                    
+                    <div style="background: rgba(224, 159, 65, 0.05); padding: 15px; border-radius: 10px; border: 1px dashed rgba(224, 159, 65, 0.3); margin-bottom: 20px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--favu-rust);">
+                            <input type="checkbox" id="ac-agendar" style="width:18px; height:18px; accent-color:var(--favu-rust);" onchange="document.getElementById('ac-agenda-fields').style.display = this.checked ? 'block' : 'none'"> 
+                            <strong>Programar exibição / ocultação</strong>
+                        </label>
+                        <div id="ac-agenda-fields" style="display:none; margin-top:15px;">
+                            <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ac-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="time" id="ac-inih"></div></div>
+                            <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ac-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="time" id="ac-fimh"></div></div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button></div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE EDITAR CATEGORIA (ATUALIZADO) -->
     <div id="modal-editar-cat" class="modal">
         <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
             <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Categoria</h3><button class="close-modal" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')">&times;</button></div>
@@ -1014,15 +1092,21 @@
                     <div class="form-grid"><div><label>Nome</label><input type="text" id="ec-nome" required></div><div><label>Mín. Total</label><input type="number" id="ec-min" required></div></div>
                     <div style="margin-bottom: 15px;">
                         <label>Medida</label>
-                        <select id="ec-col">
-                            <option value="Nenhuma">Nenhuma</option>
-                            <option value="Tamanho">Tamanho</option>
-                            <option value="Mínimo">Mínimo</option>
-                            <!-- NOVA OPÇÃO AQUI -->
-                            <option value="Tamanho/Minimo">Tamanho/Mínimo</option>
-                        </select>
+                        <select id="ec-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option><option value="Tamanho/Minimo">Tamanho/Mínimo</option></select>
                     </div>
-                    <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ec-obs" rows="2"></textarea></div>
+                    <div style="margin-bottom: 15px;"><label>Comunicado Categoria</label><textarea id="ec-obs" rows="2"></textarea></div>
+
+                    <div style="background: rgba(224, 159, 65, 0.05); padding: 15px; border-radius: 10px; border: 1px dashed rgba(224, 159, 65, 0.3); margin-bottom: 20px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--favu-rust);">
+                            <input type="checkbox" id="ec-agendar" style="width:18px; height:18px; accent-color:var(--favu-rust);" onchange="document.getElementById('ec-agenda-fields').style.display = this.checked ? 'block' : 'none'"> 
+                            <strong>Programar exibição / ocultação</strong>
+                        </label>
+                        <div id="ec-agenda-fields" style="display:none; margin-top:15px;">
+                            <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ec-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="time" id="ec-inih"></div></div>
+                            <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ec-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="time" id="ec-fimh"></div></div>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button><button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar</button></div>
                 </form>
             </div>
@@ -1084,7 +1168,7 @@
                     </div>
                     <div style="display:flex; gap:10px; margin-bottom:10px; align-items: flex-end;">
                         <div style="flex:2;">
-                            <label>Cupom / Obs Desconto:</label> 
+                            <label>Cupom:</label> 
                             <input type="text" id="edit-cupom-pedido" style="margin-bottom:0;">
                         </div>
                         <div style="flex:1.5;">
@@ -1189,69 +1273,74 @@
         </div>
     </div>
 
-    
-    <div id="modal-fechamento-financeiro" class="modal-direct" onclick="if(event.target === this) this.style.display='none'">
-        <div class="modal-content modal-content-small" style="text-align:center;">
-            <button class="close-modal" style="position:absolute; right:15px; top:15px;" onclick="document.getElementById('modal-fechamento-financeiro').style.display='none'">&times;</button>
-            <div class="modal-body" style="padding-top:30px;">
-                <h3 style="margin-bottom:15px; color:var(--favu-rust); font-family:'Basic Choice', cursive; font-size:1.5rem;">Fechamento de Caixa</h3>
-                
-                <div style="background: rgba(224, 159, 65, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                    <strong style="display:block; font-size: 1.2rem; color: var(--favu-green); font-family: Arial, Helvetica, sans-serif;">Total: <span id="fechamento-total-base">R$ 0,00</span></strong>
-                    <span id="fechamento-periodo" style="font-size: 0.85rem; color: #666; font-family: Arial, Helvetica, sans-serif;"></span>
-                </div>
+<style>
+    /* Regra para as caixas ficarem lado a lado no PC e uma abaixo da outra no Celular */
+    .stack-mobile { display: flex; gap: 10px; }
+    @media (max-width: 768px) { .stack-mobile { flex-direction: column; gap: 12px; } }
+</style>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; text-align: left; font-family: Arial, Helvetica, sans-serif;">
+<div id="modal-fechamento-financeiro" class="modal" onclick="if(event.target === this) window.closeModal('modal-fechamento-financeiro')">
+    <div class="modal-content modal-content-small" style="max-width: 500px; border: 2px solid var(--favu-rust); font-family: var(--font-numbers) !important;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h3 style="color: var(--favu-rust); font-family: var(--font-numbers) !important; font-weight: bold; margin: 0;">Fechamento</h3>
+                <span id="fechamento-periodo" style="display: block; font-size: 1rem; color: #666; font-family: var(--font-numbers) !important; margin-top: 4px;"></span>
+            </div>
+            <button class="close-modal" onclick="window.closeModal('modal-fechamento-financeiro')">&times;</button>
+        </div>
+        <div class="modal-body" style="font-family: var(--font-numbers) !important;">
+            
+            <div style="background: rgba(224, 159, 65, 0.08); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--favu-rust); font-family: var(--font-numbers) !important;">
+                <h4 style="margin: 0 0 10px 0; color: var(--favu-moss); font-size: 1rem; font-family: var(--font-numbers) !important;">Divisão de Lucros (%):</h4>
+                <div class="stack-mobile">
                     <div style="flex: 1;">
-                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Caixa (%)</label>
-                        <input type="number" id="fechamento-pct-caixa" value="50" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">% Caixa</label>
+                        <input type="number" id="perc-caixa" step="0.1" value="30" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-weight: bold; font-size: 1.1rem; text-align: center;" oninput="window.calcularDivisaoFechamento()">
                     </div>
                     <div style="flex: 1;">
-                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Arabela (%)</label>
-                        <input type="number" id="fechamento-pct-ara" value="25" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">% Arabela</label>
+                        <input type="number" id="perc-ara" step="0.1" value="35" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-weight: bold; font-size: 1.1rem; text-align: center;" oninput="window.calcularDivisaoFechamento()">
                     </div>
                     <div style="flex: 1;">
-                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Flávio (%)</label>
-                        <input type="number" id="fechamento-pct-fla" value="25" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">% Flávio</label>
+                        <input type="number" id="perc-fla" step="0.1" value="35" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-weight: bold; font-size: 1.1rem; text-align: center;" oninput="window.calcularDivisaoFechamento()">
                     </div>
                 </div>
+            </div>
 
-                <div style="text-align: left; background: #fff; border: 1px dashed #ccc; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-family: Arial, Helvetica, sans-serif;">
-                    <p style="margin-bottom: 5px; font-size: 1.1rem;"><strong>Caixa FAVU:</strong> <span id="fechamento-val-caixa" style="color:var(--favu-green);">R$ 0,00</span></p>
-                    <p style="margin-bottom: 5px; font-size: 1.1rem;"><strong>Arabela:</strong> <span id="fechamento-val-ara" style="color:var(--favu-rust);">R$ 0,00</span></p>
-                    <p style="margin-bottom: 0; font-size: 1.1rem;"><strong>Flávio:</strong> <span id="fechamento-val-fla" style="color:var(--favu-rust);">R$ 0,00</span></p>
+            <div style="background: rgba(224, 159, 65, 0.08); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--favu-rust); font-family: var(--font-numbers) !important;">
+                <h4 style="margin: 0 0 10px 0; color: var(--favu-moss); font-size: 1rem; font-family: var(--font-numbers) !important;">Lançar Gastos do Período (R$):</h4>
+                <div class="stack-mobile">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">Gastos Caixa</label>
+                        <input type="number" id="gasto-manual-caixa" step="0.01" value="0.00" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-size: 1.05rem;" oninput="window.calcularDivisaoFechamento()">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">Gastos Arabela</label>
+                        <input type="number" id="gasto-manual-ara" step="0.01" value="0.00" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-size: 1.05rem;" oninput="window.calcularDivisaoFechamento()">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.85rem; display: block; margin-bottom: 4px; font-family: var(--font-numbers) !important;">Gastos Flávio</label>
+                        <input type="number" id="gasto-manual-fla" step="0.01" value="0.00" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-family: var(--font-numbers) !important; font-size: 1.05rem;" oninput="window.calcularDivisaoFechamento()">
+                    </div>
+                </div>
+            </div>
+
+            <p style="display: none !important;">
+                <strong id="fechamento-lucro-liquido"></strong>
+            </p>
+
+            <div id="fechamento-divisao-detalhe" style="background:rgba(0,0,0,0.03); padding:15px; border-radius:10px; font-family:var(--font-numbers) !important; line-height:1.8; font-size:1.05rem; margin-bottom: 20px;">
                 </div>
 
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.enviarFechamentoWA('Arabela')"><i class="fab fa-whatsapp"></i> Enviar Arabela</button>
-                    <button class="btn btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.enviarFechamentoWA('Flávio')"><i class="fab fa-whatsapp"></i> Enviar Flávio</button>
-                </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" style="flex:1; background-color:#25D366; border-color:#25D366; font-family: var(--font-numbers) !important; font-weight: bold;" onclick="window.enviarFechamentoWA('Arabela')"><i class="fab fa-whatsapp"></i> Arabela</button>
+                <button class="btn btn-primary" style="flex:1; background-color:#25D366; border-color:#25D366; font-family: var(--font-numbers) !important; font-weight: bold;" onclick="window.enviarFechamentoWA('Flavio')"><i class="fab fa-whatsapp"></i> Flávio</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div id="modal-add-estoque" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header"><h3>Cadastrar Insumo</h3><button class="close-modal" onclick="window.closeModal('modal-add-estoque', 'form-add-estoque')">&times;</button></div>
-            <div class="modal-body">
-                <form id="form-add-estoque">
-                    <div class="form-grid">
-                        <div><label>Nome do Insumo</label><input type="text" id="ae-nome" placeholder="Ex: Ovo, Farinha" required></div>
-                        <div><label>Unidade de Medida</label><select id="ae-unidade" required><option value="Unidade">Unidade (un)</option><option value="Kg">Quilograma (kg)</option><option value="Gramas">Gramas (g)</option><option value="Litros">Litros (L)</option><option value="Caixa">Caixa/Lata</option></select></div>
-                    </div>
-                    <div class="form-grid">
-                        <div><label>Estoque Atual</label><input type="number" step="0.01" id="ae-atual" value="0" required></div>
-                        <div><label>Alerta de Estoque Mínimo</label><input type="number" step="0.01" id="ae-minimo" value="10" required></div>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-estoque', 'form-add-estoque')" style="flex:1;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" style="flex:1;">Salvar Insumo</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
     <div id="modal-edit-estoque" class="modal">
         <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
             <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Insumo</h3><button class="close-modal" onclick="window.closeModal('modal-edit-estoque', 'form-edit-estoque')">&times;</button></div>
@@ -1358,7 +1447,58 @@
             setTimeout(() => { m.style.display = 'none'; if(formId) document.getElementById(formId).reset(); }, 300);
         };
         window.openBulkModal = function() { window.openModal('modal-bulk-prod'); };
+
     </script>
+
+    <!-- MODAIS DE AGENDA -->
+    <div id="modal-add-agenda" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header"><h3>Restringir Data</h3><button class="close-modal" onclick="window.closeModal('modal-add-agenda', 'form-add-agenda')">&times;</button></div>
+            <div class="modal-body">
+                <form id="form-add-agenda">
+                    <div style="margin-bottom: 15px;"><label>Selecione a Data</label><input type="date" id="ag-data" required></div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#E60000;">
+                            <input type="checkbox" id="ag-indisponivel" style="width:18px; height:18px; accent-color:#E60000;" onchange="document.getElementById('ag-horas-container').style.display = this.checked ? 'none' : 'block'"> 
+                            <strong>Dia Indisponível (Fechar Agenda)</strong>
+                        </label>
+                    </div>
+
+                    <div id="ag-horas-container" style="margin-bottom: 20px;">
+                        <label>Horários Permitidos (Separados por vírgula)</label>
+                        <textarea id="ag-horas" rows="2" placeholder="Ex: 16:00, 16:30, 17:00"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-agenda', 'form-add-agenda')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Salvar Regra</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-agenda" class="modal">
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Data</h3><button class="close-modal" onclick="window.closeModal('modal-editar-agenda', 'form-edit-agenda')">&times;</button></div>
+            <div class="modal-body">
+                <form id="form-edit-agenda">
+                    <input type="hidden" id="e-ag-data">
+                    <div style="margin-bottom: 15px;"><label>Data</label><input type="date" id="e-ag-data-display" disabled></div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#E60000;">
+                            <input type="checkbox" id="e-ag-indisponivel" style="width:18px; height:18px; accent-color:#E60000;" onchange="document.getElementById('e-ag-horas-container').style.display = this.checked ? 'none' : 'block'"> 
+                            <strong>Dia Indisponível (Fechar Agenda)</strong>
+                        </label>
+                    </div>
+
+                    <div id="e-ag-horas-container" style="margin-bottom: 20px;">
+                        <label>Horários Permitidos (Separados por vírgula)</label>
+                        <textarea id="e-ag-horas" rows="2"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-agenda', 'form-edit-agenda')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button><button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="admin.js"></script>
 
