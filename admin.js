@@ -398,21 +398,80 @@ window.renderCatsTable = function() {
 }
 
 document.getElementById('form-add-cat').onsubmit = async(e) => {
-    e.preventDefault(); const nm = document.getElementById('ac-nome').value.trim();
-    await setDoc(doc(db, "categorias", nm.toLowerCase().replace(/\s/g, '-')), { nome: nm, minTotal: parseInt(document.getElementById('ac-min').value)||0, tipoColuna: document.getElementById('ac-col').value, mensagemObs: document.getElementById('ac-obs').value.trim(), ativo: true, minIndividual: true }); 
+    e.preventDefault(); 
+    const nm = document.getElementById('ac-nome').value.trim();
+    
+    // Pega as datas se o checkbox estiver marcado
+    const agendar = document.getElementById('ac-agendar').checked;
+    let dataInicio = null, dataFim = null;
+    if (agendar) {
+        dataInicio = new Date(`${document.getElementById('ac-inid').value}T${document.getElementById('ac-inih').value}`).getTime();
+        dataFim = new Date(`${document.getElementById('ac-fimd').value}T${document.getElementById('ac-fimh').value}`).getTime();
+    }
+
+    await setDoc(doc(db, "categorias", nm.toLowerCase().replace(/\s/g, '-')), { 
+        nome: nm, 
+        minTotal: parseInt(document.getElementById('ac-min').value)||0, 
+        tipoColuna: document.getElementById('ac-col').value, 
+        mensagemObs: document.getElementById('ac-obs').value.trim(), 
+        ativo: true, 
+        minIndividual: true,
+        agendarVisibilidade: agendar,
+        inicio: dataInicio,
+        fim: dataFim
+    }); 
     customAlert("Categoria Criada!"); window.closeModal('modal-add-cat', 'form-add-cat'); syncCats();
 };
 
 window.openEditCat = async(id) => {
     const c = (await getDoc(doc(db, "categorias", id))).data();
-    document.getElementById('ec-id').value = id; document.getElementById('ec-nome').value = c.nome;
-    document.getElementById('ec-min').value = c.minTotal; document.getElementById('ec-col').value = c.tipoColuna;
-    document.getElementById('ec-obs').value = c.mensagemObs || ''; window.openModal('modal-editar-cat');
+    document.getElementById('ec-id').value = id; 
+    document.getElementById('ec-nome').value = c.nome;
+    document.getElementById('ec-min').value = c.minTotal; 
+    document.getElementById('ec-col').value = c.tipoColuna;
+    document.getElementById('ec-obs').value = c.mensagemObs || ''; 
+    
+    // Lida com o Agendamento
+    const agendar = c.agendarVisibilidade || false;
+    document.getElementById('ec-agendar').checked = agendar;
+    document.getElementById('ec-agenda-fields').style.display = agendar ? 'block' : 'none';
+    
+    if (agendar && c.inicio && c.fim) {
+        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        const dIni = new Date(c.inicio - tzOffset); 
+        document.getElementById('ec-inid').value = dIni.toISOString().split('T')[0]; 
+        document.getElementById('ec-inih').value = dIni.toISOString().split('T')[1].slice(0,5);
+        
+        const dFim = new Date(c.fim - tzOffset); 
+        document.getElementById('ec-fimd').value = dFim.toISOString().split('T')[0]; 
+        document.getElementById('ec-fimh').value = dFim.toISOString().split('T')[1].slice(0,5);
+    } else {
+        document.getElementById('ec-inid').value = ''; document.getElementById('ec-inih').value = '';
+        document.getElementById('ec-fimd').value = ''; document.getElementById('ec-fimh').value = '';
+    }
+
+    window.openModal('modal-editar-cat');
 };
 
 document.getElementById('form-edit-cat').onsubmit = async(e) => {
     e.preventDefault();
-    await updateDoc(doc(db, "categorias", document.getElementById('ec-id').value), { nome: document.getElementById('ec-nome').value.trim(), minTotal: parseInt(document.getElementById('ec-min').value)||0, tipoColuna: document.getElementById('ec-col').value, mensagemObs: document.getElementById('ec-obs').value.trim() });
+    
+    const agendar = document.getElementById('ec-agendar').checked;
+    let dataInicio = null, dataFim = null;
+    if (agendar) {
+        dataInicio = new Date(`${document.getElementById('ec-inid').value}T${document.getElementById('ec-inih').value}`).getTime();
+        dataFim = new Date(`${document.getElementById('ec-fimd').value}T${document.getElementById('ec-fimh').value}`).getTime();
+    }
+
+    await updateDoc(doc(db, "categorias", document.getElementById('ec-id').value), { 
+        nome: document.getElementById('ec-nome').value.trim(), 
+        minTotal: parseInt(document.getElementById('ec-min').value)||0, 
+        tipoColuna: document.getElementById('ec-col').value, 
+        mensagemObs: document.getElementById('ec-obs').value.trim(),
+        agendarVisibilidade: agendar,
+        inicio: dataInicio,
+        fim: dataFim
+    });
     customAlert("Categoria Atualizada!"); window.closeModal('modal-editar-cat', 'form-edit-cat'); syncCats(); loadProds();
 };
 window.togC = async(id, s) => { 
@@ -648,35 +707,6 @@ document.getElementById('form-add-prod').onsubmit = async(e) => {
         }
         customAlert("Item(ns) Adicionado(s)!"); window.closeModal('modal-add-prod', 'form-add-prod'); loadProds();
     } catch(err) { console.error(err); customAlert("Erro ao salvar.", "Erro"); } finally { btn.innerHTML = 'Salvar Novo Produto'; btn.disabled = false; }
-};
-
-window.openEditor = async(id) => {
-    const p = (await getDoc(doc(db,"produtos",id))).data();
-    document.getElementById('e-id').value = id; 
-    document.getElementById('e-nome').value = p.nome; 
-    document.getElementById('e-cat').value = p.categoria; 
-    document.getElementById('e-preco').value = p.preco; 
-    document.getElementById('e-min').value = p.min||1; 
-    document.getElementById('e-dmenu').value = p.descricaoItem||''; 
-    document.getElementById('e-dres').value = p.descricaoResumo||''; 
-    document.getElementById('e-dpop').value = p.descricaoPopup||''; 
-    
-    const catObj = globalCategories.find(c => c.nome === p.categoria);
-    if (catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo')) { 
-        document.getElementById('e-tam-container').style.display = 'block'; 
-        document.getElementById('e-tam').value = p.tamanho||''; 
-        document.getElementById('e-tam').required = (catObj.tipoColuna === 'Tamanho');
-    } else { 
-        document.getElementById('e-tam-container').style.display = 'none'; 
-        document.getElementById('e-tam').value = ''; 
-    }
-    
-    if (p.imagemUrl && p.imagemUrl.trim() !== '') {
-        document.getElementById('e-img-preview').src = p.imagemUrl; document.getElementById('e-img-preview').style.display = 'block'; document.getElementById('btn-remove-e-img').style.display = 'inline-block'; document.getElementById('e-img-none').style.display = 'none';
-    } else {
-        document.getElementById('e-img-preview').style.display = 'none'; document.getElementById('btn-remove-e-img').style.display = 'none'; document.getElementById('e-img-none').style.display = 'block';
-    }
-    document.getElementById('e-remove-img').value = 'false'; window.openModal('modal-editar-prod');
 };
 
 document.getElementById('e-cat').addEventListener('change', function() {
@@ -990,7 +1020,20 @@ function listenPedidos() {
     });
 }
 
-window.obterPedidosDoMesAtual = function() { const hj = new Date(), mA = hj.getMonth(), aA = hj.getFullYear(); return window.todosPedidos.filter(p => { const d = parseDataBR(p.Data_Entrega); return d && d.getMonth() === mA && d.getFullYear() === aA; }); }
+window.obterPedidosDaSemanaAtual = function() {
+    let hoje = new Date(); hoje.setHours(0,0,0,0);
+    let diaSemana = hoje.getDay(); // 0 é Domingo, 1 é Segunda...
+    let diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // Ajusta para Segunda-feira
+    
+    let segunda = new Date(hoje); segunda.setDate(diff);
+    let domingo = new Date(segunda); domingo.setDate(segunda.getDate() + 6); // Soma 6 dias para o Domingo
+
+    return window.todosPedidos.filter(p => {
+        const d = parseDataBR(p.Data_Entrega);
+        return d && d.getTime() >= segunda.getTime() && d.getTime() <= domingo.getTime();
+    });
+}
+
 window.obterPedidosFiltrados = function() {
     const s = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim().toLowerCase() : '';
     const df = document.getElementById('date-input') ? document.getElementById('date-input').value : ''; 
@@ -1015,7 +1058,7 @@ window.filtrarPedidos = function() {
     timerFiltroPedidos = setTimeout(() => {
         const txt = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
         const dt = document.getElementById('date-input') ? document.getElementById('date-input').value : '';
-        let escopo = (txt || dt) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p));
+        let escopo = (txt || dt) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p));
         window.renderizar(escopo);
     }, 350); // Só busca 350ms depois que ele parar de digitar!
 }
@@ -1043,7 +1086,12 @@ window.renderizar = function(pedidos) {
 }
 
 window.atualizarDashboardPedidos = function() {
-    let pedCalc = window.ticketsSelecionados.size > 0 ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p)) );
+    let pedCalc = window.ticketsSelecionados.size > 0 
+        ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
+        : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) 
+            ? window.obterPedidosFiltrados() 
+            : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p)) );
+            
     let tv = 0, tp = 0; 
     pedCalc.forEach(p => { 
         if (!(p.Status_do_Pedido || '').toLowerCase().includes('cancelado')) {
@@ -1059,7 +1107,10 @@ window.criarCardHTML = function(p) {
     const c = document.createElement('div'); const st = (p.Status_do_Pedido || '').replace(/\s+/g, '-'); const tO = p.Observacoes && p.Observacoes.trim() !== '';
     c.className = `pedido-card status-${st} ${tO ? 'com-observacao' : ''} ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'selected' : ''}`;
     if(window.isDragEnabled) c.draggable = true; c.id = `card-${p.ID_do_Pedido}`; c.dataset.id = p.ID_do_Pedido;
-    if(window.isDragEnabled) c.addEventListener('dragstart', window.drag);
+    if(window.isDragEnabled) {
+        c.addEventListener('dragstart', window.drag);
+        c.addEventListener('dragend', window.dragEnd);
+    }
     c.addEventListener('click', (e) => { if(e.target.tagName !== 'SELECT' && e.target.type !== 'checkbox') window.abrirModalEdicao(p.ID_do_Pedido); });
 
     const pg = (p.Status_Pagamento || 'Pagamento pendente').toLowerCase(); let pC = pg.includes('50%') ? 'pg-parcial' : (pg.includes('100%') || pg === 'pago' ? 'pg-pago' : 'pg-pendente');
@@ -1075,8 +1126,48 @@ window.configurarAcordeaoColunas = function() {
     if (window.innerWidth <= 768) { document.querySelectorAll('.column-header').forEach(h => { h.addEventListener('click', (e) => { if (e.target.type === 'checkbox' || e.target.closest('.column-select-all-checkbox')) return; const c = h.closest('.kanban-column'); if (!c) return; document.querySelectorAll('.kanban-column').forEach(col => { if (col !== c) col.classList.remove('expanded'); }); c.classList.toggle('expanded'); }); }); }
 }
 
-window.allowDrop = function(e) { e.preventDefault(); }; window.drag = function(e) { e.dataTransfer.setData("text", e.target.dataset.id); };
-window.drop = async function(e) { e.preventDefault(); const id = e.dataTransfer.getData("text"); const c = e.target.closest('.kanban-column'); if(!c) return; const nS = c.dataset.status; const card = document.getElementById(`card-${id}`); if(card) c.querySelector('.column-content').appendChild(card); window.mostrarLoading(true); try { await updateDoc(doc(db, "pedidos", id), { Status_do_Pedido: nS }); window.showToast("Status atualizado!"); } catch(err) { window.showToast("Erro ao mover", true); } window.mostrarLoading(false); }
+window.allowDrop = function(e) {
+    e.preventDefault();
+};
+
+window.drag = function(e) {
+    // Guarda o ID do card
+    e.dataTransfer.setData("text", e.target.dataset.id);
+    
+    // Pequeno delay pra ele não achar que você soltou no mesmo milissegundo que clicou
+    setTimeout(() => {
+        e.target.style.opacity = '0.5';
+    }, 0);
+};
+
+window.dragEnd = function(e) {
+    e.target.style.opacity = '1';
+};
+
+window.drop = async function(e) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text");
+    const coluna = e.target.closest('.kanban-column');
+    
+    if (!coluna) return;
+    
+    const novoStatus = coluna.dataset.status;
+    const card = document.getElementById(`card-${id}`);
+    
+    if (card) {
+        card.style.opacity = '1';
+        coluna.querySelector('.column-content').appendChild(card);
+        
+        window.mostrarLoading(true);
+        try {
+            await updateDoc(doc(db, "pedidos", id), { Status_do_Pedido: novoStatus });
+            window.showToast("Status atualizado!");
+        } catch (err) {
+            window.showToast("Erro ao mover pedido", true);
+        }
+        window.mostrarLoading(false);
+    }
+};
 window.toggleSelecao = function(id, cb) { if(cb.checked) window.ticketsSelecionados.add(id); else window.ticketsSelecionados.delete(id); window.atualizarBarraAcoesPedidos(); }
 window.toggleSelectColumn = function(cb, s) { document.querySelector(`.kanban-column[data-status="${s}"]`).querySelectorAll('.card-checkbox').forEach(c => { c.checked = cb.checked; window.toggleSelecao(c.closest('.pedido-card').dataset.id, c); }); }
 window.atualizarBarraAcoesPedidos = function() { const bar = document.getElementById('bulk-actions-bar-pedidos'); if(document.getElementById('selected-count-pedidos')) document.getElementById('selected-count-pedidos').textContent = `${window.ticketsSelecionados.size} itens`; if(bar) bar.style.display = window.ticketsSelecionados.size > 0 ? 'flex' : 'none'; window.atualizarDashboardPedidos(); }
@@ -1142,7 +1233,7 @@ window.abrirModalWhatsApp = function(id) {
     const p = window.todosPedidos.find(x => x.ID_do_Pedido === id); if (!p) return; window.pedidoWhatsAppAtual = id;
     const n = (p.Nome_Cliente || 'Cliente').trim().split(' ')[0];
     document.getElementById('whatsapp-confirm-title').textContent = `Contato com ${n}`;
-    document.getElementById('whatsapp-confirm-message').innerHTML = `<div style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;"><button class="btn btn-primary" onclick="window.confirmarEnvioWhatsApp('resumo')" style="width: 100%; justify-content:center;">📋 Enviar resumo</button><button class="btn btn-secondary" onclick="window.confirmarEnvioWhatsApp('contato')" style="width: 100%; justify-content:center;">💬 Entrar em contato</button><button class="btn btn-outline" onclick="window.confirmarEnvioWhatsApp('pronto')" style="width: 100%; border-color:#28a745; color:#28a745; justify-content:center;">✅ Pedido Pronto</button></div>`;
+    document.getElementById('whatsapp-confirm-message').innerHTML = `<div style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;"><button class="btn btn-primary" onclick="window.confirmarEnvioWhatsApp('resumo')" style="width: 100%; justify-content:center;">Enviar resumo</button><button class="btn btn-secondary" onclick="window.confirmarEnvioWhatsApp('contato')" style="width: 100%; justify-content:center;">Entrar em contato</button><button class="btn btn-outline" onclick="window.confirmarEnvioWhatsApp('pronto')" style="width: 100%; border-color:#28a745; color:#28a745; justify-content:center;">Pedido Pronto</button></div>`;
     document.getElementById('whatsapp-confirm-modal').style.display = 'flex';
 }
 
@@ -1436,6 +1527,101 @@ window.aplicarDescontoEdit = function() {
     window.showToast('Desconto abatido do Total Final!');
 };
 
+// ==========================================
+// MÓDULO DE AGENDA DE HORÁRIOS (DATAS RESTRITAS)
+// ==========================================
+window.allAgendas = [];
+
+window.loadAgendas = async function() {
+    const s = await getDocs(collection(db, "agenda_horarios"));
+    window.allAgendas = [];
+    s.forEach(d => window.allAgendas.push({ id: d.id, ...d.data() }));
+    window.renderAgendasTable();
+}
+
+window.renderAgendasTable = function() {
+    const tb = document.querySelector('#tbl-horarios tbody');
+    if(!tb) return;
+    tb.innerHTML = '';
+    
+    const ordenadas = window.allAgendas.sort((a, b) => a.id.localeCompare(b.id));
+
+    ordenadas.forEach(a => {
+        const dataFormatada = a.id.split('-').reverse().join('/'); 
+        const statusHoras = a.indisponivel ? '<span style="color:#E60000; font-weight:bold; padding:4px 8px; background:#ffebee; border-radius:6px;">DIA FECHADO</span>' : (a.horarios ? a.horarios.join(', ') : '');
+
+        tb.innerHTML += `<tr>
+            <td data-label="Data Restrita:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${dataFormatada}</strong></td>
+            <td data-label="Horários Permitidos:">${statusHoras}</td>
+            <td data-label="Ações:">
+                <div class="action-btns-wrapper">
+                    <button class="btn-action edit" onclick="window.openEditAgenda('${a.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action del" onclick="window.delAgenda('${a.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    });
+}
+
+document.getElementById('form-add-agenda').onsubmit = async(e) => {
+    e.preventDefault();
+    const dataRef = document.getElementById('ag-data').value; 
+    const indisponivel = document.getElementById('ag-indisponivel').checked;
+    const horasArray = indisponivel ? [] : document.getElementById('ag-horas').value.split(',').map(h => h.trim()).filter(h => h !== '');
+
+    await setDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasArray });
+    customAlert("Regra de horários salva!");
+    window.closeModal('modal-add-agenda', 'form-add-agenda');
+    window.loadAgendas();
+};
+
+window.openEditAgenda = async(id) => {
+    const a = window.allAgendas.find(x => x.id === id);
+    if(!a) return;
+    document.getElementById('e-ag-data').value = id;
+    document.getElementById('e-ag-data-display').value = id;
+    
+    const indisponivel = a.indisponivel || false;
+    document.getElementById('e-ag-indisponivel').checked = indisponivel;
+    document.getElementById('e-ag-horas-container').style.display = indisponivel ? 'none' : 'block';
+    document.getElementById('e-ag-horas').value = a.horarios ? a.horarios.join(', ') : '';
+    
+    window.openModal('modal-editar-agenda');
+}
+
+document.getElementById('form-edit-agenda').onsubmit = async(e) => {
+    e.preventDefault();
+    const dataRef = document.getElementById('e-ag-data').value;
+    const indisponivel = document.getElementById('e-ag-indisponivel').checked;
+    const horasArray = indisponivel ? [] : document.getElementById('e-ag-horas').value.split(',').map(h => h.trim()).filter(h => h !== '');
+
+    await updateDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasArray });
+    customAlert("Regra atualizada!");
+    window.closeModal('modal-editar-agenda', 'form-edit-agenda');
+    window.loadAgendas();
+};
+
+window.delAgenda = async(id) => {
+    customConfirm(`Excluir as restrições da data ${id.split('-').reverse().join('/')}?`, async () => {
+        await deleteDoc(doc(db, "agenda_horarios", id));
+        window.loadAgendas();
+    });
+};
+
+window.setFiltroSemanaAtualVisivel = function() {
+    let hoje = new Date(); hoje.setHours(0,0,0,0);
+    let diaSemana = hoje.getDay();
+    let diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+    
+    window.dataInicialIntervalo = new Date(hoje);
+    window.dataInicialIntervalo.setDate(diff);
+    
+    window.dataFinalIntervalo = new Date(window.dataInicialIntervalo);
+    window.dataFinalIntervalo.setDate(window.dataInicialIntervalo.getDate() + 6);
+    
+    window.atualizarDisplayData(); // Mostra visualmente no campo
+}
+
 async function init() { 
     window.addVariation(false); 
     await syncCats(); 
@@ -1444,7 +1630,9 @@ async function init() {
     loadTema(); 
     loadCarrossel(); 
     window.inicializarKanban(); 
+    window.setFiltroSemanaAtualVisivel(); // <-- A mágica visual acontece aqui!
     listenPedidos(); 
+    window.loadAgendas(); 
 }
 
 // ==========================================
@@ -1513,8 +1701,7 @@ window.abrirModalFechamento = function() {
     let pedidos = window.ticketsSelecionados.size > 0 
         ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
         : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) 
-            ? window.obterPedidosFiltrados() 
-            : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p)) );
+            ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p)) );
     
     // Ignora pedidos cancelados para não somar faturamento fantasma
     pedidos = pedidos.filter(p => !(p.Status_do_Pedido || '').toLowerCase().includes('cancelado'));
@@ -1530,9 +1717,16 @@ window.abrirModalFechamento = function() {
         if(p.Data_Entrega) datas.push(p.Data_Entrega);
     });
 
-    // Encontra a data inicial e final para o cabeçalho
+    // NOVA LÓGICA: Puxa o período diretamente do filtro do calendário
     let periodoStr = "";
-    if(datas.length > 0) {
+    if (window.dataInicialIntervalo) {
+        const pData = window.dataInicialIntervalo;
+        const uData = window.dataFinalIntervalo || window.dataInicialIntervalo;
+        const pStr = String(pData.getDate()).padStart(2,'0') + '/' + String(pData.getMonth()+1).padStart(2,'0');
+        const uStr = String(uData.getDate()).padStart(2,'0') + '/' + String(uData.getMonth()+1).padStart(2,'0');
+        periodoStr = pStr === uStr ? pStr : `${pStr} - ${uStr}`;
+    } else if (datas.length > 0) { 
+        // Fallback: Se não houver filtro de data ativo, pega pelas datas dos pedidos
         const datasParsed = datas.map(d => parseDataBR(d)).filter(d => d).sort((a,b) => a-b);
         if(datasParsed.length > 0) {
             const pData = datasParsed[0];
@@ -1544,82 +1738,145 @@ window.abrirModalFechamento = function() {
     }
 
     document.getElementById('fechamento-periodo').textContent = periodoStr ? `(${periodoStr})` : '';
-    document.getElementById('fechamento-total-base').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
     window.totalFechamentoAtual = total;
     window.calcularDivisaoFechamento();
 
-    document.getElementById('modal-fechamento-financeiro').style.display = 'flex';
+    window.openModal('modal-fechamento-financeiro');
 };
 
 window.calcularDivisaoFechamento = function() {
-    const total = window.totalFechamentoAtual || 0;
+    const totalBase = window.totalFechamentoAtual || 0;
     
-    // Se por acaso os inputs ficarem vazios, assume 0
-    const pctCaixa = parseFloat(document.getElementById('fechamento-pct-caixa').value) || 0;
-    const pctAra = parseFloat(document.getElementById('fechamento-pct-ara').value) || 0;
-    const pctFla = parseFloat(document.getElementById('fechamento-pct-fla').value) || 0;
+    const percCaixa = parseFloat(document.getElementById('perc-caixa').value) || 0;
+    const percAra = parseFloat(document.getElementById('perc-ara').value) || 0;
+    const percFla = parseFloat(document.getElementById('perc-fla').value) || 0;
 
-    const valCaixa = total * (pctCaixa / 100);
-    const valAra = total * (pctAra / 100);
-    const valFla = total * (pctFla / 100);
+    const gCaixa = parseFloat(document.getElementById('gasto-manual-caixa').value) || 0;
+    const gAra = parseFloat(document.getElementById('gasto-manual-ara').value) || 0;
+    const gFla = parseFloat(document.getElementById('gasto-manual-fla').value) || 0;
 
-    document.getElementById('fechamento-val-caixa').textContent = valCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    document.getElementById('fechamento-val-ara').textContent = valAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    document.getElementById('fechamento-val-fla').textContent = valFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const totalGasto = gCaixa + gAra + gFla;
+
+    const lucroLiquido = totalBase - totalGasto;
+    document.getElementById('fechamento-lucro-liquido').textContent = lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const lucroCaixa = lucroLiquido * (percCaixa / 100);
+    const lucroAra = lucroLiquido * (percAra / 100);
+    const lucroFla = lucroLiquido * (percFla / 100);
+
+    const finalCaixa = lucroCaixa + gCaixa;
+    const finalAra = lucroAra + gAra;
+    const finalFla = lucroFla + gFla;
+
+    // Define as cores dinamicamente baseado nos valores reais calculados
+    const corVendas = totalBase > 0 ? 'color: #27ae60;' : totalBase < 0 ? 'color: #c0392b;' : '';
+    const corGastos = totalGasto > 0 ? 'color: #c0392b;' : '';
+    const corLucro = lucroLiquido > 0 ? 'color: #27ae60;' : lucroLiquido < 0 ? 'color: #c0392b;' : '';
+
+    const corCaixa = finalCaixa > 0 ? 'color: #27ae60;' : finalCaixa < 0 ? 'color: #c0392b;' : '';
+    const corAra = finalAra > 0 ? 'color: #27ae60;' : finalAra < 0 ? 'color: #c0392b;' : '';
+    const corLucroAra = lucroAra > 0 ? 'color: #27ae60;' : lucroAra < 0 ? 'color: #c0392b;' : '';
+    
+    const corFla = finalFla > 0 ? 'color: #27ae60;' : finalFla < 0 ? 'color: #c0392b;' : '';
+    const corLucroFla = lucroFla > 0 ? 'color: #27ae60;' : lucroFla < 0 ? 'color: #c0392b;' : '';
+
+    // NOVO FORMATO DE TEXTO COM SEPARAÇÃO VISUAL E CORES DINÂMICAS
+    const detalheHTML = `
+        <div style="font-family: var(--font-numbers) !important; font-size: 1.05rem; line-height: 1.6; color: #333;">
+            
+            Total de Vendas: <strong style="${corVendas}">${totalBase.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            Total de Gastos: <strong style="${corGastos}">- ${totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            Lucro: <strong style="${corLucro}">${lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+            
+            <div style="margin: 15px 0; border-top: 1px dashed rgba(0, 0, 0, 0.15);"></div>
+            
+            <strong>Divisão Detalhada:</strong><br><br>
+            
+            • Caixa: <strong style="${corCaixa}">${finalCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br><br>
+            
+            • Arabela: = <strong style="${corAra}">${finalAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            &nbsp;&nbsp;&nbsp;⤷ Reembolso = <span style="${gAra > 0 ? 'color: #27ae60;' : ''}">${gAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span><br>
+            &nbsp;&nbsp;&nbsp;⤷ Lucro = <span style="${corLucroAra}">${lucroAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span><br><br>
+            
+            • Flávio: = <strong style="${corFla}">${finalFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            &nbsp;&nbsp;&nbsp;⤷ Reembolso = <span style="${gFla > 0 ? 'color: #27ae60;' : ''}">${gFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span><br>
+            &nbsp;&nbsp;&nbsp;⤷ Lucro = <span style="${corLucroFla}">${lucroFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+        </div>
+    `;
+
+    document.getElementById('fechamento-divisao-detalhe').innerHTML = detalheHTML;
+
+    // Salvar dados globais para envio no WhatsApp (adicionado os Lucros separados)
+    window.dadosFechamentoWA = {
+        totalVendido: totalBase,
+        totalGasto: totalGasto,
+        lucroLiquido: lucroLiquido,
+        gCaixa: gCaixa,
+        gAra: gAra,
+        gFla: gFla,
+        lucroAra: lucroAra,
+        lucroFla: lucroFla,
+        finalCaixa: finalCaixa,
+        finalAra: finalAra,
+        finalFla: finalFla,
+        percCaixa: document.getElementById('perc-caixa').value,
+        percAra: document.getElementById('perc-ara').value,
+        percFla: document.getElementById('perc-fla').value
+    };
 };
 
 window.enviarFechamentoWA = function(destinatario) {
-    const total = window.totalFechamentoAtual || 0;
-    const periodo = document.getElementById('fechamento-periodo').textContent;
+    // Puxa o período e remove os parênteses limpinho
+    const periodo = document.getElementById('fechamento-periodo').textContent.replace(/[()]/g, '').trim();
     
-    // Pega os valores exatamente como estão no painel (que já foram calculados corretamente)
-    const valCaixa = document.getElementById('fechamento-val-caixa').textContent.replace('R$', '').trim();
-    const valAra = document.getElementById('fechamento-val-ara').textContent.replace('R$', '').trim();
-    const valFla = document.getElementById('fechamento-val-fla').textContent.replace('R$', '').trim();
-
-    let txt = `Pedidos da Semana ${periodo}\n\n`;
+    const totalVendido = window.totalFechamentoAtual || 0;
     
-    // Ordena por data antes de gerar a lista
-    const pedidosOrdenados = window.pedidosFechamento.sort((a,b) => {
-        const dA = parseDataBR(a.Data_Entrega); const dB = parseDataBR(b.Data_Entrega);
-        if(!dA) return 1; if(!dB) return -1; return dA.getTime() - dB.getTime();
-    });
+    const gCaixa = parseFloat(document.getElementById('gasto-manual-caixa').value || 0);
+    const gAra = parseFloat(document.getElementById('gasto-manual-ara').value || 0);
+    const gFla = parseFloat(document.getElementById('gasto-manual-fla').value || 0);
+    const totalGasto = gCaixa + gAra + gFla;
+    const lucroLiquido = totalVendido - totalGasto;
 
-    pedidosOrdenados.forEach(p => {
-        const nome = (p.Nome_Cliente || 'Cliente').trim().split(' ')[0];
-        const data = p.Data_Entrega || '--/--/----';
-        const val = formatarValorComCentavos(p.Total_Final);
-        
-        // Linha principal do cliente
-        txt += `- ${nome} | ${data} | R$ ${val}\n`;
-        
-        // Pega os itens do resumo e formata com a setinha
-        if (p.Resumo_dos_Itens) {
-            const linhas = p.Resumo_dos_Itens.split('\n');
-            linhas.forEach(linha => {
-                const l = linha.trim();
-                // Ignora linhas de categoria (ex: "- Bolos:") ou linhas vazias
-                if (l && !(l.startsWith('-') && l.endsWith(':'))) {
-                    // Limpa traços extras se tiver
-                    let itemClean = l.startsWith('-') ? l.substring(1).trim() : l;
-                    txt += `   ⤷ ${itemClean}\n`;
-                }
-            });
-        }
-        txt += `\n`; // Espaço entre um pedido e outro
-    });
+    const pCaixa = parseFloat(document.getElementById('perc-caixa').value || 30) / 100;
+    const pAra = parseFloat(document.getElementById('perc-ara').value || 35) / 100;
+    const pFla = parseFloat(document.getElementById('perc-fla').value || 35) / 100;
 
-    // Rodapé de Total e Divisão (Formatado diretamente para não quebrar a casa decimal)
-    txt += `Total= ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
-    txt += `*Caixa Favu*: R$ ${valCaixa}\n`;
-    txt += `*Arabela*: R$ ${valAra}\n`;
-    txt += `*Flávio*: R$ ${valFla}`;
+    const lucroCaixa = lucroLiquido * pCaixa;
+    const lucroAra = lucroLiquido * pAra;
+    const lucroFla = lucroLiquido * pFla;
 
-    // Telefones oficias configurados
-    const numero = destinatario === 'Arabela' ? '558199502865' : '558199591775';
+    const finalCaixa = lucroCaixa + gCaixa;
+    const finalAra = lucroAra + gAra;
+    const finalFla = lucroFla + gFla;
+
+    const dados = {
+        periodo, totalVendido, totalGasto, lucroLiquido,
+        gCaixa, gAra, gFla,
+        finalCaixa, finalAra, finalFla,
+        lucroAra, lucroFla
+    };
+
+    let txt = `*FAVU - Fechamento Financeiro*\n`;
+    txt += `*Período:* ${dados.periodo}\n\n`;
     
-    // Abre o WhatsApp com o texto pronto
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(txt)}`, '_blank');
-    document.getElementById('modal-fechamento-financeiro').style.display = 'none';
+    txt += `*Total de Vendas:* ${dados.totalVendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    txt += `*Total de Gastos:* - ${dados.totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    // Adicionado o espaço extra (\n\n) abaixo do Lucro
+    txt += `*Lucro:* ${dados.lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
+    txt += `*-------------------------------------*\n\n`;
+
+    txt += `*Divisão Detalhada:*\n\n`;
+    txt += `• Caixa: *${dados.finalCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n\n`;
+    
+    txt += `• Arabela: = *${dados.finalAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n`;
+    txt += `   ⤷ Reembolso = ${dados.gAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    txt += `   ⤷ Lucro = ${dados.lucroAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
+    
+    txt += `• Flávio: = *${dados.finalFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n`;
+    txt += `   ⤷ Reembolso = ${dados.gFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    txt += `   ⤷ Lucro = ${dados.lucroFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+
+    const fone = (destinatario === 'Arabela') ? '5581992147363' : '5581996914595';
+    window.open(`https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(txt)}`, '_blank');
 };
