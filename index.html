@@ -268,11 +268,37 @@
         .card-status-pagamento select.pg-pendente { background-color: #ffb3b3; color: #8b0000; } .card-status-pagamento select.pg-pago { background-color: #a8e6a8; color: #006400; } .card-status-pagamento select.pg-parcial { background-color: #ffeb9c; color: #8b6914; }
 
         @media (min-width: 1024px) {
-            #t-pedidos.active { display: flex; flex-direction: column; height: calc(100vh - 100px); }
-            #main-content-pedidos { flex: 1; overflow: hidden; display: flex; }
-            #kanban-board { display: flex; gap: 10px; width: 100%; height: 100%; overflow-x: hidden; }
-            .kanban-column { flex: 1 1 0; min-width: 0; width: auto; max-width: 16.666%; display: flex; flex-direction: column; max-height: 100%;}
-            .column-content { overflow-y: auto; flex: 1; }
+            #t-pedidos.active { 
+                display: flex; 
+                flex-direction: column; 
+                min-height: calc(100vh - 100px); 
+            }
+            #main-content-pedidos { 
+                flex: 1; 
+                display: flex; 
+                /* Garante a altura vertical confortável para os cards não esmagarem */
+                min-height: 65vh; 
+            }
+            #kanban-board { 
+                display: flex; 
+                gap: 10px; /* Espaçamento menor para caberem todas as 6 colunas */
+                width: 100%; 
+                overflow-x: hidden; /* Trava a rolagem horizontal */
+            }
+            .kanban-column { 
+                flex: 1 1 0; /* Divide a tela em partes iguais para todas as colunas */
+                min-width: 0; /* Permite que a coluna se esprema na horizontal para caber */
+                width: auto; 
+                display: flex; 
+                flex-direction: column; 
+                height: 100%; 
+                max-height: none; 
+            }
+            .column-content { 
+                overflow-y: auto; /* Rolagem APENAS na vertical dentro de cada etapa */
+                flex: 1; 
+                padding-right: 5px; 
+            }
         }
         @media (max-width: 768px) {
             #kanban-board { flex-direction: column; overflow-y: auto; overflow-x: hidden; max-height: none;}
@@ -283,7 +309,6 @@
             .kanban-column:not(.expanded) .column-content { display: none !important; }
             .column-header { cursor: pointer; }
             .column-toggle { display: inline-block; }
-            #bulk-actions-bar-pedidos { flex-wrap: wrap; justify-content: center; bottom: 10px; position: fixed; left: 50%; transform: translateX(-50%); width: 90%; z-index: 2000;}
         }
 
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 10000; display: none; justify-content: center; align-items: center; flex-direction: column; }
@@ -304,6 +329,168 @@
         .date-picker-day.today { border: 2px solid var(--favu-rust); }
         .date-picker-buttons-row { display: flex; gap: 10px; margin-bottom: 10px; }
         .date-picker-btn { flex: 1; padding: 10px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Basic Choice', cursive; color: white;}
+    
+    /* Efeito de clique nos botões (Sensação tátil) */
+    .btn:active, .btn-action:active, .categoria-btn-orc:active { 
+        transform: scale(0.95) !important; 
+        transition: 0.1s; 
+    }
+
+    /* Foco elegante nos campos de digitação */
+    input:focus, textarea:focus, select:focus { 
+        border-color: var(--favu-rust); 
+        box-shadow: 0 0 0 4px rgba(224, 159, 65, 0.15) !important;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Barra de rolagem global estilo App */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--favu-beige); }
+    ::-webkit-scrollbar-thumb { background: rgba(224, 159, 65, 0.4); border-radius: 10px; border: 2px solid var(--favu-beige); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--favu-rust); }
+
+    /* =========================================================================
+   UX: CABEÇALHO DE PEDIDOS MODERNO
+   ========================================================================= */
+.header-pedidos-moderno {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.header-pedidos-moderno h2 {
+    margin: 0;
+    font-size: 2.2rem;
+    color: var(--favu-green);
+}
+
+.card-faturamento {
+    background: white;
+    padding: 15px 25px;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(224, 159, 65, 0.15); /* Sombra laranja elegante */
+    border: none; /* Tiramos a borda feia */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Alinha os números à direita no desktop */
+}
+
+.card-faturamento .fat-label {
+    font-size: 0.75rem;
+    font-family: var(--font-numbers);
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.card-faturamento .fat-valor {
+    font-size: 1.8rem;
+    color: var(--favu-rust);
+    font-family: var(--font-numbers);
+    margin: 2px 0;
+}
+
+.card-faturamento .fat-sub {
+    font-size: 0.85rem;
+    color: var(--favu-moss);
+    font-family: var(--font-numbers);
+}
+
+/* =========================================================================
+   UX: BARRA FLUTUANTE DE AÇÕES (MOBILE)
+   ========================================================================= */
+/* Ajuste para a barra de "Etapa", "Pagamento", etc, não quebrar no celular */
+@media (max-width: 768px) {
+    .header-pedidos-moderno {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .card-faturamento {
+        width: 100%;
+        align-items: center; /* Centraliza no celular */
+        padding: 12px;
+    }
+
+    #bulk-actions-bar-pedidos {
+        flex-direction: column; /* Empilha os botões no celular */
+        gap: 8px;
+        padding: 15px;
+        border-radius: 20px 20px 0 0; /* Arredonda só em cima */
+        bottom: 0; /* Gruda no fundo da tela */
+        width: 100%;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+        background: white;
+    }
+
+    #bulk-actions-bar-pedidos .bulk-actions-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Coloca os botões em 2 colunas */
+        width: 100%;
+        gap: 8px;
+    }
+    
+    #bulk-actions-bar-pedidos .btn {
+        width: 100%;
+        font-size: 0.9rem;
+        padding: 10px 5px;
+    }
+}
+
+/* =========================================================================
+   UX: BARRA FLUTUANTE DE AÇÕES (FIXA NO RODAPÉ)
+   ========================================================================= */
+#bulk-actions-bar-pedidos {
+    position: fixed; /* Essa é a âncora mágica que estava faltando */
+    bottom: 25px; /* Desgruda do fundo */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    
+    background: white;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    border: 2px solid var(--favu-rust);
+    padding: 15px 30px;
+    border-radius: 20px;
+    
+    /* Centraliza a contagem e os botões */
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+#bulk-actions-bar-pedidos.active {
+    display: flex !important;
+}
+
+@media (max-width: 768px) {
+    #bulk-actions-bar-pedidos {
+        width: 92%;
+        flex-direction: column;
+        bottom: 15px;
+        padding: 15px;
+        border-radius: 16px;
+        gap: 15px;
+    }
+    
+    #bulk-actions-bar-pedidos .bulk-actions-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Coloca os botões em 2 colunas */
+        width: 100%;
+        gap: 10px;
+    }
+    
+    #bulk-actions-bar-pedidos .btn {
+        width: 100%;
+        padding: 12px 5px;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+}
+    
     </style>
 </head>
 <body>
@@ -434,11 +621,13 @@
             </div>
 
             <div id="t-pedidos" class="tab-pane active">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Gestão de Pedidos</h2>
-                    <div id="dashboard-totals" style="text-align: right; background: white; padding: 10px 20px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--favu-rust);">
-                        <strong style="display: block; font-size: 1.4rem; color: var(--favu-rust); font-family: var(--font-numbers);">R$ 0,00</strong>
-                        <span id="total-count" style="font-size: 0.9em; color: #555; font-family: var(--font-numbers);">Carregando...</span>
+                <div class="header-pedidos-moderno">
+                    <h2 class="font-display">Gestão de Pedidos</h2>
+                    
+                    <div class="card-faturamento" id="dashboard-totals" onclick="window.abrirModalFechamento()" style="cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(0.98)'" onmouseout="this.style.transform='none'">
+                        <div class="fat-label">Faturamento</div>
+                        <strong class="fat-valor">R$ 0,00</strong>
+                        <div class="fat-sub" id="total-count">Carregando...</div>
                     </div>
                 </div>
 
@@ -476,6 +665,9 @@
                             <select id="filter-observacao" onchange="window.filtrarPedidos()">
                                 <option value="">Todos</option><option value="com">Com Observação</option><option value="sem">Sem Observação</option>
                             </select>
+                        </div>
+                        <div class="filter-item" style="justify-content: flex-end;">
+                            <button class="btn btn-outline" style="padding: 8px 15px; border-color: #ddd; color: var(--favu-moss); white-space: nowrap;" onclick="window.limparFiltros()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
                         </div>
                     </div>
                 </div>
@@ -695,20 +887,36 @@
             <div class="modal-header"><h3>Adesão Produto</h3><button class="close-modal" onclick="window.closeModal('modal-add-prod', 'form-add-prod')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-prod">
-                    <div class="form-grid"><div><label>Nome do Produto</label><textarea id="a-nome" rows="2" required></textarea></div><div><label>Categoria</label><select class="cat-select" id="a-cat" required></select></div></div>
-                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));"><div><label>Mínimo por produto</label><input type="number" id="a-min" value="1" required></div></div>
-                    <div class="form-grid"><div><label>Descrição do produto</label><textarea id="a-dmenu" rows="2"></textarea></div><div><label>Descrição da imagem</label><textarea id="a-dpop" rows="2"></textarea></div></div>
-                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-                            <label class="custom-file-upload" style="width: auto;"><i class="fas fa-image"></i> Escolher Foto<input type="file" id="a-file" accept="image/*" onchange="window.previewImage(this, 'a-img-preview', null, 'a-img-none', null); document.getElementById('a-file-name').textContent = this.files[0].name;"></label>
-                            <img id="a-img-preview" src="" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; display: none;">
-                            <span id="a-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
-                        </div>
-                        <span id="a-file-name" class="file-name-display" style="text-align: left;"></span>
+                    <div class="form-grid">
+                        <div><label>Nome do Produto</label><textarea id="a-nome" rows="1" required></textarea></div>
+                        <div><label>Categoria</label><select class="cat-select" id="a-cat" required></select></div>
                     </div>
+                    
+                    <div class="form-grid">
+                        <div><label>Descrição do produto</label><textarea id="a-dmenu" rows="2"></textarea></div>
+                        <div><label>Descrição do Resumo</label><textarea id="a-dres" rows="2" required></textarea></div>
+                    </div>
+                    
+                    <div class="form-grid" style="align-items: stretch;">
+                        <div style="padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                            <label style="font-size: 0.9rem; margin-bottom: 8px; display: block;">Imagem do Produto</label>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                                <label class="custom-file-upload" style="width: auto; padding: 8px 12px; font-size: 0.9rem;"><i class="fas fa-camera"></i> Escolher Foto<input type="file" id="a-file" accept="image/*" onchange="window.previewImage(this, 'a-img-preview', null, 'a-img-none', null); document.getElementById('a-file-name').textContent = this.files[0].name;"></label>
+                                <img id="a-img-preview" src="" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px; display: none;">
+                                <span id="a-img-none" style="font-size:0.8rem; color:#999;">Nenhuma foto</span>
+                            </div>
+                            <span id="a-file-name" class="file-name-display" style="text-align: left;"></span>
+                        </div>
+                        <div>
+                            <label>Descrição da imagem</label>
+                            <textarea id="a-dpop" rows="4" style="height: calc(100% - 25px);"></textarea>
+                        </div>
+                    </div>
+
                     <h4 class="font-display" style="color: var(--favu-moss); margin-top: 20px; margin-bottom: 10px; font-size: 1.5rem; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">Tamanhos e Valores</h4>
                     <div id="variations-container"></div>
                     <button type="button" id="btn-add-variation" class="btn btn-outline" style="width: 100%; margin-bottom: 25px; border-style: dashed; font-size: 1rem; display: none;" onclick="window.addVariation(true)">+ Adicionar Outro Tamanho</button>
+                    
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-prod', 'form-add-prod')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:2;">Salvar</button></div>
                 </form>
             </div>
@@ -721,18 +929,41 @@
             <div class="modal-body">
                 <form id="form-edit-prod">
                     <input type="hidden" id="e-id">
-                    <div class="form-grid"><div><label>Nome do Produto</label><textarea id="e-nome" rows="2" required></textarea></div><div><label>Categoria</label><select class="cat-select" id="e-cat" required></select></div></div>
-                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));"><div id="e-tam-container"><label>Tamanho</label><input type="text" id="e-tam"></div><div><label>Preço (R$)</label><input type="number" step="0.01" id="e-preco" required></div><div><label>Mín. Individual</label><input type="number" id="e-min" required></div></div>
-                    <div class="form-grid"><div><label>Descrição na Tabela</label><textarea id="e-dmenu" rows="2"></textarea></div><div><label>Descrição do Resumo</label><textarea id="e-dres" rows="2" required></textarea></div></div>
-                    <div style="margin-bottom: 15px;"><label>Descrição do Popup</label><textarea id="e-dpop" rows="2"></textarea></div>
-                    <div style="margin-bottom: 25px; padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
-                        <label style="font-size: 0.9rem;">Imagem Atual:</label>
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;"><img id="e-img-preview" src="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; display: none;"><button type="button" id="btn-remove-e-img" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; display: none;" onclick="window.markImageForRemoval('prod')"><i class="fas fa-trash"></i> </button><span id="e-img-none" style="font-family: var(--font-numbers); font-size: 0.9rem; color: #999; display: none;">Nenhuma imagem.</span></div>
-                        <label style="font-size: 0.9rem; margin-top: 10px;">Substituir/Adicionar Foto:</label>
-                        <label class="custom-file-upload"><i class="fas fa-camera"></i> Selecionar Imagem<input type="file" id="e-file" accept="image/*" onchange="window.previewImage(this, 'e-img-preview', 'btn-remove-e-img', 'e-img-none', 'e-remove-img'); document.getElementById('e-file-name').textContent = this.files[0].name;"></label>
-                        <span id="e-file-name" class="file-name-display"></span><input type="hidden" id="e-remove-img" value="false">
+                    <div class="form-grid">
+                        <div><label>Nome do Produto</label><textarea id="e-nome" rows="1" required></textarea></div>
+                        <div><label>Categoria</label><select class="cat-select" id="e-cat" required></select></div>
                     </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-prod', 'form-edit-prod')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar Edição</button><button type="submit" class="btn btn-secondary" style="flex:2;">Salvar Alterações</button></div>
+                    
+                    <div class="form-grid">
+                        <div><label>Descrição na Tabela</label><textarea id="e-dmenu" rows="2"></textarea></div>
+                        <div><label>Descrição do Resumo</label><textarea id="e-dres" rows="2" required></textarea></div>
+                    </div>
+                    
+                    <div class="form-grid" style="align-items: stretch;">
+                        <div style="padding: 15px; border: 1px dashed var(--favu-rust); border-radius: 10px; background: rgba(224, 159, 65, 0.03);">
+                            <label style="font-size: 0.9rem; margin-bottom: 8px; display: block;">Imagem Atual/Nova:</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <img id="e-img-preview" src="" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px; display: none;">
+                                <button type="button" id="btn-remove-e-img" class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem; display: none;" onclick="window.markImageForRemoval('prod')"><i class="fas fa-trash"></i> </button>
+                                <span id="e-img-none" style="font-family: var(--font-numbers); font-size: 0.8rem; color: #999; display: none;">Nenhuma.</span>
+                            </div>
+                            <label class="custom-file-upload" style="padding: 8px 12px; font-size: 0.9rem;"><i class="fas fa-camera"></i> Alterar Imagem<input type="file" id="e-file" accept="image/*" onchange="window.previewImage(this, 'e-img-preview', 'btn-remove-e-img', 'e-img-none', 'e-remove-img'); document.getElementById('e-file-name').textContent = this.files[0].name;"></label>
+                            <span id="e-file-name" class="file-name-display"></span><input type="hidden" id="e-remove-img" value="false">
+                        </div>
+                        <div>
+                            <label>Descrição da imagem</label>
+                            <textarea id="e-dpop" rows="4" style="height: calc(100% - 25px);"></textarea>
+                        </div>
+                    </div>
+
+                    <h4 class="font-display" style="color: var(--favu-moss); margin-top: 20px; margin-bottom: 10px; font-size: 1.5rem; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">Tamanhos e Valores</h4>
+                    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); background: rgba(224, 159, 65, 0.05); padding: 15px; border-radius: 10px; border: 1px dashed rgba(224, 159, 65, 0.3);">
+                        <div id="e-tam-container"><label>Tamanho</label><input type="text" id="e-tam" placeholder="Ex: P, M"></div>
+                        <div><label>Mín. Individual</label><input type="number" id="e-min" placeholder="Ex: 10"></div>
+                        <div><label>Preço (R$)</label><input type="number" step="0.01" id="e-preco" required></div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 25px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-prod', 'form-edit-prod')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar Edição</button><button type="submit" class="btn btn-secondary" style="flex:2;">Salvar Alterações</button></div>
                 </form>
             </div>
         </div>
@@ -749,13 +980,23 @@
         </div>
     </div>
 
+    <!-- MODAL DE ADICIONAR CATEGORIA (ATUALIZADO) -->
     <div id="modal-add-cat" class="modal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header"><h3>Cadastrar Categoria</h3><button class="close-modal" onclick="window.closeModal('modal-add-cat', 'form-add-cat')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-cat">
                     <div class="form-grid"><div><label>Nome</label><input type="text" id="ac-nome" required></div><div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div></div>
-                    <div style="margin-bottom: 15px;"><label>Medida</label><select id="ac-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
+                    <div style="margin-bottom: 15px;">
+                        <label>Medida</label>
+                        <select id="ac-col">
+                            <option value="Nenhuma">Nenhuma</option>
+                            <option value="Tamanho">Tamanho</option>
+                            <option value="Mínimo">Mínimo</option>
+                            <!-- NOVA OPÇÃO AQUI -->
+                            <option value="Tamanho/Minimo">Tamanho/Mínimo</option>
+                        </select>
+                    </div>
                     <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button></div>
                 </form>
@@ -763,6 +1004,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE EDITAR CATEGORIA (ATUALIZADO) -->
     <div id="modal-editar-cat" class="modal">
         <div class="modal-content" style="max-width: 500px; border: 2px solid var(--favu-moss);">
             <div class="modal-header"><h3 style="color: var(--favu-moss);">Editar Categoria</h3><button class="close-modal" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')">&times;</button></div>
@@ -770,7 +1012,16 @@
                 <form id="form-edit-cat">
                     <input type="hidden" id="ec-id">
                     <div class="form-grid"><div><label>Nome</label><input type="text" id="ec-nome" required></div><div><label>Mín. Total</label><input type="number" id="ec-min" required></div></div>
-                    <div style="margin-bottom: 15px;"><label>Medida</label><select id="ec-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option></select></div>
+                    <div style="margin-bottom: 15px;">
+                        <label>Medida</label>
+                        <select id="ec-col">
+                            <option value="Nenhuma">Nenhuma</option>
+                            <option value="Tamanho">Tamanho</option>
+                            <option value="Mínimo">Mínimo</option>
+                            <!-- NOVA OPÇÃO AQUI -->
+                            <option value="Tamanho/Minimo">Tamanho/Mínimo</option>
+                        </select>
+                    </div>
                     <div style="margin-bottom: 20px;"><label>Comunicado Categoria</label><textarea id="ec-obs" rows="2"></textarea></div>
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')" style="border-color: var(--favu-moss); color: var(--favu-moss); flex:1;">Cancelar</button><button type="submit" class="btn btn-secondary" style="flex:1;">Atualizar</button></div>
                 </form>
@@ -831,7 +1082,19 @@
                         <div style="flex:1;"><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
                         <div style="flex:1;"><label>Status Pagamento:</label><select id="edit-status-pgto-pedido"><option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option></select></div>
                     </div>
-                    <label>Cupom:</label> <input type="text" id="edit-cupom-pedido" style="margin-bottom:10px;">
+                    <div style="display:flex; gap:10px; margin-bottom:10px; align-items: flex-end;">
+                        <div style="flex:2;">
+                            <label>Cupom / Obs Desconto:</label> 
+                            <input type="text" id="edit-cupom-pedido" style="margin-bottom:0;">
+                        </div>
+                        <div style="flex:1.5;">
+                            <label>Abater Desconto (R$):</label> 
+                            <div style="display:flex; gap:5px;">
+                                <input type="number" step="0.01" id="edit-desconto-pedido" placeholder="0,00" style="margin:0;">
+                                <button type="button" class="btn btn-secondary" style="padding: 10px 15px; margin:0;" onclick="window.aplicarDescontoEdit()" title="Aplicar Desconto"><i class="fas fa-check"></i></button>
+                            </div>
+                        </div>
+                    </div>
                     <label>Total Final (R$):</label> <input type="text" id="edit-total-pedido" required style="margin-bottom:10px;">
                     <label>Observações:</label> <textarea id="edit-obs-pedido" rows="2" style="margin-bottom:10px;"></textarea>
                     
@@ -922,6 +1185,47 @@
                 <h3 style="margin-bottom:20px; color:var(--favu-green); font-family:'Basic Choice', cursive; font-size:1.5rem;">Escolha o resumo</h3>
                 <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="window.gerarListaPedidos()">📋 Lista de pedidos (Inteira)</button>
                 <button class="btn btn-secondary" style="width:100%; justify-content:center;" onclick="window.gerarResumoItens()">📦 Lista de itens (Agrupados)</button>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="modal-fechamento-financeiro" class="modal-direct" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-content modal-content-small" style="text-align:center;">
+            <button class="close-modal" style="position:absolute; right:15px; top:15px;" onclick="document.getElementById('modal-fechamento-financeiro').style.display='none'">&times;</button>
+            <div class="modal-body" style="padding-top:30px;">
+                <h3 style="margin-bottom:15px; color:var(--favu-rust); font-family:'Basic Choice', cursive; font-size:1.5rem;">Fechamento de Caixa</h3>
+                
+                <div style="background: rgba(224, 159, 65, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <strong style="display:block; font-size: 1.2rem; color: var(--favu-green); font-family: Arial, Helvetica, sans-serif;">Total: <span id="fechamento-total-base">R$ 0,00</span></strong>
+                    <span id="fechamento-periodo" style="font-size: 0.85rem; color: #666; font-family: Arial, Helvetica, sans-serif;"></span>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; text-align: left; font-family: Arial, Helvetica, sans-serif;">
+                    <div style="flex: 1;">
+                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Caixa (%)</label>
+                        <input type="number" id="fechamento-pct-caixa" value="50" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Arabela (%)</label>
+                        <input type="number" id="fechamento-pct-ara" value="25" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; color: #666;">Flávio (%)</label>
+                        <input type="number" id="fechamento-pct-fla" value="25" oninput="window.calcularDivisaoFechamento()" style="text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="text-align: left; background: #fff; border: 1px dashed #ccc; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-family: Arial, Helvetica, sans-serif;">
+                    <p style="margin-bottom: 5px; font-size: 1.1rem;"><strong>Caixa FAVU:</strong> <span id="fechamento-val-caixa" style="color:var(--favu-green);">R$ 0,00</span></p>
+                    <p style="margin-bottom: 5px; font-size: 1.1rem;"><strong>Arabela:</strong> <span id="fechamento-val-ara" style="color:var(--favu-rust);">R$ 0,00</span></p>
+                    <p style="margin-bottom: 0; font-size: 1.1rem;"><strong>Flávio:</strong> <span id="fechamento-val-fla" style="color:var(--favu-rust);">R$ 0,00</span></p>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.enviarFechamentoWA('Arabela')"><i class="fab fa-whatsapp"></i> Enviar Arabela</button>
+                    <button class="btn btn-secondary" style="flex:1; font-size: 0.85rem;" onclick="window.enviarFechamentoWA('Flávio')"><i class="fab fa-whatsapp"></i> Enviar Flávio</button>
+                </div>
             </div>
         </div>
     </div>
