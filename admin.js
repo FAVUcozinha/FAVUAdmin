@@ -81,7 +81,26 @@ const sortProducts = (a, b) => {
     return getTamPeso(a.tamanho) - getTamPeso(b.tamanho);
 };
 
+// ==========================================
+// FECHAR MODAIS COM ESC
+// ==========================================
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") {
+        document.querySelectorAll('.modal.show').forEach(m => window.closeModal(m.id));
+        document.querySelectorAll('.modal-direct').forEach(m => m.style.display = 'none');
+    }
+});
+
+// ==========================================
+// ALERTAS E TOASTS INTELIGENTES
+// ==========================================
 window.customAlert = function(msg, title = "Sucesso!") {
+    // Se for sucesso, não trava a tela, mostra o Toast silencioso!
+    if (title === "Sucesso!" || title === "Sucesso") {
+        window.showToast(msg);
+        return;
+    }
+    // Se for erro ou aviso importante, mantém o popup
     const modal = document.getElementById('custom-alert');
     document.getElementById('alert-title').textContent = title;
     document.getElementById('alert-msg').textContent = msg;
@@ -226,13 +245,44 @@ window.enviarEmailRecuperacao = async function() {
 };
 
 // ==========================================
-// UPLOAD DE IMAGEM SEGURO (FIREBASE STORAGE)
+// COMPRESSÃO E UPLOAD DE IMAGEM (FIREBASE STORAGE)
 // ==========================================
+window.compressImage = function(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > maxWidth) { height = Math.round((height *= maxWidth / width)); width = maxWidth; }
+                } else {
+                    if (height > maxHeight) { width = Math.round((width *= maxHeight / height)); height = maxHeight; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // Converte de volta para arquivo, mas compactado!
+                canvas.toBlob(blob => {
+                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                }, 'image/jpeg', quality);
+            };
+        };
+    });
+};
+
 async function upImg(file) {
     try {
-        const filename = `imagens/${Date.now()}_${file.name}`;
+        // Aplica a compressão antes de enviar!
+        const compressedFile = await window.compressImage(file);
+        
+        const filename = `imagens/${Date.now()}_${compressedFile.name}`;
         const storageRef = ref(storage, filename);
-        const snapshot = await uploadBytes(storageRef, file);
+        const snapshot = await uploadBytes(storageRef, compressedFile);
         const downloadURL = await getDownloadURL(snapshot.ref);
         return downloadURL;
     } catch(e) { 
@@ -365,8 +415,20 @@ document.getElementById('form-edit-cat').onsubmit = async(e) => {
     await updateDoc(doc(db, "categorias", document.getElementById('ec-id').value), { nome: document.getElementById('ec-nome').value.trim(), minTotal: parseInt(document.getElementById('ec-min').value)||0, tipoColuna: document.getElementById('ec-col').value, mensagemObs: document.getElementById('ec-obs').value.trim() });
     customAlert("Categoria Atualizada!"); window.closeModal('modal-editar-cat', 'form-edit-cat'); syncCats(); loadProds();
 };
-window.togC = async(id, s) => { await updateDoc(doc(db, "categorias", id), {ativo: s}); syncCats(); };
-window.delC = async(id) => { customConfirm("Excluir categoria?", async () => { await deleteDoc(doc(db, "categorias", id)); syncCats(); loadProds(); }); };
+window.togC = async(id, s) => { 
+    await updateDoc(doc(db, "categorias", id), {ativo: s}); 
+    const index = globalCategories.findIndex(c => c.id === id);
+    if(index > -1) globalCategories[index].ativo = s;
+    window.renderCatsTable(); 
+};
+
+window.delC = async(id) => { 
+    customConfirm("Excluir categoria?", async () => { 
+        await deleteDoc(doc(db, "categorias", id)); 
+        globalCategories = globalCategories.filter(c => c.id !== id);
+        window.renderCatsTable(); 
+    }); 
+};
 
 document.getElementById('a-cat').addEventListener('change', function() {
     const catObj = globalCategories.find(c => c.nome === this.value);
@@ -376,44 +438,37 @@ document.getElementById('a-cat').addEventListener('change', function() {
     document.getElementById('btn-add-variation').style.display = isSizeCategory ? 'block' : 'none';
 });
 
-window.addVariation = (isSizeCategory = true) => {
+window.addVariation = (isSizeCategory = true, isMixed = false) => {
     const container = document.getElementById('variations-container');
     if (!container) return; 
     const div = document.createElement('div');
     div.className = 'variation-block';
     div.style = "background: rgba(224, 159, 65, 0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed rgba(224, 159, 65, 0.3); position: relative;";
     const btnRemove = (isSizeCategory && container.children.length > 0) ? `<button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: white; color: #E60000; border: 1px solid #E60000; border-radius: 5px; font-size: 0.8rem; cursor: pointer; padding: 2px 8px;">Remover <i class="fas fa-times"></i></button>` : '';
-    const sizeFieldHtml = isSizeCategory ? `<div><label>Tamanho</label><input type="text" class="v-tam" placeholder="Ex: (P - 1,5kg)" required></div>` : `<div style="display:none;"><input type="hidden" class="v-tam" value=""></div>`;
+    
+    const req = isMixed ? '' : 'required';
+    const labelSize = isMixed ? 'Tamanho (Vazio = Mín)' : 'Tamanho';
+    
+    const sizeFieldHtml = isSizeCategory ? `<div><label>${labelSize}</label><input type="text" class="v-tam" placeholder="Ex: P, M" ${req}></div>` : `<div style="display:none;"><input type="hidden" class="v-tam" value=""></div>`;
 
     div.innerHTML = `${btnRemove}
-        <div class="form-grid" style="grid-template-columns: ${isSizeCategory ? '1fr 1fr' : '1fr'}; margin-bottom: 10px;">
-            ${sizeFieldHtml}<div><label>Preço (R$)</label><input type="number" step="0.01" class="v-preco" required style="font-family: var(--font-numbers) !important;"></div>
-        </div>
-        <div><label>Descrição do Resumo</label><textarea class="v-dres" rows="1" required placeholder="Descrição para o resumo"></textarea></div>`;
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); margin-bottom: 0;">
+            ${sizeFieldHtml}
+            <div><label>Mínimo por Produto</label><input type="number" class="v-min" placeholder="Ex: 10"></div>
+            <div><label>Preço (R$)</label><input type="number" step="0.01" class="v-preco" required style="font-family: var(--font-numbers) !important;"></div>
+        </div>`;
     container.appendChild(div);
 };
 
-document.getElementById('form-add-prod').onsubmit = async(e) => {
-    e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
-    try {
-        let url = ""; const f = document.getElementById('a-file').files[0]; if(f) url = await upImg(f);
-        const nomeBase = document.getElementById('a-nome').value.trim();
-        const categoriaBase = document.getElementById('a-cat').value;
-        const minBase = parseInt(document.getElementById('a-min').value)||1;
-        const descMenuBase = document.getElementById('a-dmenu').value.trim();
-        const descPopupBase = document.getElementById('a-dpop').value.trim();
-
-        for(let v of document.querySelectorAll('.variation-block')) {
-            await addDoc(collection(db, "produtos"), {
-                nome: nomeBase, categoria: categoriaBase, min: minBase, 
-                descricaoItem: descMenuBase, descricaoPopup: descPopupBase, 
-                imagemUrl: url, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
-                preco: parseFloat(v.querySelector('.v-preco').value)||0, descricaoResumo: v.querySelector('.v-dres').value.trim()
-            });
-        }
-        customAlert("Item(ns) Adicionado(s)!"); window.closeModal('modal-add-prod', 'form-add-prod'); loadProds();
-    } catch(err) { console.error(err); customAlert("Erro ao salvar.", "Erro"); } finally { btn.innerHTML = 'Salvar Novo Produto'; btn.disabled = false; }
-};
+document.getElementById('a-cat').addEventListener('change', function() {
+    const catObj = globalCategories.find(c => c.nome === this.value);
+    const isSizeCategory = catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo');
+    const isMixed = catObj && catObj.tipoColuna === 'Tamanho/Minimo';
+    
+    document.getElementById('variations-container').innerHTML = '';
+    window.addVariation(isSizeCategory, isMixed);
+    document.getElementById('btn-add-variation').style.display = isSizeCategory ? 'block' : 'none';
+});
 
 window.handleBulkCategoryChange = (selectElement) => {
     const catObj = globalCategories.find(c => c.nome === selectElement.value);
@@ -421,13 +476,17 @@ window.handleBulkCategoryChange = (selectElement) => {
     const addBtn = container.querySelector('.add-bulk-var-btn');
     const tamInputs = container.querySelectorAll('.b-tam');
 
-    if (catObj && catObj.tipoColuna === 'Tamanho') {
-        tamInputs.forEach(i => { i.disabled = false; i.placeholder = "Tam"; i.type = "text"; });
+    if (catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo')) {
+        tamInputs.forEach(i => { 
+            i.disabled = false; 
+            i.placeholder = catObj.tipoColuna === 'Tamanho/Minimo' ? "Tam (Vazio = Mín)" : "Tam"; 
+            i.type = "text"; 
+        });
         if(addBtn) addBtn.style.display = 'inline-block';
     } else {
         const varRows = container.querySelectorAll('.b-var-row');
         if(varRows.length > 1) for(let i=1; i<varRows.length; i++) varRows[i].remove();
-        tamInputs[0].disabled = true; tamInputs[0].value = ""; tamInputs[0].placeholder = "-";
+        tamInputs.forEach(i => { i.disabled = true; i.value = ""; i.placeholder = "-"; });
         if(addBtn) addBtn.style.display = 'none';
     }
 };
@@ -457,17 +516,55 @@ window.addGridRow = () => {
 };
 
 window.saveBulkItems = async() => {
-    const btn = document.getElementById('btn-save-bulk'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subindo fotos...'; btn.disabled = true;
+    const btn = document.getElementById('btn-save-bulk'); 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subindo lote...'; 
+    btn.disabled = true;
+    
     try {
-        for(let r of document.querySelectorAll('#bulk-rows .grid-row')) {
-            const nm = r.querySelector('.b-nome').value.trim(); if(!nm) continue;
-            let url = ""; const f = r.querySelector('.b-file').files[0]; if(f) url = await upImg(f);
-            for (let vr of r.querySelectorAll('.b-var-row')) {
-                await addDoc(collection(db, "produtos"), { nome: nm, categoria: r.querySelector('.b-cat').value, min: parseInt(r.querySelector('.b-min').value)||1, descricaoItem: r.querySelector('.b-dmenu').value.trim(), descricaoPopup: r.querySelector('.b-dpop').value.trim(), imagemUrl: url, ativo: true, tamanho: vr.querySelector('.b-tam').value.trim(), preco: parseFloat(vr.querySelector('.b-preco').value)||0, descricaoResumo: vr.querySelector('.b-dres').value.trim() });
-            }
-        }
-        customAlert("Lote adicionado!"); document.getElementById('bulk-rows').innerHTML = ''; window.closeModal('modal-bulk-prod'); loadProds();
-    } catch(err) { customAlert("Erro.", "Erro"); } finally { btn.innerHTML = 'Salvar'; btn.disabled = false; }
+        const rows = Array.from(document.querySelectorAll('#bulk-rows .grid-row'));
+        
+        const promessas = rows.map(async (r) => {
+            const nm = r.querySelector('.b-nome').value.trim(); 
+            if(!nm) return; 
+            
+            let url = ""; 
+            const f = r.querySelector('.b-file').files[0]; 
+            if(f) url = await upImg(f); 
+            
+            const vars = Array.from(r.querySelectorAll('.b-var-row'));
+            
+            const varPromises = vars.map(vr => {
+                return addDoc(collection(db, "produtos"), { 
+                    nome: nm, 
+                    categoria: r.querySelector('.b-cat').value, 
+                    min: parseInt(r.querySelector('.b-min').value)||1, 
+                    descricaoItem: r.querySelector('.b-dmenu').value.trim(), 
+                    descricaoPopup: r.querySelector('.b-dpop').value.trim(), 
+                    imagemUrl: url, 
+                    ativo: true, 
+                    tamanho: vr.querySelector('.b-tam').value.trim(), 
+                    preco: parseFloat(vr.querySelector('.b-preco').value)||0, 
+                    descricaoResumo: vr.querySelector('.b-dres').value.trim() 
+                });
+            });
+            
+            return Promise.all(varPromises);
+        });
+
+        await Promise.all(promessas);
+
+        customAlert("Lote adicionado com sucesso!"); 
+        document.getElementById('bulk-rows').innerHTML = ''; 
+        window.closeModal('modal-bulk-prod'); 
+        loadProds(); 
+        
+    } catch(err) { 
+        console.error(err);
+        customAlert("Erro ao salvar lote.", "Erro"); 
+    } finally { 
+        btn.innerHTML = 'Salvar'; 
+        btn.disabled = false; 
+    }
 };
 
 document.getElementById('search-prod').addEventListener('input', () => { window.renderProdsTable(); });
@@ -496,6 +593,12 @@ window.renderProdsTable = function() {
     
     let filtered = searchTerm ? allProducts.filter(p => `${p.nome} ${p.categoria} ${p.tamanho||''} ${p.min||1} ${p.preco} ${p.descricaoItem||''} ${p.descricaoResumo||''} ${p.descricaoPopup||''} ${p.ativo?'visível':'oculto'}`.toLowerCase().includes(searchTerm)) : allProducts.filter(p => (p.categoria || 'Sem Categoria') === currentCategoryFilter);
     let chaveAtual = null;
+
+    // EMPTY STATE DA TABELA AQUI!
+    if (filtered.length === 0) {
+        tb.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 50px 20px; color: #999; font-family: var(--font-numbers); font-size: 1.1rem;"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum produto encontrado por aqui.</td></tr>`;
+        return;
+    }
     
     filtered.sort(sortProducts).forEach((p) => {
         const imgTag = p.imagemUrl ? `<img src="${p.imagemUrl}" class="img-preview">` : `<div class="img-preview" style="background:#eee; display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="color:#ccc;"></i></div>`;
@@ -519,11 +622,54 @@ window.renderProdsTable = function() {
     });
 }
 
+document.getElementById('form-add-prod').onsubmit = async(e) => {
+    e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
+    try {
+        let url = ""; const f = document.getElementById('a-file').files[0]; if(f) url = await upImg(f);
+        const nomeBase = document.getElementById('a-nome').value.trim();
+        const categoriaBase = document.getElementById('a-cat').value;
+        const descMenuBase = document.getElementById('a-dmenu').value.trim();
+        const descPopupBase = document.getElementById('a-dpop').value.trim();
+        
+        // Agora lê a Descrição do Resumo do novo campo que colocamos lá em cima
+        const descResumoBase = document.getElementById('a-dres').value.trim(); 
+
+        for(let v of document.querySelectorAll('.variation-block')) {
+            // Agora lê o Mínimo de dentro do próprio bloco de variação (lado a lado com o tamanho)
+            const minInput = v.querySelector('.v-min');
+            const minVariation = minInput && minInput.value ? parseInt(minInput.value) : 1; 
+            
+            await addDoc(collection(db, "produtos"), {
+                nome: nomeBase, categoria: categoriaBase, min: minVariation, 
+                descricaoItem: descMenuBase, descricaoPopup: descPopupBase, 
+                imagemUrl: url, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
+                preco: parseFloat(v.querySelector('.v-preco').value)||0, descricaoResumo: descResumoBase
+            });
+        }
+        customAlert("Item(ns) Adicionado(s)!"); window.closeModal('modal-add-prod', 'form-add-prod'); loadProds();
+    } catch(err) { console.error(err); customAlert("Erro ao salvar.", "Erro"); } finally { btn.innerHTML = 'Salvar Novo Produto'; btn.disabled = false; }
+};
+
 window.openEditor = async(id) => {
     const p = (await getDoc(doc(db,"produtos",id))).data();
-    document.getElementById('e-id').value = id; document.getElementById('e-nome').value = p.nome; document.getElementById('e-cat').value = p.categoria; document.getElementById('e-preco').value = p.preco; document.getElementById('e-min').value = p.min||1; document.getElementById('e-dmenu').value = p.descricaoItem||''; document.getElementById('e-dres').value = p.descricaoResumo||''; document.getElementById('e-dpop').value = p.descricaoPopup||''; 
+    document.getElementById('e-id').value = id; 
+    document.getElementById('e-nome').value = p.nome; 
+    document.getElementById('e-cat').value = p.categoria; 
+    document.getElementById('e-preco').value = p.preco; 
+    document.getElementById('e-min').value = p.min||1; 
+    document.getElementById('e-dmenu').value = p.descricaoItem||''; 
+    document.getElementById('e-dres').value = p.descricaoResumo||''; 
+    document.getElementById('e-dpop').value = p.descricaoPopup||''; 
+    
     const catObj = globalCategories.find(c => c.nome === p.categoria);
-    if (catObj && catObj.tipoColuna === 'Tamanho') { document.getElementById('e-tam-container').style.display = 'block'; document.getElementById('e-tam').value = p.tamanho||''; } else { document.getElementById('e-tam-container').style.display = 'none'; document.getElementById('e-tam').value = ''; }
+    if (catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo')) { 
+        document.getElementById('e-tam-container').style.display = 'block'; 
+        document.getElementById('e-tam').value = p.tamanho||''; 
+        document.getElementById('e-tam').required = (catObj.tipoColuna === 'Tamanho');
+    } else { 
+        document.getElementById('e-tam-container').style.display = 'none'; 
+        document.getElementById('e-tam').value = ''; 
+    }
     
     if (p.imagemUrl && p.imagemUrl.trim() !== '') {
         document.getElementById('e-img-preview').src = p.imagemUrl; document.getElementById('e-img-preview').style.display = 'block'; document.getElementById('btn-remove-e-img').style.display = 'inline-block'; document.getElementById('e-img-none').style.display = 'none';
@@ -535,7 +681,12 @@ window.openEditor = async(id) => {
 
 document.getElementById('e-cat').addEventListener('change', function() {
     const catObj = globalCategories.find(c => c.nome === this.value);
-    document.getElementById('e-tam-container').style.display = (catObj && catObj.tipoColuna === 'Tamanho') ? 'block' : 'none';
+    const showTam = catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo');
+    
+    document.getElementById('e-tam-container').style.display = showTam ? 'block' : 'none';
+    if(document.getElementById('e-tam')) {
+        document.getElementById('e-tam').required = (catObj && catObj.tipoColuna === 'Tamanho');
+    }
 });
 
 document.getElementById('form-edit-prod').onsubmit = async(e) => {
@@ -547,8 +698,21 @@ document.getElementById('form-edit-prod').onsubmit = async(e) => {
     } catch(err) { customAlert("Erro.", "Erro"); } finally { btn.innerHTML = 'Salvar Alterações'; btn.disabled = false; }
 };
 
-window.togP = async(id, s) => { await updateDoc(doc(db, "produtos", id), {ativo:s}); loadProds(); };
-window.delP = async(id) => { customConfirm("Excluir item?", async () => { await deleteDoc(doc(db, "produtos", id)); loadProds(); }); };
+window.togP = async(id, s) => { 
+    await updateDoc(doc(db, "produtos", id), {ativo:s}); 
+    const index = allProducts.findIndex(p => p.id === id);
+    if(index > -1) allProducts[index].ativo = s;
+    window.renderProdsTable(); 
+};
+
+window.delP = async(id) => { 
+    customConfirm("Excluir item?", async () => { 
+        await deleteDoc(doc(db, "produtos", id)); 
+        allProducts = allProducts.filter(p => p.id !== id);
+        window.renderProdsTable(); 
+        window.renderOrcamentoMenu();
+    }); 
+};
 
 document.getElementById('search-aviso').addEventListener('input', () => { window.renderAvisosTable(); });
 document.getElementById('form-add-aviso').onsubmit = async(e) => {
@@ -602,40 +766,94 @@ window.getOrcQtd = function(id) { return orcQtdState[id] || 0; };
 window.inputQtdOrcamento = function(input, itemId) { let val = parseInt(input.value); if(isNaN(val) || val < 0) val = 0; orcQtdState[itemId] = val; window.calcOrcamentoTotal(); };
 
 window.renderOrcamentoMenu = function() {
-    const container = document.getElementById('orc-menu-container'); const nav = document.getElementById('orc-cats-nav');
+    const container = document.getElementById('orc-menu-container'); 
+    const nav = document.getElementById('orc-cats-nav');
     container.innerHTML = ""; nav.innerHTML = "";
-    const orcAgrupados = {}; allProducts.filter(p=>p.ativo).forEach(p => { const cat = p.categoria || 'Geral'; if(!orcAgrupados[cat]) orcAgrupados[cat] = []; orcAgrupados[cat].push(p); });
+    
+    const categoriasAtivas = globalCategories.filter(c => c.ativo !== false).map(c => c.nome);
+    
+    const orcAgrupados = {}; 
+    allProducts.filter(p => p.ativo && categoriasAtivas.includes(p.categoria || 'Geral')).forEach(p => { 
+        const cat = p.categoria || 'Geral'; 
+        if(!orcAgrupados[cat]) orcAgrupados[cat] = []; 
+        orcAgrupados[cat].push(p); 
+    });
     
     const categoriasOrdenadas = Object.keys(orcAgrupados).sort(window.sortAlfabetico);
-    
     if(categoriasOrdenadas.length > 0 && (!currentOrcCatFilter || !categoriasOrdenadas.includes(currentOrcCatFilter))) currentOrcCatFilter = categoriasOrdenadas[0];
+    
     categoriasOrdenadas.forEach(c => nav.innerHTML += `<a class="categoria-btn-orc ${currentOrcCatFilter === c ? 'active-link' : ''}" onclick="window.filterOrc('${c}')">${c}</a>`);
+
+    // Construtor inteligente de tabelas para manter o visual limpo
+    const gerarTabelaHtml = (listaItens, tipoColuna) => {
+        if(listaItens.length === 0) return '';
+        
+        let labelDesktop = tipoColuna === 'Mínimo' ? 'MÍNIMO' : 'TAMANHO';
+        let labelMobile = tipoColuna === 'Mínimo' ? 'MÍN.' : 'TAM.';
+        
+        let thSecundaria = (tipoColuna && tipoColuna !== 'Nenhuma') ? `<th class="col-sec"><span class="th-mobile">${labelMobile}</span><span class="th-desktop">${labelDesktop}</span></th>` : '';
+        let t = `<div class="table-card-orc" style="margin-bottom: 25px;"><table class="orc-table"><thead><tr><th class="col-item">ITEM</th><th class="col-icon"></th>${thSecundaria}<th class="col-unid"><span class="th-mobile">UNID.</span><span class="th-desktop">UNIDADE</span></th><th class="col-qtd"><span class="th-mobile">QTD</span><span class="th-desktop">QUANTIDADE</span></th></tr></thead><tbody>`;
+
+        let chaveAtual = null; 
+        const agruparPorNome = (tipoColuna === 'Tamanho'); 
+        const contagemNomes = {};
+        if(agruparPorNome) listaItens.forEach(i => contagemNomes[i.nome.trim()] = (contagemNomes[i.nome.trim()] || 0) + 1);
+
+        listaItens.forEach(p => {
+            const inputHtml = `<div class="quantidade-input-group"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', -1)">-</button><input type="number" value="${window.getOrcQtd(p.id)}" oninput="window.inputQtdOrcamento(this, '${p.id}')" class="quantidade-input orc-qtd-input" data-item-id="${p.id}"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', 1)">+</button></div>`;
+            const iconeHint = p.imagemUrl ? `<i class="fas fa-camera foto-hint"></i>` : (p.descricaoPopup ? `<i class="fas fa-info-circle foto-hint"></i>` : '');
+            const celulaNomeHTML = `<div class="item-nome-texto" style="line-height: 1.2;">${window.formatText(p.nome.trim())}</div>${p.descricaoItem ? `<div class="descricao-orc">${window.formatText(p.descricaoItem)}</div>` : ''}`;
+            
+            // Aqui ele decide o que exibir: se a tabela for de Mínimo, puxa o p.min. Se for Tamanho, puxa o p.tamanho.
+            let conteudoSecundario = tipoColuna === 'Mínimo' ? (p.min || 1) : window.formatText(p.tamanho || '-');
+            let tdSec = (tipoColuna && tipoColuna !== 'Nenhuma') ? `<td class="col-sec">${conteudoSecundario}</td>` : '';
+            
+            const celulasRestantes = `${tdSec}<td class="col-unid">R$ ${p.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td class="col-qtd"><div class="quantidade-container">${inputHtml}</div></td>`;
+            
+            if(agruparPorNome) {
+                if(p.nome.trim() !== chaveAtual) { 
+                    chaveAtual = p.nome.trim(); 
+                    t += `<tr class="group-separator-top"><td rowspan="${contagemNomes[chaveAtual]}" class="col-item">${celulaNomeHTML}</td><td rowspan="${contagemNomes[chaveAtual]}" class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`; 
+                } else {
+                    t += `<tr><td style="display:none;"></td><td style="display:none;"></td>${celulasRestantes}</tr>`;
+                }
+            } else { 
+                t += `<tr class="group-separator-top"><td class="col-item">${celulaNomeHTML}</td><td class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`; 
+            }
+        });
+        return t + `</tbody></table></div>`;
+    };
 
     categoriasOrdenadas.filter(c=>c===currentOrcCatFilter).forEach(nomeCat => {
         const catObj = globalCategories.find(c => c.nome === nomeCat) || { tipoColuna: 'Tamanho' };
         const itens = orcAgrupados[nomeCat].sort(sortProducts);
-        let thSecundaria = (catObj.tipoColuna && catObj.tipoColuna !== 'Nenhuma') ? `<th class="col-sec"><span class="th-mobile">${catObj.tipoColuna==='Mínimo'?'MÍN.':'TAM.'}</span><span class="th-desktop">${catObj.tipoColuna==='Mínimo'?'Mínimo':'Tamanho'}</span></th>` : '';
-        let htmlTabela = `<div class="categoria-group-orc active-group"><h2 class="categoria-title-orc">${nomeCat}</h2><div class="table-card-orc"><table class="orc-table"><thead><tr><th class="col-item">ITEM</th><th class="col-icon"></th>${thSecundaria}<th class="col-unid"><span class="th-mobile">UNID.</span><span class="th-desktop">Unidade</span></th><th class="col-qtd"><span class="th-mobile">QTD</span><span class="th-desktop">Quantidade</span></th></tr></thead><tbody>`;
 
-        let chaveAtual = null; const agruparPorNome = (catObj.tipoColuna === 'Tamanho'); const contagemNomes = {};
-        if(agruparPorNome) itens.forEach(i => contagemNomes[i.nome.trim()] = (contagemNomes[i.nome.trim()] || 0) + 1);
-
-        itens.forEach(p => {
-            const inputHtml = `<div class="quantidade-input-group"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', -1)">-</button><input type="number" value="${window.getOrcQtd(p.id)}" oninput="window.inputQtdOrcamento(this, '${p.id}')" class="quantidade-input orc-qtd-input" data-item-id="${p.id}"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', 1)">+</button></div>`;
-            const iconeHint = p.imagemUrl ? `<i class="fas fa-camera foto-hint"></i>` : (p.descricaoPopup ? `<i class="fas fa-info-circle foto-hint"></i>` : '');
+        let htmlFull = `<div class="categoria-group-orc active-group"><h2 class="categoria-title-orc">${nomeCat}</h2>`;
+        
+        // Se a categoria for Tamanho/Minimo, segrega e gera dois grupos
+        if (catObj.tipoColuna === 'Tamanho/Minimo') {
+            const itensTam = itens.filter(i => i.tamanho && i.tamanho.trim() !== '');
+            const itensMin = itens.filter(i => !i.tamanho || i.tamanho.trim() === '');
             
-            const celulaNomeHTML = `<div class="item-nome-texto" style="line-height: 1.2;">${window.formatText(p.nome.trim())}</div>${p.descricaoItem ? `<div class="descricao-orc">${window.formatText(p.descricaoItem)}</div>` : ''}`;
-            let tdSec = (catObj.tipoColuna && catObj.tipoColuna !== 'Nenhuma') ? `<td class="col-sec">${catObj.tipoColuna === 'Mínimo' ? (p.min||1) : (p.tamanho||'-')}</td>` : '';
-            const celulasRestantes = `${tdSec}<td class="col-unid">R$ ${p.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td class="col-qtd"><div class="quantidade-container">${inputHtml}</div></td>`;
-            
-            if(agruparPorNome) {
-                if(p.nome.trim() !== chaveAtual) { chaveAtual = p.nome.trim(); htmlTabela += `<tr class="group-separator-top"><td rowspan="${contagemNomes[chaveAtual]}" class="col-item">${celulaNomeHTML}</td><td rowspan="${contagemNomes[chaveAtual]}" class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`; } 
-                else htmlTabela += `<tr><td style="display:none;"></td><td style="display:none;"></td>${celulasRestantes}</tr>`;
-            } else { htmlTabela += `<tr class="group-separator-top"><td class="col-item">${celulaNomeHTML}</td><td class="col-icon">${iconeHint}</td>${celulasRestantes}</tr>`; }
-        });
-        htmlTabela += `</tbody></table></div></div>`; container.innerHTML += htmlTabela;
+            if(itensTam.length > 0) {
+                htmlFull += `<h3 style="text-align:center; color:var(--favu-moss); font-family:'Basic Choice', cursive; font-size: 1.4rem; margin-bottom: 10px;">Por Tamanho</h3>`;
+                htmlFull += gerarTabelaHtml(itensTam, 'Tamanho'); // Aqui a mágica ignora o mínimo
+            }
+            if(itensMin.length > 0) {
+                htmlFull += `<h3 style="text-align:center; color:var(--favu-moss); font-family:'Basic Choice', cursive; font-size: 1.4rem; margin-bottom: 10px; margin-top: 15px;">Por Mínimo</h3>`;
+                htmlFull += gerarTabelaHtml(itensMin, 'Mínimo'); // Aqui a mágica ignora o tamanho
+            }
+        } else {
+            // Se for apenas uma coisa ou outra, segue normal
+            htmlFull += gerarTabelaHtml(itens, catObj.tipoColuna);
+        }
+        
+        htmlFull += `</div>`; 
+        container.innerHTML += htmlFull;
     });
-    window.calcOrcamentoTotal(); configurarEventosDragOrcamento();
+
+    window.calcOrcamentoTotal(); 
+    configurarEventosDragOrcamento();
 };
 
 window.filterOrc = function(cat) { currentOrcCatFilter = cat; window.renderOrcamentoMenu(); };
@@ -790,11 +1008,16 @@ window.obterPedidosFiltrados = function() {
     });
 }
 
+let timerFiltroPedidos;
 window.filtrarPedidos = function() {
-    const txt = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
-    const dt = document.getElementById('date-input') ? document.getElementById('date-input').value : '';
-    let escopo = (txt || dt) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p));
-    window.renderizar(escopo);
+    // Cancela a busca anterior se o usuário ainda estiver digitando (Debounce)
+    clearTimeout(timerFiltroPedidos);
+    timerFiltroPedidos = setTimeout(() => {
+        const txt = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
+        const dt = document.getElementById('date-input') ? document.getElementById('date-input').value : '';
+        let escopo = (txt || dt) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p));
+        window.renderizar(escopo);
+    }, 350); // Só busca 350ms depois que ele parar de digitar!
 }
 
 window.renderizar = function(pedidos) {
@@ -807,7 +1030,11 @@ window.renderizar = function(pedidos) {
     window.STATUS_FLOW.forEach(s => {
         const ord = ordenarPedidosPorDataHorario([...pedStatus[s]]);
         const col = document.getElementById(`col-${limparString(s)}`);
-        if (col) ord.forEach(p => { col.appendChild(window.criarCardHTML(p)); contadores[s]++; });
+        if (col) {
+            // Removido o "Empty State". Se não houver pedidos, o loop simplesmente não roda
+            // e a coluna fica perfeitamente limpa e vazia!
+            ord.forEach(p => { col.appendChild(window.criarCardHTML(p)); contadores[s]++; });
+        }
     });
 
     window.STATUS_FLOW.forEach(s => { const c = document.querySelector(`.kanban-column[data-status="${s}"]`); if(c) c.querySelector('.count-badge').textContent = contadores[s]; });
@@ -1182,6 +1409,33 @@ window.calcularCustoProduto = async function(produtoId, precoVendaProduto) {
 
 document.addEventListener("DOMContentLoaded", () => { let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { window.configurarAcordeaoColunas(); if (window.innerWidth > 768) document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('expanded')); }, 250); }); });
 
+// ==========================================
+// APLICAR DESCONTO NA EDIÇÃO
+// ==========================================
+window.aplicarDescontoEdit = function() {
+    const descInput = document.getElementById('edit-desconto-pedido');
+    const desc = parseFloat(descInput.value.replace(',', '.')) || 0;
+    
+    if (desc <= 0) return window.showToast('Insira um valor maior que zero.', true);
+    
+    // Pega o valor total atual e deduz o desconto
+    const totalElement = document.getElementById('edit-total-pedido');
+    let totalAtual = parseFloat(totalElement.value.replace(/\./g, '').replace(',', '.')) || 0;
+    
+    totalAtual -= desc;
+    if(totalAtual < 0) totalAtual = 0;
+    totalElement.value = totalAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    
+    // Adiciona o histórico do desconto no campo de Cupom para controle
+    const cupomElement = document.getElementById('edit-cupom-pedido');
+    const descText = `Desconto Extra (R$ ${desc.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`;
+    cupomElement.value = cupomElement.value ? cupomElement.value + ` | ${descText}` : descText;
+    
+    // Limpa o campo de desconto e avisa
+    descInput.value = '';
+    window.showToast('Desconto abatido do Total Final!');
+};
+
 async function init() { 
     window.addVariation(false); 
     await syncCats(); 
@@ -1192,6 +1446,45 @@ async function init() {
     window.inicializarKanban(); 
     listenPedidos(); 
 }
+
+// ==========================================
+// EXPORTAR PEDIDOS PARA EXCEL/CSV
+// ==========================================
+window.exportarPedidosCSV = function() {
+    // Pega os pedidos que estão filtrados na tela no momento
+    const pedidos = window.obterPedidosFiltrados();
+    
+    if (pedidos.length === 0) {
+        return window.showToast("Nenhum pedido para exportar na tela atual.", true);
+    }
+
+    // Cabeçalho das colunas do Excel
+    let csv = "ID_do_Pedido,Cliente,Telefone,Data_Entrega,Horario_Entrega,Status_do_Pedido,Status_Pagamento,Forma_de_Pagamento,Total\n";
+    
+    // Varre os pedidos e monta as linhas
+    pedidos.forEach(p => {
+        const id = p.ID_do_Pedido || "";
+        const cliente = (p.Nome_Cliente || "").replace(/,/g, ""); // Tira vírgulas do nome para não quebrar a coluna
+        const tel = p.Numero || "";
+        const data = p.Data_Entrega || "";
+        const hora = p.Horario_Entrega || "";
+        const status = p.Status_do_Pedido || "";
+        const pgto = p.Status_Pagamento || "";
+        const forma = p.Forma_de_Pagamento || "";
+        const total = p.Total_Final || "0,00";
+        
+        csv += `${id},${cliente},${tel},${data},${hora},${status},${pgto},${forma},"${total}"\n`;
+    });
+
+    // Cria o arquivo invisível e força o download no navegador
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // "\uFEFF" resolve acentos no Excel (BOM)
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Relatorio_Favu_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+    link.click();
+    
+    window.showToast("Download iniciado!");
+};
 
 // O onAuthStateChanged gerencia tudo, se ele detectar login ele mostra o painel e roda o init()
 onAuthStateChanged(auth, (user) => {
@@ -1211,3 +1504,122 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById("login-pass").value = "";
     }
 });
+
+// ==========================================
+// FECHAMENTO FINANCEIRO E DIVISÃO (SÓCIOS)
+// ==========================================
+window.abrirModalFechamento = function() {
+    // Pega os pedidos da tela atual (idêntico ao cálculo do Dashboard)
+    let pedidos = window.ticketsSelecionados.size > 0 
+        ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
+        : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) 
+            ? window.obterPedidosFiltrados() 
+            : window.obterPedidosFiltrados().filter(p => window.obterPedidosDoMesAtual().includes(p)) );
+    
+    // Ignora pedidos cancelados para não somar faturamento fantasma
+    pedidos = pedidos.filter(p => !(p.Status_do_Pedido || '').toLowerCase().includes('cancelado'));
+
+    if(pedidos.length === 0) return window.showToast('Nenhum pedido para fechar!', true);
+
+    window.pedidosFechamento = pedidos;
+    
+    let total = 0;
+    let datas = [];
+    pedidos.forEach(p => {
+        total += calcularValorPedido(p);
+        if(p.Data_Entrega) datas.push(p.Data_Entrega);
+    });
+
+    // Encontra a data inicial e final para o cabeçalho
+    let periodoStr = "";
+    if(datas.length > 0) {
+        const datasParsed = datas.map(d => parseDataBR(d)).filter(d => d).sort((a,b) => a-b);
+        if(datasParsed.length > 0) {
+            const pData = datasParsed[0];
+            const uData = datasParsed[datasParsed.length-1];
+            const pStr = String(pData.getDate()).padStart(2,'0') + '/' + String(pData.getMonth()+1).padStart(2,'0');
+            const uStr = String(uData.getDate()).padStart(2,'0') + '/' + String(uData.getMonth()+1).padStart(2,'0');
+            periodoStr = pStr === uStr ? pStr : `${pStr} - ${uStr}`;
+        }
+    }
+
+    document.getElementById('fechamento-periodo').textContent = periodoStr ? `(${periodoStr})` : '';
+    document.getElementById('fechamento-total-base').textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    window.totalFechamentoAtual = total;
+    window.calcularDivisaoFechamento();
+
+    document.getElementById('modal-fechamento-financeiro').style.display = 'flex';
+};
+
+window.calcularDivisaoFechamento = function() {
+    const total = window.totalFechamentoAtual || 0;
+    
+    // Se por acaso os inputs ficarem vazios, assume 0
+    const pctCaixa = parseFloat(document.getElementById('fechamento-pct-caixa').value) || 0;
+    const pctAra = parseFloat(document.getElementById('fechamento-pct-ara').value) || 0;
+    const pctFla = parseFloat(document.getElementById('fechamento-pct-fla').value) || 0;
+
+    const valCaixa = total * (pctCaixa / 100);
+    const valAra = total * (pctAra / 100);
+    const valFla = total * (pctFla / 100);
+
+    document.getElementById('fechamento-val-caixa').textContent = valCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('fechamento-val-ara').textContent = valAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('fechamento-val-fla').textContent = valFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+window.enviarFechamentoWA = function(destinatario) {
+    const total = window.totalFechamentoAtual || 0;
+    const periodo = document.getElementById('fechamento-periodo').textContent;
+    
+    // Pega os valores exatamente como estão no painel (que já foram calculados corretamente)
+    const valCaixa = document.getElementById('fechamento-val-caixa').textContent.replace('R$', '').trim();
+    const valAra = document.getElementById('fechamento-val-ara').textContent.replace('R$', '').trim();
+    const valFla = document.getElementById('fechamento-val-fla').textContent.replace('R$', '').trim();
+
+    let txt = `Pedidos da Semana ${periodo}\n\n`;
+    
+    // Ordena por data antes de gerar a lista
+    const pedidosOrdenados = window.pedidosFechamento.sort((a,b) => {
+        const dA = parseDataBR(a.Data_Entrega); const dB = parseDataBR(b.Data_Entrega);
+        if(!dA) return 1; if(!dB) return -1; return dA.getTime() - dB.getTime();
+    });
+
+    pedidosOrdenados.forEach(p => {
+        const nome = (p.Nome_Cliente || 'Cliente').trim().split(' ')[0];
+        const data = p.Data_Entrega || '--/--/----';
+        const val = formatarValorComCentavos(p.Total_Final);
+        
+        // Linha principal do cliente
+        txt += `- ${nome} | ${data} | R$ ${val}\n`;
+        
+        // Pega os itens do resumo e formata com a setinha
+        if (p.Resumo_dos_Itens) {
+            const linhas = p.Resumo_dos_Itens.split('\n');
+            linhas.forEach(linha => {
+                const l = linha.trim();
+                // Ignora linhas de categoria (ex: "- Bolos:") ou linhas vazias
+                if (l && !(l.startsWith('-') && l.endsWith(':'))) {
+                    // Limpa traços extras se tiver
+                    let itemClean = l.startsWith('-') ? l.substring(1).trim() : l;
+                    txt += `   ⤷ ${itemClean}\n`;
+                }
+            });
+        }
+        txt += `\n`; // Espaço entre um pedido e outro
+    });
+
+    // Rodapé de Total e Divisão (Formatado diretamente para não quebrar a casa decimal)
+    txt += `Total= ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
+    txt += `*Caixa Favu*: R$ ${valCaixa}\n`;
+    txt += `*Arabela*: R$ ${valAra}\n`;
+    txt += `*Flávio*: R$ ${valFla}`;
+
+    // Telefones oficias configurados
+    const numero = destinatario === 'Arabela' ? '558199502865' : '558199591775';
+    
+    // Abre o WhatsApp com o texto pronto
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(txt)}`, '_blank');
+    document.getElementById('modal-fechamento-financeiro').style.display = 'none';
+};
