@@ -876,18 +876,77 @@
 
         <!-- NOVA ABA DE HORÁRIOS RESTRITOS -->
             <div id="t-horarios" class="tab-pane">
-                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-agenda')"><i class="fas fa-plus"></i> Restringir Nova Data</button></div>
-                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
-                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Horários Restritos por Data</h2>
-                    <p style="font-family: var(--font-numbers); font-size: 0.9rem; color: var(--text-light); margin:0;">Defina quais horários os clientes podem escolher em datas específicas (Ex: Natal, São João).</p>
+            <div class="panel-card" style="padding: 25px;">
+                
+                <div style="margin-bottom: 40px; font-family: var(--font-numbers);">
+                    <h2 class="font-display" style="margin: 0 0 20px 0; font-size: 1.8rem; color: var(--favu-green);"><i class="fas fa-clock"></i> Horários por Dia da Semana</h2>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-1-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Seg</label>
+                            <input type="text" id="dia-1-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-2-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Ter</label>
+                            <input type="text" id="dia-2-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-3-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Qua</label>
+                            <input type="text" id="dia-3-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-4-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Qui</label>
+                            <input type="text" id="dia-4-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-5-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Sex</label>
+                            <input type="text" id="dia-5-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-6-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Sáb</label>
+                            <input type="text" id="dia-6-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="width: 80px; display: flex; align-items: center; gap: 5px; font-weight: bold; margin:0;"><input type="checkbox" id="dia-0-ativo" style="width: 18px; height: 18px; accent-color: var(--favu-rust);"> Dom</label>
+                            <input type="text" id="dia-0-horas" placeholder="Ex: 11:00, 12:00, 15:00" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin:0;">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="window.salvarConfigAgendaGeral()"><i class="fas fa-save"></i> Salvar Horários</button>
                 </div>
-                <div class="panel-card table-responsive">
-                    <table class="favu-table" id="tbl-horarios">
-                        <thead><tr><th>Data Restrita</th><th>Horários Permitidos</th><th style="width: 120px;">Ações</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+
+                <div style="border-top: 2px dashed #eee; padding-top: 30px; font-family: var(--font-numbers);">
+                    <h2 class="font-display" style="margin: 0 0 20px 0; font-size: 1.8rem; color: var(--favu-green);"><i class="fas fa-calendar-day"></i> Exceções para Dias Específicos</h2>
+                    
+                    <div style="background: rgba(224, 159, 65, 0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(224, 159, 65, 0.2); margin-bottom: 25px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-weight:bold; margin-bottom:5px;">Escolha a Data Especial:</label>
+                            <input type="date" id="exc-data" style="margin:0;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color: #E60000; font-weight: bold; margin:0;">
+                                <input type="checkbox" id="exc-fechado" style="width:20px; height:20px; accent-color:#E60000;" onchange="document.getElementById('container-exc-horas').style.display = this.checked ? 'none' : 'block'; document.getElementById('container-exc-msg').style.display = this.checked ? 'block' : 'none';">
+                                FECHAR AGENDA NESTA DATA
+                            </label>
+                        </div>
+                        
+                        <div id="container-exc-horas" style="margin-bottom: 20px;">
+                            <label style="font-weight:bold; margin-bottom:5px;">Intervalos ou Horários Permitidos:</label>
+                            <input type="text" id="exc-horas" placeholder="Ex: 08h às 12h, 14h às 18h" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                        </div>
+
+                        <div id="container-exc-msg" style="margin-bottom: 20px; display: none;">
+                            <label style="font-weight:bold; margin-bottom:5px; color: #E60000;">Mensagem de aviso para os clientes:</label>
+                            <input type="text" id="exc-mensagem" placeholder="Ex: ⛔ FECHADO (Feriado Nacional)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+                        </div>
+
+                        <button type="button" onclick="window.salvarExcecaoData()" class="btn btn-primary" style="width:100%; padding:10px;">Adicionar Regra Especial</button>
+
+                    <label style="font-weight: bold; margin-bottom: 10px; display: block; font-size: 1.1rem; color: var(--favu-moss);">Regras Ativas:</label>
+                    <div id="lista-excecoes-container" style="display: flex; flex-direction: column; gap: 10px;">
+                        </div>
                 </div>
             </div>
+        </div>
     </div>
 
     <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-pedido')">
@@ -1060,8 +1119,8 @@
             <div class="modal-body">
                 <form id="form-add-cat">
                     <div class="form-grid"><div><label>Nome</label><input type="text" id="ac-nome" required></div><div><label>Mín. por categoria</label><input type="number" id="ac-min" value="0" required></div></div>
-                    <div style="margin-bottom: 15px;">
-                        <label>Medida</label>
+                    
+                       <div style="margin-bottom: 15px;"> <label>Medida</label>
                         <select id="ac-col"><option value="Nenhuma">Nenhuma</option><option value="Tamanho">Tamanho</option><option value="Mínimo">Mínimo</option><option value="Tamanho/Minimo">Tamanho/Mínimo</option></select>
                     </div>
                     <div style="margin-bottom: 15px;"><label>Comunicado Categoria</label><textarea id="ac-obs" rows="2"></textarea></div>
