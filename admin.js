@@ -1530,6 +1530,50 @@ window.aplicarDescontoEdit = function() {
 // ==========================================
 // MÓDULO DE AGENDA DE HORÁRIOS (DATAS RESTRITAS)
 // ==========================================
+
+// --- INÍCIO DA REGRA GERAL ---
+window.carregarConfigAgendaGeral = async function() {
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_geral'));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Varre de 0 (Dom) a 6 (Sáb) para preencher a tela
+            for (let i = 0; i <= 6; i++) {
+                if (data[i]) {
+                    document.getElementById(`dia-${i}-ativo`).checked = data[i].ativo || false;
+                    document.getElementById(`dia-${i}-horas`).value = data[i].horarios || '';
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao carregar a regra geral:", error);
+    }
+};
+
+window.salvarConfigAgendaGeral = async function() {
+    window.mostrarLoading(true);
+    try {
+        let agendaDaSemana = {};
+        
+        // Varre de 0 a 6 para ler os valores da tela e montar o objeto
+        for (let i = 0; i <= 6; i++) {
+            agendaDaSemana[i] = {
+                ativo: document.getElementById(`dia-${i}-ativo`).checked,
+                horarios: document.getElementById(`dia-${i}-horas`).value.trim()
+            };
+        }
+
+        // Salva o pacotão com os 7 dias de uma vez no Firebase
+        await setDoc(doc(db, 'config', 'agenda_geral'), agendaDaSemana);
+        
+        window.showToast('Regra Geral salva com sucesso!');
+    } catch (error) {
+        window.showToast('Erro ao salvar configurações.', true);
+    }
+    window.mostrarLoading(false);
+};
+// --- FIM DA REGRA GERAL ---
+
 window.allAgendas = [];
 
 window.loadAgendas = async function() {
@@ -1538,6 +1582,35 @@ window.loadAgendas = async function() {
     s.forEach(d => window.allAgendas.push({ id: d.id, ...d.data() }));
     window.renderAgendasTable();
 }
+
+// Função para Salvar Edição Rápida
+window.atualizarAgendaInline = async function(id, campo, valor) {
+    try {
+        await updateDoc(doc(db, "agenda_horarios", id), { [campo]: valor });
+        window.showToast("Edição salva com sucesso!");
+    } catch (e) {
+        window.showToast("Erro ao editar.", true);
+    }
+};
+
+// Motor de visualização de 30 em 30 min para o Admin
+window.previewHorariosAdmin = function(texto) {
+    if (!texto || texto.trim() === '') return [];
+    const blocos = texto.split(',').map(b => b.trim());
+    let resultado = [];
+    function formata(min) { return `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`; }
+    blocos.forEach(bloco => {
+        const partes = bloco.split(/\s+(?:às|as|-)\s+/i);
+        if (partes.length === 2) {
+            let [i, f] = partes.map(p => { let m = p.replace(/[^0-9:]/g,'').split(':'); return (parseInt(m[0]||0)*60)+parseInt(m[1]||0); });
+            for (let m = i; m <= f; m += 30) resultado.push(formata(m));
+        } else {
+            let m = bloco.replace(/[^0-9:]/g,'').split(':');
+            if(m[0]) resultado.push(formata((parseInt(m[0])*60)+parseInt(m[1]||0)));
+        }
+    });
+    return [...new Set(resultado)].sort();
+};
 
 window.renderAgendasTable = function() {
     const tb = document.querySelector('#tbl-horarios tbody');
@@ -1548,14 +1621,28 @@ window.renderAgendasTable = function() {
 
     ordenadas.forEach(a => {
         const dataFormatada = a.id.split('-').reverse().join('/'); 
-        const statusHoras = a.indisponivel ? '<span style="color:#E60000; font-weight:bold; padding:4px 8px; background:#ffebee; border-radius:6px;">DIA FECHADO</span>' : (a.horarios ? a.horarios.join(', ') : '');
+        let htmlEdicao = '';
+
+        if (a.indisponivel) {
+            const msgAtual = a.mensagem || '⛔ FECHADO (Bloqueado)';
+            htmlEdicao = `<input type="text" value="${msgAtual}" onchange="window.atualizarAgendaInline('${a.id}', 'mensagem', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: #E60000; font-weight: bold; width: 100%; transition: 0.2s;" placeholder="Digite o aviso para o cliente...">`;
+        } else {
+            // Se as horas estiverem em Array (código antigo) ou String (código novo), ele trata corretamente
+            const hrsAtual = Array.isArray(a.horarios) ? a.horarios.join(', ') : (a.horarios || '');
+            const previewGerado = window.previewHorariosAdmin(hrsAtual).join(', ');
+            
+            htmlEdicao = `
+                <input type="text" value="${hrsAtual}" onchange="window.atualizarAgendaInline('${a.id}', 'horarios', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: #333; font-weight: bold; width: 100%; transition: 0.2s;" placeholder="Ex: 8h às 12h, 15h às 20h">
+                <div style="font-size: 0.75rem; color: #777; margin-top: 4px;">Horários
+                : ${previewGerado || 'Nenhum'}</div>
+            `;
+        }
 
         tb.innerHTML += `<tr>
             <td data-label="Data Restrita:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${dataFormatada}</strong></td>
-            <td data-label="Horários Permitidos:">${statusHoras}</td>
+            <td data-label="Horários/Mensagem:">${htmlEdicao}</td>
             <td data-label="Ações:">
                 <div class="action-btns-wrapper">
-                    <button class="btn-action edit" onclick="window.openEditAgenda('${a.id}')"><i class="fas fa-pen"></i></button>
                     <button class="btn-action del" onclick="window.delAgenda('${a.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
@@ -1563,13 +1650,303 @@ window.renderAgendasTable = function() {
     });
 }
 
+import { deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"; // Certifique-se de incluir o deleteField no topo do arquivo se não houver
+
+// Salva ou atualiza uma data específica
+// Alterna visualmente os campos dependendo se está fechado ou não
+window.toggleExcecaoCampos = function() {
+    const fechado = document.getElementById('exc-fechado').checked;
+    document.getElementById('container-exc-horas').style.display = fechado ? 'none' : 'block';
+    document.getElementById('container-exc-mensagem').style.display = fechado ? 'block' : 'none';
+};
+
+// Salva ou atualiza uma data específica
+// Salva ou atualiza uma data específica do ZERO
+window.salvarExcecaoData = async function() {
+    const dataAlvo = document.getElementById('exc-data').value;
+    const estaFechado = document.getElementById('exc-fechado').checked;
+    const horariosTexto = document.getElementById('exc-horas').value.trim();
+    const mensagemTexto = document.getElementById('exc-mensagem').value.trim();
+
+    if (!dataAlvo) { window.showToast('Selecione uma data.', true); return; }
+
+    window.mostrarLoading(true);
+    try {
+        const payload = {
+            indisponivel: estaFechado,
+            horarios: estaFechado ? "" : horariosTexto,
+            mensagem: estaFechado ? mensagemTexto : ""
+        };
+
+        await setDoc(doc(db, 'config', 'agenda_excecoes'), { [dataAlvo]: payload }, { merge: true });
+        window.showToast('Regra aplicada!');
+        
+        // Limpa tudo
+        document.getElementById('exc-data').value = '';
+        document.getElementById('exc-fechado').checked = false;
+        document.getElementById('exc-horas').value = '';
+        document.getElementById('exc-mensagem').value = '';
+        document.getElementById('container-exc-horas').style.display = 'block';
+        document.getElementById('container-exc-msg').style.display = 'none';
+        
+        window.carregarExcecoesLista();
+    } catch (error) { window.showToast('Erro ao gravar.', true); }
+    window.mostrarLoading(false);
+};
+
+// Nova Função Mágica: Salva a edição na hora que você digita na lista!
+window.atualizarExcecaoInline = async function(dataString, campo, valor) {
+    try {
+        await setDoc(doc(db, 'config', 'agenda_excecoes'), {
+            [dataString]: { [campo]: valor }
+        }, { merge: true });
+        window.showToast("Edição salva com sucesso!");
+    } catch(e) { window.showToast("Erro ao editar.", true); }
+};
+
+// Carrega a lista transformando a exibição em campos de edição direta (Inline Editing)
+window.carregarExcecoesLista = async function() {
+    const container = document.getElementById('lista-excecoes-container');
+    if (!container) return;
+    
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+        container.innerHTML = '';
+        
+        if (docSnap.exists()) {
+            const dados = docSnap.data();
+            const datasOrdenadas = Object.keys(dados).sort();
+            
+            if (datasOrdenadas.length === 0) {
+                container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial.</p>';
+                return;
+            }
+
+            datasOrdenadas.forEach(dataString => {
+                const regra = dados[dataString];
+                const [ano, mes, dia] = dataString.split('-');
+                const dataFormatada = `${dia}/${mes}/${ano}`;
+
+                let htmlEdicao;
+                if (regra.indisponivel) {
+                    const msgAtual = regra.mensagem || '⛔ FECHADO (Bloqueado)';
+                    htmlEdicao = `<div style="display:flex; flex-direction:column; flex:1;">
+                                    <span style="color:var(--danger); font-size: 0.8rem; font-weight:bold; margin-bottom:2px;">Mensagem para o cliente:</span>
+                                    <input type="text" value="${msgAtual}" onchange="window.atualizarExcecaoInline('${dataString}', 'mensagem', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: var(--danger); font-weight: bold; width: 100%; transition: 0.2s;" onfocus="this.style.border='1px dashed #ccc'; this.style.background='#f9f9f9'" onblur="this.style.border='1px dashed transparent'; this.style.background='transparent'">
+                                  </div>`;
+                } else {
+                    const hrsAtual = regra.horarios || '';
+                    htmlEdicao = `<div style="display:flex; flex-direction:column; flex:1;">
+                                    <span style="color:var(--favu-moss); font-size: 0.8rem; font-weight:bold; margin-bottom:2px;">Horários/Intervalos:</span>
+                                    <input type="text" value="${hrsAtual}" onchange="window.atualizarExcecaoInline('${dataString}', 'horarios', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: #333; font-weight: bold; width: 100%; transition: 0.2s;" onfocus="this.style.border='1px dashed #ccc'; this.style.background='#f9f9f9'" onblur="this.style.border='1px dashed transparent'; this.style.background='transparent'">
+                                  </div>`;
+                }
+
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; background:#fff; padding:12px; border-radius:8px; border:1px solid #ddd; gap: 15px; margin-bottom: 8px;">
+                        <div style="background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 6px;">
+                            <strong>${dataFormatada}</strong>
+                        </div>
+                        ${htmlEdicao}
+                        <button type="button" onclick="window.deletarExcecaoData('${dataString}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem; padding: 10px;"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+            });
+        } else {
+            container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial.</p>';
+        }
+    } catch (error) { console.error(error); }
+};
+
+window.deletarExcecaoData = async function(dataString) {
+    if (!confirm(`Deseja remover a regra da data ${dataString}?`)) return;
+    window.mostrarLoading(true);
+    try {
+        await updateDoc(doc(db, 'config', 'agenda_excecoes'), { [dataString]: deleteField() });
+        window.carregarExcecoesLista();
+    } catch (error) { window.showToast('Erro ao remover.', true); }
+    window.mostrarLoading(false);
+};
+
+// Carrega as exceções salvas e monta o visual (AGORA COM BOTÃO DE EDITAR)
+window.carregarExcecoesLista = async function() {
+    const container = document.getElementById('lista-excecoes-container');
+    if (!container) return;
+    
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+        container.innerHTML = '';
+        
+        if (docSnap.exists()) {
+            const dados = docSnap.data();
+            const datasOrdenadas = Object.keys(dados).sort();
+            
+            if (datasOrdenadas.length === 0) {
+                container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial configurada.</p>';
+                return;
+            }
+
+            datasOrdenadas.forEach(dataString => {
+                const regra = dados[dataString];
+                const [ano, mes, dia] = dataString.split('-');
+                const dataFormatadaVisivel = `${dia}/${mes}/${ano}`;
+
+                // Se tiver mensagem, exibe. Se não tiver, exibe padrão.
+                let textoRegra = regra.indisponivel 
+                    ? `<span style="color:var(--danger); font-weight:bold;">⛔ FECHADO${regra.mensagem ? ` (${regra.mensagem})` : ''}</span>`
+                    : `⏰ Horários: ${regra.horarios}`;
+
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:between; align-items:center; background:#fff; padding:10px; border-radius:6px; border:1px solid #ddd; justify-content: space-between;">
+                        <div>
+                            <strong>${dataFormatadaVisivel}</strong> — ${textoRegra}
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button type="button" title="Editar" onclick="window.editarExcecaoData('${dataString}')" style="background:none; border:none; color:var(--favu-rust); cursor:pointer; font-size:1.1rem;"><i class="fas fa-edit"></i></button>
+                            <button type="button" title="Excluir" onclick="window.deletarExcecaoData('${dataString}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial configurada.</p>';
+        }
+    } catch (error) {
+        console.error("Erro ao listar exceções:", error);
+    }
+};
+
+// NOVA FUNÇÃO: Puxa a regra de volta para os campos para você editar
+window.editarExcecaoData = async function(dataString) {
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+        if (docSnap.exists()) {
+            const regra = docSnap.data()[dataString];
+            if (regra) {
+                document.getElementById('exc-data').value = dataString;
+                document.getElementById('exc-fechado').checked = regra.indisponivel || false;
+                document.getElementById('exc-horas').value = regra.horarios || '';
+                
+                // Preenche a mensagem caso exista (verificando compatibilidade com o HTML)
+                const msgInput = document.getElementById('exc-mensagem');
+                if(msgInput) msgInput.value = regra.mensagem || '';
+                
+                window.toggleExcecaoCampos();
+                
+                // Rola a tela suavemente para cima até o formulário
+                document.getElementById('exc-data').scrollIntoView({behavior: "smooth", block: "center"});
+                window.showToast("Edite os dados e clique em Adicionar Regra");
+            }
+        }
+    } catch (error) {
+        window.showToast('Erro ao carregar dados para edição.', true);
+    }
+};
+
+// Apaga uma exceção criada
+window.deletarExcecaoData = async function(dataString) {
+    if (!confirm(`Deseja remover a regra especial da data ${dataString}?`)) return;
+    
+    window.mostrarLoading(true);
+    try {
+        const docRef = doc(db, 'config', 'agenda_excecoes');
+        await updateDoc(docRef, {
+            [dataString]: deleteField()
+        });
+        window.showToast('Regra removida com sucesso!');
+        window.carregarExcecoesLista();
+    } catch (error) {
+        window.showToast('Erro ao remover regra.', true);
+    }
+    window.mostrarLoading(false);
+};
+
+// Carrega as exceções com a exibição da mensagem de aviso correta para o admin
+window.carregarExcecoesLista = async function() {
+    const container = document.getElementById('lista-excecoes-container');
+    if (!container) return;
+    
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+        container.innerHTML = '';
+        
+        if (docSnap.exists()) {
+            const dados = docSnap.data();
+            const datasOrdenadas = Object.keys(dados).sort();
+            
+            if (datasOrdenadas.length === 0) {
+                container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial configurada.</p>';
+                return;
+            }
+
+            datasOrdenadas.forEach(dataString => {
+                const regra = dados[dataString];
+                const [ano, mes, dia] = dataString.split('-');
+                const dataFormatadaVisivel = `${dia}/${mes}/${ano}`;
+
+                let htmlEdicao = '';
+                if (regra.indisponivel) {
+                    const msgAtual = regra.mensagem || '⛔ FECHADO (Bloqueado)';
+                    htmlEdicao = `
+                        <div style="display:flex; flex-direction:column; flex:1;">
+                            <span style="color:var(--danger); font-size: 0.8rem; font-weight:bold; margin-bottom:2px;">Mensagem exibida no site:</span>
+                            <input type="text" value="${msgAtual}" onchange="window.atualizarExcecaoInline('${dataString}', 'mensagem', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: var(--danger); font-weight: bold; width: 100%; transition: 0.2s;" placeholder="Digite o aviso...">
+                        </div>`;
+                } else {
+                    const hrsAtual = regra.horarios || '';
+                    const previewGerado = window.previewHorariosAdmin ? window.previewHorariosAdmin(hrsAtual).join(', ') : '';
+                    htmlEdicao = `
+                        <div style="display:flex; flex-direction:column; flex:1;">
+                            <span style="color:var(--favu-moss); font-size: 0.8rem; font-weight:bold; margin-bottom:2px;">Turnos/Horários:</span>
+                            <input type="text" value="${hrsAtual}" onchange="window.atualizarExcecaoInline('${dataString}', 'horarios', this.value)" style="border: 1px dashed transparent; background: transparent; padding: 4px; border-radius: 4px; color: #333; font-weight: bold; width: 100%; transition: 0.2s;" placeholder="Ex: 8h às 12h, 15h às 20h">
+                            <small style="color:#777; font-size:0.75rem; margin-top:3px;"><strong>Horários:</strong> ${previewGerado || 'Nenhum'}</small>
+                        </div>`;
+                }
+
+                container.innerHTML += `
+                    <div style="display:flex; align-items:center; background:#fff; padding:12px; border-radius:8px; border:1px solid #ddd; gap: 15px; margin-bottom: 8px;">
+                        <div style="background: rgba(0,0,0,0.05); padding: 8px 12px; border-radius: 6px; white-space:nowrap;">
+                            <strong>${dataFormatadaVisivel}</strong>
+                        </div>
+                        ${htmlEdicao}
+                        <button type="button" onclick="window.deletarExcecaoData('${dataString}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.2rem; padding: 10px;"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+            });
+        } else {
+            container.innerHTML = '<p style="color:#888; font-size:0.9rem;">Nenhuma data especial configurada.</p>';
+        }
+    } catch (error) {
+        console.error("Erro ao listar exceções:", error);
+    }
+};
+
+// Apaga uma exceção criada
+window.deletarExcecaoData = async function(dataString) {
+    if (!confirm(`Deseja remover a regra especial da data ${dataString}?`)) return;
+    
+    window.mostrarLoading(true);
+    try {
+        const docRef = doc(db, 'config', 'agenda_excecoes');
+        await updateDoc(docRef, {
+            [dataString]: deleteField()
+        });
+        window.showToast('Regra removida com sucesso!');
+        window.carregarExcecoesLista();
+    } catch (error) {
+        window.showToast('Erro ao remover regra.', true);
+    }
+    window.mostrarLoading(false);
+};
+
 document.getElementById('form-add-agenda').onsubmit = async(e) => {
     e.preventDefault();
     const dataRef = document.getElementById('ag-data').value; 
     const indisponivel = document.getElementById('ag-indisponivel').checked;
-    const horasArray = indisponivel ? [] : document.getElementById('ag-horas').value.split(',').map(h => h.trim()).filter(h => h !== '');
+    // Agora salva o texto puro (ex: "8h às 12h, 15h às 20h") para o site do cliente processar!
+    const horasTexto = indisponivel ? "" : document.getElementById('ag-horas').value.trim();
 
-    await setDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasArray });
+    await setDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasTexto });
     customAlert("Regra de horários salva!");
     window.closeModal('modal-add-agenda', 'form-add-agenda');
     window.loadAgendas();
@@ -1593,9 +1970,9 @@ document.getElementById('form-edit-agenda').onsubmit = async(e) => {
     e.preventDefault();
     const dataRef = document.getElementById('e-ag-data').value;
     const indisponivel = document.getElementById('e-ag-indisponivel').checked;
-    const horasArray = indisponivel ? [] : document.getElementById('e-ag-horas').value.split(',').map(h => h.trim()).filter(h => h !== '');
+    const horasTexto = indisponivel ? "" : document.getElementById('e-ag-horas').value.trim();
 
-    await updateDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasArray });
+    await updateDoc(doc(db, "agenda_horarios", dataRef), { indisponivel: indisponivel, horarios: horasTexto });
     customAlert("Regra atualizada!");
     window.closeModal('modal-editar-agenda', 'form-edit-agenda');
     window.loadAgendas();
@@ -1630,9 +2007,10 @@ async function init() {
     loadTema(); 
     loadCarrossel(); 
     window.inicializarKanban(); 
-    window.setFiltroSemanaAtualVisivel(); // <-- A mágica visual acontece aqui!
+    window.setFiltroSemanaAtualVisivel();
     listenPedidos(); 
-    window.loadAgendas(); 
+    window.carregarConfigAgendaGeral();
+    window.carregarExcecoesLista(); // <-- Carrega a nova lista de exceções
 }
 
 // ==========================================
