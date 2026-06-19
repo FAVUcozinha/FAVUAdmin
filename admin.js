@@ -20,6 +20,7 @@ let globalCategories = [];
 let allProducts = [];
 let allEstoque = []; 
 let allAvisos = [];
+let currentAvisosTab = 'ativos';
 let currentCategoryFilter = '';
 
 // ==========================================
@@ -245,52 +246,134 @@ window.enviarEmailRecuperacao = async function() {
 };
 
 // ==========================================
-// COMPRESSÃO E UPLOAD DE IMAGEM (FIREBASE STORAGE)
+// COMPRESSÃO E UPLOAD DE IMAGEM
 // ==========================================
-window.compressImage = function(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
-    return new Promise((resolve) => {
+window.compressImage = function(file, maxWidth = 900, maxHeight = 900, quality = 0.72) {
+    return new Promise((resolve, reject) => {
+        if (!file) return reject(new Error("Nenhum arquivo selecionado."));
+        if (!file.type || !file.type.startsWith("image/")) {
+            return reject(new Error("O arquivo selecionado não é uma imagem válida."));
+        }
+
         const reader = new FileReader();
-        reader.readAsDataURL(file);
+        reader.onerror = () => reject(new Error("Não foi possível ler a imagem selecionada."));
         reader.onload = event => {
             const img = new Image();
-            img.src = event.target.result;
+            img.onerror = () => reject(new Error("Não foi possível carregar a imagem para compactação."));
             img.onload = () => {
                 let width = img.width;
                 let height = img.height;
+
                 if (width > height) {
-                    if (width > maxWidth) { height = Math.round((height *= maxWidth / width)); width = maxWidth; }
-                } else {
-                    if (height > maxHeight) { width = Math.round((width *= maxHeight / height)); height = maxHeight; }
+                    if (width > maxWidth) {
+                        height = Math.round(height * (maxWidth / width));
+                        width = maxWidth;
+                    }
+                } else if (height > maxHeight) {
+                    width = Math.round(width * (maxHeight / height));
+                    height = maxHeight;
                 }
+
                 const canvas = document.createElement('canvas');
-                canvas.width = width; canvas.height = height;
+                canvas.width = width;
+                canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Converte de volta para arquivo, mas compactado!
+
                 canvas.toBlob(blob => {
-                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
+                    if (!blob) return reject(new Error("Não foi possível compactar a imagem."));
+
+                    const baseName = (file.name || "imagem")
+                        .replace(/\.[^/.]+$/, "")
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-zA-Z0-9_-]/g, '_')
+                        .slice(0, 60);
+
+                    resolve(new File([blob], `${baseName || 'imagem'}.jpg`, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    }));
                 }, 'image/jpeg', quality);
             };
+            img.src = event.target.result;
         };
+        reader.readAsDataURL(file);
     });
 };
 
+window.fileToDataURL = function(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Não foi possível converter a imagem."));
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+    });
+};
+
+// Enquanto o CORS do Firebase Storage não estiver corrigido, deixe false.
+// Assim as imagens são salvas diretamente no Firestore como Base64 e o site volta a funcionar sem erro de CORS.
+// Depois de aplicar o cors.json no bucket, você pode trocar para true.
+const USAR_FIREBASE_STORAGE = false;
+
+async function salvarImagemBase64(compressedFile) {
+    const dataUrl = await window.fileToDataURL(compressedFile);
+
+    // Evita estourar o limite de 1MB por documento do Firestore.
+    if (dataUrl.length > 900000) {
+        throw new Error("Imagem compactada ficou grande demais para salvar no banco. Tente uma imagem menor.");
+    }
+
+    return dataUrl;
+}
+
 async function upImg(file) {
+    if (!file) return "";
+
+    let compressedFile;
     try {
-        // Aplica a compressão antes de enviar!
-        const compressedFile = await window.compressImage(file);
-        
-        const filename = `imagens/${Date.now()}_${compressedFile.name}`;
+        compressedFile = await window.compressImage(file);
+    } catch (e) {
+        console.error("Erro ao compactar imagem:", e);
+        customAlert("Não foi possível preparar a imagem selecionada.", "Erro no upload");
+        throw e;
+    }
+
+    // MODO COMPATIBILIDADE: não chama o Storage, então não gera erro de CORS.
+    if (!USAR_FIREBASE_STORAGE) {
+        try {
+            return await salvarImagemBase64(compressedFile);
+        } catch (fallbackError) {
+            console.error("Falha ao salvar imagem em Base64:", fallbackError);
+            customAlert("Erro ao salvar imagem. Tente uma imagem menor ou mais leve.", "Erro no upload");
+            throw fallbackError;
+        }
+    }
+
+    // MODO STORAGE: use somente depois de aplicar corretamente o CORS no bucket.
+    try {
+        const safeName = compressedFile.name || `imagem_${Date.now()}.jpg`;
+        const filename = `imagens/${Date.now()}_${safeName}`;
         const storageRef = ref(storage, filename);
-        const snapshot = await uploadBytes(storageRef, compressedFile);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        return downloadURL;
-    } catch(e) { 
-        console.error("Erro no upload:", e);
-        customAlert("Erro no upload da imagem.", "Atenção"); 
-        return ""; 
+
+        const snapshot = await uploadBytes(storageRef, compressedFile, {
+            contentType: 'image/jpeg',
+            cacheControl: 'public,max-age=31536000'
+        });
+
+        return await getDownloadURL(snapshot.ref);
+    } catch (storageError) {
+        console.warn("Firebase Storage bloqueou o upload. Usando fallback em Base64 no Firestore:", storageError);
+        try {
+            return await salvarImagemBase64(compressedFile);
+        } catch (fallbackError) {
+            console.error("Falha também no fallback de imagem:", fallbackError);
+            customAlert("Erro ao enviar imagem. Verifique o CORS/permissões do Firebase Storage ou tente uma imagem menor.", "Erro no upload");
+            throw fallbackError;
+        }
     }
 }
+window.upImg = upImg;
 
 window.previewImage = function(input, imgId, btnId, noneId, hiddenFlagId) {
     const file = input.files[0];
@@ -331,7 +414,18 @@ window.toggleAll = function(headerCheckbox, type) {
 window.checkSelection = function(type) {
     const checked = document.querySelectorAll(`#tbl-${type} .row-checkbox:checked`).length;
     const bar = document.getElementById(`bulk-actions-${type}`);
-    document.getElementById(`count-${type}`).textContent = checked;
+    const countEl = document.getElementById(`count-${type}`);
+    if (countEl) countEl.textContent = checked;
+
+    if (type === 'categorias') {
+        const label = document.getElementById('bulk-label-categorias');
+        if (label) label.innerHTML = `<strong id="count-categorias">${checked}</strong> ${checked === 1 ? 'categoria' : 'categorias'}`;
+    }
+    if (type === 'avisos') {
+        const label = document.getElementById('bulk-label-avisos');
+        if (label) label.innerHTML = `<strong id="count-avisos">${checked}</strong> ${checked === 1 ? 'comunicado' : 'comunicados'}`;
+    }
+
     if(checked > 0) bar.classList.add('active'); else bar.classList.remove('active');
 };
 
@@ -363,63 +457,637 @@ window.bulkDelete = function(type) {
 
 document.getElementById('search-cat').addEventListener('input', () => { window.renderCatsTable(); });
 
+function normalizeDateBR(dateValue) {
+    if (!dateValue) return '-';
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        const [y, m, d] = dateValue.split('-');
+        return `${d}/${m}/${y}`;
+    }
+    const d = new Date(dateValue);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+}
+
+function getScheduleParts(c, prefix) {
+    const dateKey = `${prefix}Data`;
+    const timeKey = `${prefix}Hora`;
+    let data = c[dateKey] || '';
+    let hora = c[timeKey] || '';
+
+    // Compatibilidade com categorias antigas que só tinham timestamp em inicio/fim
+    const timestamp = c[prefix];
+    if ((!data || !hora) && timestamp) {
+        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        const d = new Date(timestamp - tzOffset);
+        if (!isNaN(d.getTime())) {
+            if (!data) data = d.toISOString().split('T')[0];
+            if (!hora) hora = d.toISOString().split('T')[1].slice(0, 5);
+        }
+    }
+
+    return { data, hora };
+}
+
+function formatScheduleValue(data, hora) {
+    const dataBR = normalizeDateBR(data);
+    const parts = [];
+
+    if (dataBR && dataBR !== '-') parts.push(dataBR);
+    if (hora) parts.push(hora);
+
+    return parts.length ? parts.join(' | ') : '-';
+}
+
+function formatScheduleLine(label, data, hora) {
+    const value = formatScheduleValue(data, hora);
+    return value === '-' ? '' : `${label}: ${value}`;
+}
+
+function buildOptionalTimestamp(data, hora, isFim = false) {
+    // Permite salvar apenas data ou apenas hora. Timestamp só existe quando há data.
+    if (!data) return null;
+    const finalHora = hora || (isFim ? '23:59' : '00:00');
+    const d = new Date(`${data}T${finalHora}`);
+    return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function getCatScheduleFromForm(prefix) {
+    const inicioData = document.getElementById(`${prefix}-inid`).value || '';
+    const inicioHora = document.getElementById(`${prefix}-inih`).value || '';
+    const fimData = document.getElementById(`${prefix}-fimd`).value || '';
+    const fimHora = document.getElementById(`${prefix}-fimh`).value || '';
+
+    return {
+        inicioData,
+        inicioHora,
+        fimData,
+        fimHora,
+        inicio: buildOptionalTimestamp(inicioData, inicioHora, false),
+        fim: buildOptionalTimestamp(fimData, fimHora, true)
+    };
+}
+
+function orderedCategoriesList() {
+    return [...globalCategories].sort((a, b) => {
+        const ao = (a.ordem !== undefined && a.ordem !== null && Number.isFinite(Number(a.ordem))) ? Number(a.ordem) : null;
+        const bo = (b.ordem !== undefined && b.ordem !== null && Number.isFinite(Number(b.ordem))) ? Number(b.ordem) : null;
+        if (ao !== null && bo !== null && ao !== bo) return ao - bo;
+        if (ao !== null && bo === null) return -1;
+        if (ao === null && bo !== null) return 1;
+        return window.sortAlfabetico(a.nome, b.nome);
+    });
+}
+
+async function reorderCategoriesAlphabetically() {
+    const snap = await getDocs(collection(db, "categorias"));
+    const cats = [];
+    snap.forEach(d => cats.push({ id: d.id, ...d.data() }));
+    cats.sort((a, b) => window.sortAlfabetico(a.nome, b.nome));
+    await Promise.all(cats.map((c, index) => updateDoc(doc(db, "categorias", c.id), { ordem: index })));
+}
+
 async function syncCats() {
     const snap = await getDocs(collection(db, "categorias"));
     globalCategories = []; snap.forEach(d => { const c = d.data(); c.id = d.id; globalCategories.push(c); });
     window.renderCatsTable();
 }
 
+
+function sanitizeRichText(html) {
+    const raw = (html || '').toString();
+    const container = document.createElement('div');
+    container.innerHTML = raw;
+
+    const allowedTags = ['B', 'STRONG', 'I', 'EM', 'U', 'BR', 'DIV', 'P', 'SPAN'];
+    const allowedAlignments = ['left', 'right', 'center', 'justify'];
+    const walk = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, null);
+    const nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+
+    nodes.forEach(node => {
+        if (!allowedTags.includes(node.tagName)) {
+            node.replaceWith(...Array.from(node.childNodes));
+            return;
+        }
+
+        let textAlign = '';
+        const styleAttr = node.getAttribute('style') || '';
+        const styleMatch = styleAttr.match(/text-align\s*:\s*(left|right|center|justify)/i);
+        const alignAttr = (node.getAttribute('align') || '').toLowerCase();
+        if (styleMatch) textAlign = styleMatch[1].toLowerCase();
+        if (!textAlign && allowedAlignments.includes(alignAttr)) textAlign = alignAttr;
+
+        Array.from(node.attributes).forEach(attr => node.removeAttribute(attr.name));
+        if (allowedAlignments.includes(textAlign)) node.style.textAlign = textAlign;
+    });
+
+    return container.innerHTML
+        .replace(/<div><br><\/div>/gi, '<br>')
+        .replace(/<p><br><\/p>/gi, '<br>')
+        .trim();
+}
+
+window.focusCatEditor = function(prefix) {
+    const editor = document.getElementById(`${prefix}-obs-editor`);
+    if (editor) editor.focus();
+};
+
+window.execCatRichText = function(command, prefix) {
+    const editor = prefix ? document.getElementById(`${prefix}-obs-editor`) : document.querySelector('.cat-rich-editor:focus');
+    if (editor) editor.focus();
+    document.execCommand(command, false, null);
+};
+
+window.getCatRichText = function(prefix) {
+    const editor = document.getElementById(`${prefix}-obs-editor`);
+    if (!editor) return document.getElementById(`${prefix}-obs`)?.value?.trim() || '';
+    const html = sanitizeRichText(editor.innerHTML);
+    const hidden = document.getElementById(`${prefix}-obs`);
+    if (hidden) hidden.value = html;
+    return html;
+};
+
+window.setCatRichText = function(prefix, value) {
+    const editor = document.getElementById(`${prefix}-obs-editor`);
+    const hidden = document.getElementById(`${prefix}-obs`);
+    const safe = sanitizeRichText(value || '');
+    if (editor) editor.innerHTML = safe;
+    if (hidden) hidden.value = safe;
+};
+
+// ==========================================
+// EDITOR RICO DE COMUNICADOS
+// ==========================================
+window.focusAvisoEditor = function(prefix) {
+    const editor = document.getElementById(`${prefix}-txt-editor`);
+    if (editor) editor.focus();
+};
+
+window.execAvisoRichText = function(command, prefix) {
+    const editor = document.getElementById(`${prefix}-txt-editor`);
+    if (editor) editor.focus();
+    document.execCommand(command, false, null);
+};
+
+window.getAvisoRichText = function(prefix) {
+    const editor = document.getElementById(`${prefix}-txt-editor`);
+    const hidden = document.getElementById(`${prefix}-txt`);
+    const html = editor ? sanitizeRichText(editor.innerHTML) : (hidden?.value || '').trim();
+    if (hidden) hidden.value = html;
+    return html;
+};
+
+window.setAvisoRichText = function(prefix, value) {
+    const editor = document.getElementById(`${prefix}-txt-editor`);
+    const hidden = document.getElementById(`${prefix}-txt`);
+    const safe = sanitizeRichText(value || '');
+    if (editor) editor.innerHTML = safe;
+    if (hidden) hidden.value = safe;
+};
+
+window.setAvisoImagePosition = function(prefix, value) {
+    const input = document.getElementById(`${prefix}-img-pos`);
+    if (input) input.value = value;
+    ['top', 'bottom'].forEach(pos => {
+        const btn = document.getElementById(`${prefix}-img-pos-${pos}`);
+        if (btn) btn.classList.toggle('active', pos === value);
+    });
+};
+
+function formatAvisoScheduleLine(label, timestamp) {
+    if (!timestamp || isNaN(Number(timestamp))) return '';
+    const d = new Date(Number(timestamp));
+    if (isNaN(d.getTime())) return '';
+    const data = d.toLocaleDateString('pt-BR');
+    const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `${label}: ${data} | ${hora}`;
+}
+
+function renderAvisoScheduleHtml(a) {
+    const linhas = [
+        formatAvisoScheduleLine('Início', a.inicio),
+        formatAvisoScheduleLine('Fim', a.fim)
+    ].filter(Boolean);
+    return linhas.length ? linhas.map(l => `<span class="aviso-period-line">${l}</span>`).join('') : '<span class="aviso-period-line">-</span>';
+}
+
+function getAvisoScheduleValue(timestamp) {
+    if (!timestamp || isNaN(Number(timestamp))) return '-';
+    const d = new Date(Number(timestamp));
+    if (isNaN(d.getTime())) return '-';
+    return `${d.toLocaleDateString('pt-BR')} | ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+
+function buildOptionalAvisoTimestamp(data, hora, isFim = false) {
+    if (!data) return null;
+    const finalHora = hora || (isFim ? '23:59' : '00:00');
+    const d = new Date(`${data}T${finalHora}`);
+    return isNaN(d.getTime()) ? null : d.getTime();
+}
+
+function getAvisoScheduleFromForm(prefix) {
+    const inicioData = document.getElementById(`${prefix}-inid`).value || '';
+    const inicioHora = document.getElementById(`${prefix}-inih`).value || '';
+    const fimData = document.getElementById(`${prefix}-fimd`).value || '';
+    const fimHora = document.getElementById(`${prefix}-fimh`).value || '';
+    return {
+        inicio: buildOptionalAvisoTimestamp(inicioData, inicioHora, false),
+        fim: buildOptionalAvisoTimestamp(fimData, fimHora, true)
+    };
+}
+
+function setAvisoScheduleFields(prefix, inicio, fim) {
+    const setParts = (base, timestamp) => {
+        const dataEl = document.getElementById(`${prefix}-${base}d`);
+        const horaEl = document.getElementById(`${prefix}-${base}h`);
+        if (!timestamp || isNaN(Number(timestamp))) {
+            if (dataEl) dataEl.value = '';
+            if (horaEl) horaEl.value = '';
+            return;
+        }
+        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        const d = new Date(Number(timestamp) - tzOffset);
+        if (isNaN(d.getTime())) return;
+        if (dataEl) dataEl.value = d.toISOString().split('T')[0];
+        if (horaEl) horaEl.value = d.toISOString().split('T')[1].slice(0, 5);
+    };
+    setParts('ini', inicio);
+    setParts('fim', fim);
+}
+
+function getAvisoStatus(a) {
+    const isAtivo = a.ativo !== false;
+    const agora = Date.now();
+    const inicio = Number(a.inicio) || 0;
+    const fim = Number(a.fim) || 0;
+    if (!isAtivo) return { st: 'Oculto', stClass: 'inativo', grupo: 'inativos' };
+    if (inicio && agora < inicio) return { st: 'Agendado', stClass: 'agendado', grupo: 'ativos' };
+    if (!fim || agora <= fim) return { st: 'Andamento', stClass: 'ativo', grupo: 'ativos' };
+    return { st: 'Concluso', stClass: 'concluso', grupo: 'inativos' };
+}
+
+function orderedAvisosList() {
+    return [...allAvisos].sort((a, b) => {
+        const ao = (a.ordem !== undefined && a.ordem !== null && Number.isFinite(Number(a.ordem))) ? Number(a.ordem) : null;
+        const bo = (b.ordem !== undefined && b.ordem !== null && Number.isFinite(Number(b.ordem))) ? Number(b.ordem) : null;
+        if (ao !== null && bo !== null && ao !== bo) return ao - bo;
+        if (ao !== null && bo === null) return -1;
+        if (ao === null && bo !== null) return 1;
+        return (Number(a.inicio) || 0) - (Number(b.inicio) || 0);
+    });
+}
+
+window.switchAvisosTab = function(tab) {
+    currentAvisosTab = tab === 'inativos' ? 'inativos' : 'ativos';
+    document.getElementById('tab-avisos-ativos')?.classList.toggle('active', currentAvisosTab === 'ativos');
+    document.getElementById('tab-avisos-inativos')?.classList.toggle('active', currentAvisosTab === 'inativos');
+    window.clearSelection('avisos');
+    window.renderAvisosTable();
+};
+
+function renderClickableAvisoImage(url, className = 'img-preview') {
+    if (!url) return '';
+    const safeUrl = escapeHTML(url);
+    return `<img src="${safeUrl}" class="${className} aviso-clickable-img" alt="Imagem do comunicado" title="Clique para ampliar" style="cursor:pointer;" onclick="event.stopPropagation(); window.openAvisoImagePreview(this.src)">`;
+}
+
+window.openAvisoImagePreview = function(url) {
+    if (!url) return;
+
+    let modal = document.getElementById('modal-preview-aviso-img');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-preview-aviso-img';
+        modal.className = 'modal';
+        modal.style.zIndex = '100001';
+        modal.onclick = function(event) {
+            if (event.target === modal) window.closeAvisoImagePreview();
+        };
+
+        modal.innerHTML = `
+            <div class="popup-conteudo" style="max-width: 920px; padding: 22px; position: relative;">
+                <button class="close-modal" style="position:absolute; right:18px; top:12px;" onclick="window.closeAvisoImagePreview()">&times;</button>
+                <img id="aviso-img-preview-expanded" alt="Imagem do comunicado ampliada" style="display:block; max-width:100%; max-height:75vh; object-fit:contain; border-radius:16px; margin:0 auto;">
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    const img = document.getElementById('aviso-img-preview-expanded');
+    if (img) img.src = url;
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.closeAvisoImagePreview = function() {
+    const modal = document.getElementById('modal-preview-aviso-img');
+    if (!modal) return;
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        const img = document.getElementById('aviso-img-preview-expanded');
+        if (img) img.src = '';
+    }, 300);
+};
+
+function buildAvisoMobilePreview(a) {
+    const pos = a.posicaoImagem || 'top';
+    const img = a.imagemUrl ? renderClickableAvisoImage(a.imagemUrl, '') : '';
+    const texto = sanitizeRichText(a.texto || '') || '-';
+    return `<div class="aviso-mobile-preview aviso-img-${pos}">${pos === 'top' ? img : ''}<div class="aviso-mobile-text">${texto}</div>${pos === 'bottom' ? img : ''}</div>`;
+}
+
+
+function escapeHTML(value) {
+    return (value || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function stripCatNotice(value) {
+    const temp = document.createElement('div');
+    temp.innerHTML = sanitizeRichText(value || '');
+    return (temp.textContent || temp.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
+function renderCatNoticeBadge(value) {
+    const hasNotice = !!stripCatNotice(value);
+    return `<span class="badge cat-notice-badge ${hasNotice ? 'ativo' : 'inativo'}">${hasNotice ? 'Possui' : 'Não possui'}</span>`;
+}
+
+function renderCatNoticeSummary(value) {
+    return renderCatNoticeBadge(value);
+}
+
+function renderCatNoticeStatus(value) {
+    return renderCatNoticeBadge(value);
+}
+
 window.renderCatsTable = function() {
-    const tb = document.querySelector('#tbl-categorias tbody'); tb.innerHTML = "";
+    const tb = document.querySelector('#tbl-categorias tbody');
+    tb.innerHTML = "";
     let opts = `<option value="">Selecione...</option>`;
     const searchTerm = document.getElementById('search-cat').value.toLowerCase();
-    
-    const sorted = globalCategories.sort((a, b) => window.sortAlfabetico(a.nome, b.nome));
+
+    const sorted = orderedCategoriesList();
     sorted.forEach(c => { opts += `<option value="${c.nome}">${c.nome}</option>`; });
 
-    sorted.filter(c => `${c.nome} ${c.minTotal||0} ${c.tipoColuna} ${c.mensagemObs||''} ${c.ativo?'ativa':'oculta'}`.toLowerCase().includes(searchTerm)).forEach(c => {
-        const isAtivo = c.ativo !== false; 
-        tb.innerHTML += `<tr>
-            <td data-label="Sel:" style="text-align: center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${c.id}" onchange="window.checkSelection('categorias')"></td>
-            <td data-label="Categoria:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${c.nome}</strong></td>
-            <td data-label="Mín. Total:">${c.minTotal}</td><td data-label="Exibição:">${c.tipoColuna}</td>
-            <td data-label="Aviso Destacado:"><small>${c.mensagemObs || '-'}</small></td>
-            <td data-label="Status:"><span class="badge ${isAtivo ? 'ativo' : 'inativo'}">${isAtivo ? 'Ativa' : 'Oculta'}</span></td>
-            <td data-label="Ações:">
-                <div class="action-btns-wrapper">
-                    <button class="btn-action edit" onclick="window.openEditCat('${c.id}')"><i class="fas fa-pen"></i></button>
-                    <button class="btn-action toggle" onclick="window.togC('${c.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
-                    <button class="btn-action del" onclick="window.delC('${c.id}')"><i class="fas fa-trash"></i></button>
-                </div>
-            </td>
-        </tr>`;
+    sorted
+        .filter(c => `${c.nome} ${c.minTotal||0} ${c.tipoColuna} ${c.mensagemObs||''} ${c.ativo?'ativa':'oculta'} ${getScheduleParts(c, 'inicio').data} ${getScheduleParts(c, 'fim').data}`.toLowerCase().includes(searchTerm))
+        .forEach(c => {
+            const isAtivo = c.ativo !== false;
+            const ini = getScheduleParts(c, 'inicio');
+            const fim = getScheduleParts(c, 'fim');
+            const iniData = normalizeDateBR(ini.data);
+            const fimData = normalizeDateBR(fim.data);
+            const iniResumo = formatScheduleValue(ini.data, ini.hora);
+            const fimResumo = formatScheduleValue(fim.data, fim.hora);
+            const programacaoLinhas = [
+                formatScheduleLine('Início', ini.data, ini.hora),
+                formatScheduleLine('Fim', fim.data, fim.hora)
+            ].filter(Boolean);
+            const programacaoHtml = programacaoLinhas.length
+                ? programacaoLinhas.map(linha => `<span class="cat-period-line">${linha}</span>`).join('')
+                : '<span class="cat-period-line">-</span>';
+
+            tb.innerHTML += `<tr data-cat-id="${c.id}" class="cat-row">
+                <td class="cat-order-cell" data-label="Ordem:" style="text-align:center;"><button type="button" class="cat-drag-handle" title="Arrastar para reorganizar" onpointerdown="window.catPointerDown(event, '${c.id}')"><i class="fas fa-grip-lines"></i></button></td>
+                <td class="cat-select-cell" data-label="Selecionar:" style="text-align:center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${c.id}" onchange="window.checkSelection('categorias')"></td>
+                <td class="cat-name-cell" data-label="Categoria:" onpointerdown="window.catMobilePointerDown(event, '${c.id}')"><strong style="color:var(--favu-rust); font-size:1.1rem;">${c.nome}</strong></td>
+                <td class="cat-min-cell" data-label="Mínimo:">${c.minTotal ?? 0}</td>
+                <td class="cat-medida-cell" data-label="Medida:">${c.tipoColuna || '-'}</td>
+                <td class="cat-notice-cell" data-label="Aviso:"><small class="cat-notice-summary"><span class="cat-notice-desktop">${renderCatNoticeSummary(c.mensagemObs)}</span><span class="cat-notice-mobile">${renderCatNoticeStatus(c.mensagemObs)}</span></small></td>
+                <td class="cat-period-cell desktop-schedule-cell" data-label="Programação:">
+                    ${programacaoHtml}
+                </td>
+                <td class="cat-mobile-start mobile-schedule-cell" data-label="Início:">${iniResumo}</td>
+                <td class="cat-mobile-end mobile-schedule-cell" data-label="Fim:">${fimResumo}</td>
+                <td class="cat-status-cell" data-label="Status:"><span class="badge ${isAtivo ? 'ativo' : 'inativo'}">${isAtivo ? 'Ativa' : 'Oculta'}</span></td>
+                <td class="cat-actions-cell" data-label="Ações:">
+                    <div class="action-btns-wrapper">
+                        <button class="btn-action edit" onclick="window.openEditCat('${c.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn-action copy" title="Copiar categoria" onclick="window.copyCat('${c.id}')"><i class="fas fa-copy"></i></button>
+                        <button class="btn-action toggle ${isAtivo ? 'cat-toggle-visible' : 'cat-toggle-hidden'}" onclick="window.togC('${c.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
+                        <button class="btn-action del" onclick="window.delC('${c.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+    document.querySelectorAll('.cat-select').forEach(sel => {
+        const v = sel.value;
+        sel.innerHTML = opts;
+        sel.value = v;
     });
-    document.querySelectorAll('.cat-select').forEach(sel => { const v = sel.value; sel.innerHTML = opts; sel.value = v; });
 }
+
+let draggingCategoryId = null;
+
+window.catDragStart = function(event, id) {
+    if (!event.target.closest('.cat-drag-handle')) {
+        event.preventDefault();
+        return;
+    }
+    draggingCategoryId = id;
+    event.currentTarget.classList.add('cat-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', id);
+};
+
+window.catDragOver = function(event) {
+    event.preventDefault();
+    const draggingRow = document.querySelector('#tbl-categorias tr.cat-dragging');
+    const overRow = event.currentTarget;
+    if (!draggingRow || draggingRow === overRow) return;
+    const tbody = overRow.parentNode;
+    const rect = overRow.getBoundingClientRect();
+    const insertAfter = (event.clientY - rect.top) > rect.height / 2;
+    tbody.insertBefore(draggingRow, insertAfter ? overRow.nextSibling : overRow);
+};
+
+window.catDrop = function(event) {
+    event.preventDefault();
+};
+
+window.catDragEnd = async function(event) {
+    event.currentTarget.classList.remove('cat-dragging');
+    const rows = Array.from(document.querySelectorAll('#tbl-categorias tbody tr[data-cat-id]'));
+    const ids = rows.map(row => row.dataset.catId);
+    if (!ids.length || !draggingCategoryId) return;
+
+    ids.forEach((id, index) => {
+        const cat = globalCategories.find(c => c.id === id);
+        if (cat) cat.ordem = index;
+    });
+
+    try {
+        await Promise.all(ids.map((id, index) => updateDoc(doc(db, "categorias", id), { ordem: index })));
+    } catch (err) {
+        console.error('Erro ao salvar ordem das categorias:', err);
+        customAlert('Não foi possível salvar a nova ordem das categorias.', 'Atenção');
+        syncCats();
+    } finally {
+        draggingCategoryId = null;
+    }
+};
+
+
+let catPointerDrag = null;
+
+function persistCategoryOrderFromDOM() {
+    const rows = Array.from(document.querySelectorAll('#tbl-categorias tbody tr[data-cat-id]'));
+    const ids = rows.map(row => row.dataset.catId);
+    ids.forEach((id, index) => {
+        const cat = globalCategories.find(c => c.id === id);
+        if (cat) cat.ordem = index;
+    });
+    return Promise.all(ids.map((id, index) => updateDoc(doc(db, "categorias", id), { ordem: index })));
+}
+
+function startCategoryPointerSort(event, id, options = {}) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    const handle = event.currentTarget;
+    const row = handle.closest('tr[data-cat-id]');
+    const tbody = row ? row.parentElement : null;
+    if (!row || !tbody) return;
+
+    if (event.target.closest('input, select, textarea, button:not(.cat-drag-handle), .btn-action, a')) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const delay = options.delay || 0;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let active = false;
+    let didMove = false;
+    let cancelled = false;
+    let timer = null;
+
+    const begin = () => {
+        if (active || cancelled) return;
+        active = true;
+        draggingCategoryId = id;
+        catPointerDrag = { row, id };
+        row.classList.add('cat-dragging');
+        document.body.classList.add('cat-sorting-active');
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'grabbing';
+    };
+
+    const moveRowByPointer = (clientY) => {
+        const rows = Array.from(tbody.querySelectorAll('tr[data-cat-id]')).filter(r => r !== row);
+        if (!rows.length) return;
+
+        for (const targetRow of rows) {
+            const rect = targetRow.getBoundingClientRect();
+            const middle = rect.top + rect.height / 2;
+            if (clientY < middle) {
+                if (row.nextElementSibling !== targetRow) tbody.insertBefore(row, targetRow);
+                return;
+            }
+        }
+        tbody.appendChild(row);
+    };
+
+    const cleanup = () => {
+        clearTimeout(timer);
+        document.removeEventListener('pointermove', onMove, true);
+        document.removeEventListener('pointerup', onUp, true);
+        document.removeEventListener('pointercancel', onUp, true);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    };
+
+    const cancelBeforeStart = () => {
+        cancelled = true;
+        cleanup();
+    };
+
+    const onMove = (moveEvent) => {
+        const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+
+        if (!active) {
+            // Em telas não desktop, permite clicar/segurar e mover a categoria.
+            // Antes o movimento antes do timeout cancelava o drag, deixando a linha travada.
+            if (delay && dist > 8) {
+                begin();
+            } else if (!delay) {
+                begin();
+            } else {
+                return;
+            }
+        }
+
+        didMove = true;
+        moveEvent.preventDefault();
+        moveEvent.stopPropagation();
+        moveRowByPointer(moveEvent.clientY);
+    };
+
+    const onUp = async (upEvent) => {
+        cleanup();
+        if (!active) return;
+
+        upEvent.preventDefault();
+        upEvent.stopPropagation();
+
+        row.classList.remove('cat-dragging');
+        document.body.classList.remove('cat-sorting-active');
+        catPointerDrag = null;
+
+        try {
+            if (didMove) await persistCategoryOrderFromDOM();
+        } catch (err) {
+            console.error('Erro ao salvar ordem das categorias:', err);
+            customAlert('Não foi possível salvar a nova ordem das categorias.', 'Atenção');
+            syncCats();
+        } finally {
+            draggingCategoryId = null;
+        }
+    };
+
+    document.addEventListener('pointermove', onMove, true);
+    document.addEventListener('pointerup', onUp, true);
+    document.addEventListener('pointercancel', onUp, true);
+
+    if (delay) timer = setTimeout(begin, delay);
+    else begin();
+}
+
+window.catPointerDown = function(event, id) {
+    event.preventDefault();
+    startCategoryPointerSort(event, id, { delay: 0 });
+};
+
+window.catMobilePointerDown = function(event, id) {
+    if (window.innerWidth > 1024) return;
+    event.preventDefault();
+    startCategoryPointerSort(event, id, { delay: 280 });
+};
 
 document.getElementById('form-add-cat').onsubmit = async(e) => {
     e.preventDefault(); 
     const nm = document.getElementById('ac-nome').value.trim();
-    
-    // Pega as datas se o checkbox estiver marcado
-    const agendar = document.getElementById('ac-agendar').checked;
-    let dataInicio = null, dataFim = null;
-    if (agendar) {
-        dataInicio = new Date(`${document.getElementById('ac-inid').value}T${document.getElementById('ac-inih').value}`).getTime();
-        dataFim = new Date(`${document.getElementById('ac-fimd').value}T${document.getElementById('ac-fimh').value}`).getTime();
-    }
+    const schedule = getCatScheduleFromForm('ac');
+    const agendar = !!(schedule.inicioData || schedule.inicioHora || schedule.fimData || schedule.fimHora);
 
     await setDoc(doc(db, "categorias", nm.toLowerCase().replace(/\s/g, '-')), { 
         nome: nm, 
         minTotal: parseInt(document.getElementById('ac-min').value)||0, 
         tipoColuna: document.getElementById('ac-col').value, 
-        mensagemObs: document.getElementById('ac-obs').value.trim(), 
+        mensagemObs: window.getCatRichText('ac'), 
         ativo: true, 
         minIndividual: true,
         agendarVisibilidade: agendar,
-        inicio: dataInicio,
-        fim: dataFim
+        ...schedule
     }); 
+    await reorderCategoriesAlphabetically();
     customAlert("Categoria Criada!"); window.closeModal('modal-add-cat', 'form-add-cat'); syncCats();
 };
 
@@ -429,26 +1097,14 @@ window.openEditCat = async(id) => {
     document.getElementById('ec-nome').value = c.nome;
     document.getElementById('ec-min').value = c.minTotal; 
     document.getElementById('ec-col').value = c.tipoColuna;
-    document.getElementById('ec-obs').value = c.mensagemObs || ''; 
+    window.setCatRichText('ec', c.mensagemObs || ''); 
     
-    // Lida com o Agendamento
-    const agendar = c.agendarVisibilidade || false;
-    document.getElementById('ec-agendar').checked = agendar;
-    document.getElementById('ec-agenda-fields').style.display = agendar ? 'block' : 'none';
-    
-    if (agendar && c.inicio && c.fim) {
-        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-        const dIni = new Date(c.inicio - tzOffset); 
-        document.getElementById('ec-inid').value = dIni.toISOString().split('T')[0]; 
-        document.getElementById('ec-inih').value = dIni.toISOString().split('T')[1].slice(0,5);
-        
-        const dFim = new Date(c.fim - tzOffset); 
-        document.getElementById('ec-fimd').value = dFim.toISOString().split('T')[0]; 
-        document.getElementById('ec-fimh').value = dFim.toISOString().split('T')[1].slice(0,5);
-    } else {
-        document.getElementById('ec-inid').value = ''; document.getElementById('ec-inih').value = '';
-        document.getElementById('ec-fimd').value = ''; document.getElementById('ec-fimh').value = '';
-    }
+    const ini = getScheduleParts(c, 'inicio');
+    const fim = getScheduleParts(c, 'fim');
+    document.getElementById('ec-inid').value = ini.data || '';
+    document.getElementById('ec-inih').value = ini.hora || '';
+    document.getElementById('ec-fimd').value = fim.data || '';
+    document.getElementById('ec-fimh').value = fim.hora || '';
 
     window.openModal('modal-editar-cat');
 };
@@ -456,21 +1112,16 @@ window.openEditCat = async(id) => {
 document.getElementById('form-edit-cat').onsubmit = async(e) => {
     e.preventDefault();
     
-    const agendar = document.getElementById('ec-agendar').checked;
-    let dataInicio = null, dataFim = null;
-    if (agendar) {
-        dataInicio = new Date(`${document.getElementById('ec-inid').value}T${document.getElementById('ec-inih').value}`).getTime();
-        dataFim = new Date(`${document.getElementById('ec-fimd').value}T${document.getElementById('ec-fimh').value}`).getTime();
-    }
+    const schedule = getCatScheduleFromForm('ec');
+    const agendar = !!(schedule.inicioData || schedule.inicioHora || schedule.fimData || schedule.fimHora);
 
     await updateDoc(doc(db, "categorias", document.getElementById('ec-id').value), { 
         nome: document.getElementById('ec-nome').value.trim(), 
         minTotal: parseInt(document.getElementById('ec-min').value)||0, 
         tipoColuna: document.getElementById('ec-col').value, 
-        mensagemObs: document.getElementById('ec-obs').value.trim(),
+        mensagemObs: window.getCatRichText('ec'),
         agendarVisibilidade: agendar,
-        inicio: dataInicio,
-        fim: dataFim
+        ...schedule
     });
     customAlert("Categoria Atualizada!"); window.closeModal('modal-editar-cat', 'form-edit-cat'); syncCats(); loadProds();
 };
@@ -487,6 +1138,50 @@ window.delC = async(id) => {
         globalCategories = globalCategories.filter(c => c.id !== id);
         window.renderCatsTable(); 
     }); 
+};
+
+
+window.copyCat = async function(id) {
+    try {
+        const origemSnap = await getDoc(doc(db, "categorias", id));
+        if (!origemSnap.exists()) {
+            customAlert("Categoria não encontrada para copiar.", "Atenção");
+            return;
+        }
+
+        const origem = origemSnap.data();
+        const nomesUsados = new Set(globalCategories.map(c => (c.nome || '').trim().toLowerCase()));
+        const baseNome = `${origem.nome || 'Categoria'} (cópia)`;
+        let novoNome = baseNome;
+        let contador = 2;
+        while (nomesUsados.has(novoNome.trim().toLowerCase())) {
+            novoNome = `${baseNome} ${contador}`;
+            contador++;
+        }
+
+        const ordered = orderedCategoriesList();
+        const originalIndex = ordered.findIndex(c => c.id === id);
+        const novaOrdem = originalIndex >= 0 ? originalIndex + 1 : ordered.length;
+
+        const catsParaAtualizar = ordered
+            .filter((c, index) => index >= novaOrdem)
+            .map((c, index) => updateDoc(doc(db, "categorias", c.id), { ordem: novaOrdem + index + 1 }));
+
+        await Promise.all(catsParaAtualizar);
+
+        await addDoc(collection(db, "categorias"), {
+            ...origem,
+            nome: novoNome,
+            ordem: novaOrdem
+        });
+
+        customAlert("Categoria copiada!");
+        syncCats();
+        loadProds();
+    } catch (err) {
+        console.error("Erro ao copiar categoria:", err);
+        customAlert("Não foi possível copiar a categoria.", "Atenção");
+    }
 };
 
 document.getElementById('a-cat').addEventListener('change', function() {
@@ -667,7 +1362,7 @@ window.renderProdsTable = function() {
             <td data-label="Sel:" style="text-align: center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${p.id}" onchange="window.checkSelection('produtos')"></td>
             <td data-label="Foto:">${imgTag}</td><td data-label="Nome:"><strong style="color:var(--favu-rust); font-size:1.1rem;">${p.nome}</strong></td>
             <td data-label="Categoria:">${p.categoria}</td><td data-label="Tam:">${p.tamanho||'-'}</td><td data-label="Mín:">${p.min||1}</td>
-            <td data-label="Preço:">R$ ${p.preco.toFixed(2)}</td><td data-label="Desc. Produto:"><small>${p.descricaoItem ? window.formatText(p.descricaoItem) : '-'}</small></td>
+            <td data-label="Preço:">R$ ${(Number(p.preco) || 0).toFixed(2)}</td><td data-label="Desc. Produto:"><small>${p.descricaoItem ? window.formatText(p.descricaoItem) : '-'}</small></td>
             <td data-label="Desc. Resumo:"><small>${p.descricaoResumo ? window.formatText(p.descricaoResumo) : '-'}</small></td><td data-label="Desc. Imagem:"><small>${p.descricaoPopup ? window.formatText(p.descricaoPopup) : '-'}</small></td>
             <td data-label="Status:"><span class="badge ${p.ativo?'ativo':'inativo'}">${p.ativo?'Visível':'Oculto'}</span></td>
             <td data-label="Ações:">
@@ -709,6 +1404,61 @@ document.getElementById('form-add-prod').onsubmit = async(e) => {
     } catch(err) { console.error(err); customAlert("Erro ao salvar.", "Erro"); } finally { btn.innerHTML = 'Salvar Novo Produto'; btn.disabled = false; }
 };
 
+
+window.openEditor = async function(id) {
+    try {
+        const snap = await getDoc(doc(db, "produtos", id));
+        if (!snap.exists()) {
+            customAlert("Produto não encontrado.", "Erro");
+            return;
+        }
+
+        const p = snap.data();
+        const catSelect = document.getElementById('e-cat');
+
+        // Garante que a categoria do produto exista no select, mesmo se a lista ainda não tiver sincronizado.
+        if (p.categoria && catSelect && !Array.from(catSelect.options).some(opt => opt.value === p.categoria)) {
+            const opt = document.createElement('option');
+            opt.value = p.categoria;
+            opt.textContent = p.categoria;
+            catSelect.appendChild(opt);
+        }
+
+        document.getElementById('e-id').value = id;
+        document.getElementById('e-nome').value = p.nome || '';
+        document.getElementById('e-cat').value = p.categoria || '';
+        document.getElementById('e-tam').value = p.tamanho || '';
+        document.getElementById('e-min').value = p.min || 1;
+        document.getElementById('e-preco').value = Number(p.preco) || 0;
+        document.getElementById('e-dmenu').value = p.descricaoItem || '';
+        document.getElementById('e-dres').value = p.descricaoResumo || '';
+        document.getElementById('e-dpop').value = p.descricaoPopup || '';
+
+        document.getElementById('e-file').value = '';
+        document.getElementById('e-file-name').textContent = '';
+        document.getElementById('e-remove-img').value = 'false';
+
+        if (p.imagemUrl) {
+            document.getElementById('e-img-preview').src = p.imagemUrl;
+            document.getElementById('e-img-preview').style.display = 'block';
+            document.getElementById('btn-remove-e-img').style.display = 'inline-flex';
+            document.getElementById('e-img-none').style.display = 'none';
+        } else {
+            document.getElementById('e-img-preview').src = '';
+            document.getElementById('e-img-preview').style.display = 'none';
+            document.getElementById('btn-remove-e-img').style.display = 'none';
+            document.getElementById('e-img-none').style.display = 'block';
+        }
+
+        document.getElementById('e-cat').dispatchEvent(new Event('change'));
+        window.openModal('modal-editar-prod');
+    } catch (err) {
+        console.error("Erro ao abrir edição do produto:", err);
+        customAlert("Erro ao abrir edição do produto. Veja o Console para detalhes.", "Erro");
+    }
+};
+window.openEditProd = window.openEditor;
+
 document.getElementById('e-cat').addEventListener('change', function() {
     const catObj = globalCategories.find(c => c.nome === this.value);
     const showTam = catObj && (catObj.tipoColuna === 'Tamanho' || catObj.tipoColuna === 'Tamanho/Minimo');
@@ -725,7 +1475,7 @@ document.getElementById('form-edit-prod').onsubmit = async(e) => {
         const data = { nome: document.getElementById('e-nome').value, categoria: document.getElementById('e-cat').value, tamanho: document.getElementById('e-tam').value, preco: parseFloat(document.getElementById('e-preco').value)||0, min: parseInt(document.getElementById('e-min').value)||1, descricaoItem: document.getElementById('e-dmenu').value, descricaoResumo: document.getElementById('e-dres').value, descricaoPopup: document.getElementById('e-dpop').value };
         const f = document.getElementById('e-file').files[0]; if (f) data.imagemUrl = await upImg(f); else if (document.getElementById('e-remove-img').value === 'true') data.imagemUrl = ""; 
         await updateDoc(doc(db, "produtos", document.getElementById('e-id').value), data); customAlert("Produto Atualizado!"); window.closeModal('modal-editar-prod', 'form-edit-prod'); loadProds(); 
-    } catch(err) { customAlert("Erro.", "Erro"); } finally { btn.innerHTML = 'Salvar Alterações'; btn.disabled = false; }
+    } catch(err) { console.error('Erro ao salvar produto:', err); customAlert('Erro ao salvar produto. Veja o Console para detalhes.', 'Erro'); } finally { btn.innerHTML = 'Salvar Alterações'; btn.disabled = false; }
 };
 
 window.togP = async(id, s) => { 
@@ -746,48 +1496,166 @@ window.delP = async(id) => {
 
 document.getElementById('search-aviso').addEventListener('input', () => { window.renderAvisosTable(); });
 document.getElementById('form-add-aviso').onsubmit = async(e) => {
-    e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...'; btn.disabled = true;
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+    btn.disabled = true;
     try {
-        let url = ""; const f = document.getElementById('aa-file').files[0]; if(f) url = await upImg(f);
-        await addDoc(collection(db, "avisos"), { titulo: document.getElementById('aa-tit').value, texto: document.getElementById('aa-txt').value, inicio: new Date(`${document.getElementById('aa-inid').value}T${document.getElementById('aa-inih').value}`).getTime(), fim: new Date(`${document.getElementById('aa-fimd').value}T${document.getElementById('aa-fimh').value}`).getTime(), imagemUrl: url, ativo: true });
-        customAlert("Comunicado Agendado!"); window.closeModal('modal-add-aviso', 'form-add-aviso'); loadAvisos();
-    } catch(err) { customAlert("Erro.", "Erro"); } finally { btn.innerHTML = 'Agendar Aviso'; btn.disabled = false; }
+        let url = "";
+        const f = document.getElementById('aa-file').files[0];
+        if(f) url = await upImg(f);
+        const ordem = Date.now();
+        await addDoc(collection(db, "avisos"), {
+            titulo: document.getElementById('aa-tit').value,
+            texto: window.getAvisoRichText('aa'),
+            ...getAvisoScheduleFromForm('aa'),
+            imagemUrl: url,
+            posicaoImagem: document.getElementById('aa-img-pos').value || 'top',
+            ativo: true,
+            ordem
+        });
+        customAlert("Comunicado criado!");
+        window.closeModal('modal-add-aviso', 'form-add-aviso');
+        window.setAvisoRichText('aa', '');
+        window.setAvisoImagePosition('aa', 'top');
+        loadAvisos();
+    } catch(err) {
+        console.error(err);
+        customAlert("Erro ao criar comunicado.", "Erro");
+    } finally {
+        btn.innerHTML = 'Criar Comunicado';
+        btn.disabled = false;
+    }
 };
 
 async function loadAvisos() {
-    const s = await getDocs(collection(db, "avisos")); allAvisos = []; s.forEach(d => allAvisos.push({id: d.id, ...d.data()})); window.renderAvisosTable();
+    const s = await getDocs(collection(db, "avisos"));
+    allAvisos = [];
+    s.forEach(d => allAvisos.push({id: d.id, ...d.data()}));
+    window.renderAvisosTable();
 }
 
 window.renderAvisosTable = function() {
-    const tb = document.querySelector("#tbl-avisos tbody"); tb.innerHTML = "";
+    const tb = document.querySelector("#tbl-avisos tbody");
+    tb.innerHTML = "";
     const searchTerm = document.getElementById('search-aviso').value.toLowerCase();
-    allAvisos.filter(a => `${a.titulo} ${a.texto}`.toLowerCase().includes(searchTerm)).forEach(a => {
-        const isAtivo = a.ativo !== false; const agora = Date.now();
-        let st = "", stClass = "";
-        if(!isAtivo) { st = "Oculto"; stClass = "inativo"; } else { if(agora < a.inicio) { st = "Agendado"; stClass = "agendado"; } else if (agora <= a.fim) { st = "Andamento"; stClass = "ativo"; } else { st = "Concluso"; stClass = "concluso"; } }
-        tb.innerHTML += `<tr><td style="text-align:center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${a.id}" onchange="window.checkSelection('avisos')"></td><td>${a.imagemUrl ? `<img src="${a.imagemUrl}" class="img-preview">` : ''}</td><td><strong>${a.titulo}</strong></td><td><small>${window.formatText(a.texto)}</small></td><td>${new Date(a.inicio).toLocaleString()}</td><td>${new Date(a.fim).toLocaleString()}</td><td><span class="badge ${stClass}">${st}</span></td><td><div class="action-btns-wrapper"><button class="btn-action edit" onclick="window.openEditAviso('${a.id}')"><i class="fas fa-pen"></i></button><button class="btn-action toggle" onclick="window.togA('${a.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button><button class="btn-action del" onclick="window.delDoc('avisos','${a.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`;
+    const lista = orderedAvisosList()
+        .filter(a => getAvisoStatus(a).grupo === currentAvisosTab)
+        .filter(a => `${a.titulo || ''} ${stripCatNotice(a.texto || '')}`.toLowerCase().includes(searchTerm));
+
+    if (lista.length === 0) {
+        tb.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 45px 20px; color:#999; font-family: var(--font-numbers);">Nenhum comunicado encontrado.</td></tr>`;
+        return;
+    }
+
+    lista.forEach(a => {
+        const isAtivo = a.ativo !== false;
+        const status = getAvisoStatus(a);
+        const textoHtml = sanitizeRichText(a.texto || '');
+        const textoPlain = stripCatNotice(a.texto || '') || '-';
+        const imgPos = a.posicaoImagem || 'top';
+        const imgHtml = a.imagemUrl ? renderClickableAvisoImage(a.imagemUrl, 'img-preview') : '-';
+
+        tb.innerHTML += `<tr class="aviso-row" data-aviso-id="${a.id}">
+            <td class="aviso-select-cell" data-label="Selecionar:" style="text-align:center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${a.id}" onchange="window.checkSelection('avisos')"></td>
+            <td class="aviso-image-cell" data-label="Imagem:">${imgHtml}</td>
+            <td class="aviso-title-cell" data-label="Título:"><strong>${escapeHTML(a.titulo || '-')}</strong></td>
+            <td class="aviso-message-cell" data-label="Mensagem:"><small class="aviso-message-summary" title="${escapeHTML(textoPlain)}">${textoHtml || '-'}</small></td>
+            <td class="aviso-mobile-preview-cell" data-label="">${buildAvisoMobilePreview(a)}</td>
+            <td class="aviso-period-cell desktop-schedule-cell" data-label="Programação:">${renderAvisoScheduleHtml(a)}</td>
+            <td class="aviso-mobile-start mobile-schedule-cell" data-label="Início:">${getAvisoScheduleValue(a.inicio)}</td>
+            <td class="aviso-mobile-end mobile-schedule-cell" data-label="Fim:">${getAvisoScheduleValue(a.fim)}</td>
+            <td class="aviso-status-cell" data-label="Status:"><span class="badge ${status.stClass}">${status.st}</span></td>
+            <td class="aviso-actions-cell" data-label="Ações:">
+                <div class="action-btns-wrapper">
+                    <button class="btn-action edit" onclick="window.openEditAviso('${a.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action copy" title="Copiar comunicado" onclick="window.copyAviso('${a.id}')"><i class="fas fa-copy"></i></button>
+                    <button class="btn-action toggle ${isAtivo ? 'cat-toggle-visible' : 'cat-toggle-hidden'}" onclick="window.togA('${a.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
+                    <button class="btn-action del" onclick="window.delDoc('avisos','${a.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
     });
 }
 
 window.openEditAviso = async(id) => {
     const a = (await getDoc(doc(db,"avisos",id))).data();
-    document.getElementById('ea-id').value = id; document.getElementById('ea-tit').value = a.titulo; document.getElementById('ea-txt').value = a.texto;
-    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-    const dIni = new Date(a.inicio - tzOffset); document.getElementById('ea-inid').value = dIni.toISOString().split('T')[0]; document.getElementById('ea-inih').value = dIni.toISOString().split('T')[1].slice(0,5);
-    const dFim = new Date(a.fim - tzOffset); document.getElementById('ea-fimd').value = dFim.toISOString().split('T')[0]; document.getElementById('ea-fimh').value = dFim.toISOString().split('T')[1].slice(0,5);
-    if (a.imagemUrl) { document.getElementById('ea-img-preview').src = a.imagemUrl; document.getElementById('ea-img-preview').style.display = 'block'; document.getElementById('btn-remove-ea-img').style.display = 'inline-block'; document.getElementById('ea-img-none').style.display = 'none'; } else { document.getElementById('ea-img-preview').style.display = 'none'; document.getElementById('btn-remove-ea-img').style.display = 'none'; document.getElementById('ea-img-none').style.display = 'block'; }
-    document.getElementById('ea-remove-img').value = 'false'; window.openModal('modal-editar-aviso');
+    document.getElementById('ea-id').value = id;
+    document.getElementById('ea-tit').value = a.titulo || '';
+    window.setAvisoRichText('ea', a.texto || '');
+    window.setAvisoImagePosition('ea', a.posicaoImagem || 'top');
+    setAvisoScheduleFields('ea', a.inicio, a.fim);
+    if (a.imagemUrl) {
+        document.getElementById('ea-img-preview').src = a.imagemUrl;
+        document.getElementById('ea-img-preview').style.display = 'block';
+        document.getElementById('btn-remove-ea-img').style.display = 'inline-block';
+        document.getElementById('ea-img-none').style.display = 'none';
+    } else {
+        document.getElementById('ea-img-preview').style.display = 'none';
+        document.getElementById('btn-remove-ea-img').style.display = 'none';
+        document.getElementById('ea-img-none').style.display = 'block';
+    }
+    document.getElementById('ea-remove-img').value = 'false';
+    window.openModal('modal-editar-aviso');
 };
 
 document.getElementById('form-edit-aviso').onsubmit = async(e) => {
-    e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    btn.disabled = true;
     try {
-        let data = { titulo: document.getElementById('ea-tit').value, texto: document.getElementById('ea-txt').value, inicio: new Date(`${document.getElementById('ea-inid').value}T${document.getElementById('ea-inih').value}`).getTime(), fim: new Date(`${document.getElementById('ea-fimd').value}T${document.getElementById('ea-fimh').value}`).getTime() };
-        const f = document.getElementById('ea-file').files[0]; if (f) data.imagemUrl = await upImg(f); else if (document.getElementById('ea-remove-img').value === 'true') data.imagemUrl = "";
-        await updateDoc(doc(db, "avisos", document.getElementById('ea-id').value), data); customAlert("Aviso atualizado!"); window.closeModal('modal-editar-aviso', 'form-edit-aviso'); loadAvisos();
-    } catch(e) { console.error(e); } finally { btn.innerHTML = 'Salvar Alterações'; btn.disabled = false; }
+        let data = {
+            titulo: document.getElementById('ea-tit').value,
+            texto: window.getAvisoRichText('ea'),
+            ...getAvisoScheduleFromForm('ea'),
+            posicaoImagem: document.getElementById('ea-img-pos').value || 'top'
+        };
+        const f = document.getElementById('ea-file').files[0];
+        if (f) data.imagemUrl = await upImg(f);
+        else if (document.getElementById('ea-remove-img').value === 'true') data.imagemUrl = "";
+        await updateDoc(doc(db, "avisos", document.getElementById('ea-id').value), data);
+        customAlert("Comunicado atualizado!");
+        window.closeModal('modal-editar-aviso', 'form-edit-aviso');
+        loadAvisos();
+    } catch(e) {
+        console.error(e);
+        customAlert("Erro ao salvar comunicado.", "Erro");
+    } finally {
+        btn.innerHTML = 'Salvar Alterações';
+        btn.disabled = false;
+    }
 };
-window.togA = async(id, s) => { await updateDoc(doc(db, "avisos", id), {ativo: s}); loadAvisos(); };
+
+window.copyAviso = async function(id) {
+    try {
+        const ordered = orderedAvisosList();
+        const index = ordered.findIndex(a => a.id === id);
+        const source = ordered[index] || allAvisos.find(a => a.id === id);
+        if (!source) return;
+
+        const copyData = { ...source };
+        delete copyData.id;
+        copyData.titulo = `${source.titulo || 'Comunicado'} (Cópia)`;
+        copyData.createdAt = Date.now();
+        copyData.updatedAt = Date.now();
+
+        const newRef = await addDoc(collection(db, "avisos"), copyData);
+        const ids = ordered.map(a => a.id);
+        ids.splice(index + 1, 0, newRef.id);
+        await Promise.all(ids.map((avisoId, pos) => updateDoc(doc(db, "avisos", avisoId), { ordem: pos })));
+        customAlert("Comunicado copiado!");
+        loadAvisos();
+    } catch(err) {
+        console.error('Erro ao copiar comunicado:', err);
+        customAlert('Não foi possível copiar o comunicado.', 'Atenção');
+    }
+};
+
+window.togA = async(id, s) => {
+    await updateDoc(doc(db, "avisos", id), {ativo: s});
+    loadAvisos();
+};
 
 let currentOrcCatFilter = '';
 let orcQtdState = {};
