@@ -272,7 +272,7 @@
         .card-cupom { font-size: 0.85em; font-family: var(--font-numbers); color: var(--favu-rust); margin-top: 5px; margin-bottom: 3px; }
         .card-price { font-weight: bold; font-family: var(--font-numbers); color: var(--favu-green); font-size: 0.9em; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .payment-type-tag { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 0.7em; font-weight: bold; font-family: var(--font-numbers); }
-        .payment-type-tag.pix { background-color: #32CD32; color: white; } .payment-type-tag.dinheiro { background-color: #f1c40f; color: #333; } .payment-type-tag.cartao { background-color: #4169E1; color: white; }
+        .payment-type-tag.pix { background-color: #32CD32; color: white; } .payment-type-tag.dinheiro { background-color: #f1c40f; color: #333; } .payment-type-tag.cartao { background-color: #4169E1; color: white; } .payment-type-tag.a-confirmar { background-color: #999; color: white; }
         .card-status-pagamento select { width: 100%; padding: 6px 10px; border-radius: 6px; border: none; font-size: 0.85em; font-weight: bold; font-family: var(--font-numbers); cursor: pointer; text-align: center; color: white; }
         .card-status-pagamento select.pg-pendente { background-color: #ffb3b3; color: #8b0000; } .card-status-pagamento select.pg-pago { background-color: #a8e6a8; color: #006400; } .card-status-pagamento select.pg-parcial { background-color: #ffeb9c; color: #8b6914; }
 
@@ -715,6 +715,754 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
     }
 }
 
+
+
+/* === AJUSTE SOLICITADO: botões de limpar filtros e fontes do orçamento === */
+.search-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    width: 100%;
+    max-width: 500px;
+}
+.search-filter-actions .search-bar {
+    flex: 1;
+    min-width: 0;
+}
+.btn-clear-filter {
+    padding: 9px 14px !important;
+    border-color: #ddd !important;
+    color: var(--favu-moss) !important;
+    white-space: nowrap;
+    font-size: 0.9rem !important;
+}
+
+#t-orcamentos .orc-table td.col-sec,
+#t-orcamentos .orc-table td.col-sec * {
+    font-size: 0.9rem !important;
+    line-height: 1.15 !important;
+}
+
+#t-orcamentos .orc-table .peso-mobile {
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+}
+
+#t-orcamentos .orc-table td.col-unid,
+#t-orcamentos .orc-table td.col-unid * {
+    font-size: 0.86rem !important;
+    line-height: 1.15 !important;
+}
+
+#t-orcamentos .orc-table td.col-qtd,
+#t-orcamentos .orc-table td.col-qtd * {
+    font-size: 0.86rem !important;
+}
+
+#t-orcamentos .orc-table input[type="number"] {
+    width: 36px !important;
+    height: 28px !important;
+    font-size: 0.86rem !important;
+}
+
+#t-orcamentos .orc-table .qtd-btn-table {
+    width: 23px !important;
+    height: 28px !important;
+    font-size: 1rem !important;
+}
+
+@media (max-width: 768px) {
+    .search-filter-actions {
+        max-width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .search-filter-actions .search-bar {
+        width: 100%;
+    }
+    .btn-clear-filter {
+        width: 100%;
+        padding: 9px 12px !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: melhorias isoladas da aba Pedidos === */
+#t-pedidos .filter-bar {
+    align-items: flex-end !important;
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+    #t-pedidos .filter-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
+    }
+    #t-pedidos .filter-group-main,
+    #t-pedidos .filter-group-additional {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+        min-width: 0 !important;
+    }
+    #t-pedidos .filter-group-main { flex: 1.05 1 0 !important; }
+    #t-pedidos .filter-group-additional { flex: 1.35 1 0 !important; }
+    #t-pedidos .filter-bar .filter-item {
+        min-width: 0 !important;
+        flex: 1 1 0 !important;
+    }
+    #t-pedidos .filter-bar label {
+        white-space: nowrap !important;
+        font-size: 0.9rem !important;
+    }
+    #t-pedidos .filter-bar input,
+    #t-pedidos .filter-bar select {
+        min-width: 0 !important;
+        font-size: 0.9rem !important;
+    }
+    #t-pedidos .filter-bar .btn {
+        width: 100% !important;
+        padding: 8px 10px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+#t-pedidos #kanban-board {
+    align-items: stretch !important;
+}
+
+#t-pedidos .column-header {
+    min-height: 82px !important;
+    height: 82px !important;
+    padding: 12px 10px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+#t-pedidos .column-header > div {
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+}
+
+#t-pedidos .column-title-text {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    overflow-wrap: anywhere !important;
+}
+
+#t-pedidos .card-checkbox,
+#t-pedidos .column-select-all-checkbox {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+}
+
+#t-pedidos .pedido-card .card-header {
+    align-items: flex-start !important;
+}
+
+@media (max-width: 768px) {
+    #t-pedidos .card-checkbox,
+    #t-pedidos .column-select-all-checkbox {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
+    }
+    #filter-toggle-btn {
+        background: #fff !important;
+        border: 1px solid rgba(224, 159, 65, 0.35) !important;
+        border-radius: 14px !important;
+        box-shadow: var(--shadow-soft) !important;
+        padding: 11px 14px !important;
+    }
+    #filter-toggle-btn span {
+        color: var(--favu-moss) !important;
+        text-transform: uppercase !important;
+        font-size: 1rem !important;
+    }
+    #t-pedidos .filter-bar .btn,
+    #t-pedidos .filter-bar button {
+        background: var(--favu-rust) !important;
+        color: #fff !important;
+        border: 2px solid var(--favu-rust) !important;
+        border-radius: 12px !important;
+        font-family: 'Basic Choice', cursive !important;
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+#edit-modal-pedido .edit-pedido-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+#edit-modal-pedido .edit-field-group {
+    min-width: 0 !important;
+}
+
+#edit-modal-pedido .edit-inline-action {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+}
+
+#edit-modal-pedido .edit-inline-action input,
+#edit-modal-pedido .edit-field-group input,
+#edit-modal-pedido .edit-field-group select {
+    height: 44px !important;
+    margin: 0 !important;
+}
+
+#edit-modal-pedido .edit-action-btn {
+    height: 44px !important;
+    min-width: 92px !important;
+    padding: 8px 12px !important;
+    margin: 0 !important;
+}
+
+#edit-modal-pedido .edit-cupom-status {
+    display: block !important;
+    min-height: 16px !important;
+    margin-top: 4px !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.78rem !important;
+}
+
+#edit-modal-pedido .edit-cupom-status.ok { color: #28a745 !important; }
+#edit-modal-pedido .edit-cupom-status.erro { color: #E60000 !important; }
+
+#edit-modal-pedido .edit-itens-pedido-box {
+    border: 2px solid var(--favu-rust) !important;
+    border-radius: 10px !important;
+    padding: 15px !important;
+    margin: 15px 0 !important;
+}
+
+#edit-modal-pedido .edit-itens-pedido-box legend {
+    font-weight: bold !important;
+    color: var(--favu-rust) !important;
+    padding: 0 10px !important;
+}
+
+#edit-modal-pedido .edit-item-category {
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-rust) !important;
+    text-transform: uppercase !important;
+    margin: 14px 0 6px 0 !important;
+    border-bottom: 1px dashed rgba(224, 159, 65, 0.35) !important;
+    padding-bottom: 4px !important;
+}
+
+#edit-modal-pedido .edit-item-row {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 2fr) 70px 90px 100px 38px !important;
+    gap: 8px !important;
+    align-items: end !important;
+    margin-bottom: 8px !important;
+}
+
+#edit-modal-pedido .edit-item-row label {
+    font-size: 0.78rem !important;
+    margin-bottom: 3px !important;
+}
+
+#edit-modal-pedido .edit-item-row input,
+#edit-modal-pedido .edit-item-row select {
+    height: 40px !important;
+    padding: 8px !important;
+    margin: 0 !important;
+}
+
+#edit-modal-pedido .edit-item-total {
+    font-family: var(--font-numbers) !important;
+    font-weight: bold !important;
+    color: var(--favu-green) !important;
+    background: #fff !important;
+}
+
+#edit-modal-pedido .edit-item-remove {
+    height: 40px !important;
+    width: 38px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+}
+
+#edit-modal-pedido .edit-outros-name {
+    margin-top: 6px !important;
+}
+
+#edit-modal-pedido .edit-add-item-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+    justify-content: center !important;
+}
+
+@media (max-width: 768px) {
+    #edit-modal-pedido .edit-pedido-grid {
+        grid-template-columns: 1fr !important;
+    }
+    #edit-modal-pedido .edit-item-row {
+        grid-template-columns: 1fr 70px !important;
+        align-items: end !important;
+    }
+    #edit-modal-pedido .edit-item-row .edit-item-product-cell {
+        grid-column: 1 / -1 !important;
+    }
+    #edit-modal-pedido .edit-item-row .edit-item-total-cell {
+        grid-column: 1 / 2 !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: ajustes complementares solicitados === */
+#edit-modal-pedido .edit-pedido-grid-financeiro {
+    align-items: start !important;
+}
+#edit-modal-pedido .edit-discount-check-btn {
+    min-width: 48px !important;
+}
+#edit-modal-pedido .edit-discount-row {
+    margin-top: 8px !important;
+    padding: 9px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(224, 159, 65, 0.08) !important;
+    border: 1px dashed rgba(224, 159, 65, 0.45) !important;
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+}
+#edit-modal-pedido .edit-item-product-cell select {
+    padding-right: 34px !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+#edit-modal-pedido .edit-item-product-cell {
+    min-width: 0 !important;
+}
+#edit-modal-pedido .edit-item-product-cell label {
+    display: none !important;
+}
+#edit-modal-pedido .edit-add-item-zone {
+    margin-top: 14px !important;
+    padding-top: 14px !important;
+    border-top: 1px dashed rgba(224, 159, 65, 0.45) !important;
+}
+#edit-modal-pedido .edit-add-item-btn {
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    border-color: var(--favu-green) !important;
+}
+#edit-modal-pedido .edit-item-row {
+    grid-template-columns: minmax(150px, 2fr) 70px 90px 100px 38px !important;
+}
+.card-pedido-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+}
+.card-pedido-actions .btn-card-mini {
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 7px 6px !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 0.78rem !important;
+    cursor: pointer !important;
+    color: #fff !important;
+    line-height: 1 !important;
+}
+.card-pedido-actions .btn-card-copy { background: var(--favu-rust) !important; }
+.card-pedido-actions .btn-card-delete { background: #E60000 !important; }
+
+@media (max-width: 768px) {
+    #edit-modal-pedido .edit-pedido-grid-financeiro {
+        gap: 10px !important;
+    }
+    #edit-modal-pedido .edit-field-group {
+        margin-bottom: 0 !important;
+    }
+    #edit-modal-pedido .edit-item-row {
+        grid-template-columns: 62px minmax(74px, 1fr) minmax(86px, 1fr) 40px !important;
+        gap: 6px !important;
+    }
+    #edit-modal-pedido .edit-item-row .edit-item-product-cell {
+        grid-column: 1 / -1 !important;
+    }
+    #edit-modal-pedido .edit-item-row .edit-item-total-cell {
+        grid-column: auto !important;
+    }
+    #edit-modal-pedido .edit-item-remove {
+        width: 40px !important;
+        min-width: 40px !important;
+    }
+    #edit-modal-pedido .edit-item-row input,
+    #edit-modal-pedido .edit-item-row select {
+        font-size: 0.86rem !important;
+        padding: 7px 6px !important;
+    }
+    #edit-modal-pedido .edit-item-row label {
+        font-size: 0.68rem !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: mobile campos empilhados e itens sem vazamento === */
+#edit-modal-pedido .edit-pedido-pair-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+#edit-modal-pedido .edit-pedido-pair-grid > div,
+#edit-modal-pedido .edit-pedido-grid > div,
+#edit-modal-pedido .edit-itens-pedido-box,
+#edit-modal-pedido .edit-item-row,
+#edit-modal-pedido .edit-item-row > div {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+#edit-modal-pedido .edit-pedido-pair-grid input,
+#edit-modal-pedido .edit-pedido-pair-grid select,
+#edit-modal-pedido .edit-item-row input,
+#edit-modal-pedido .edit-item-row select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+#edit-modal-pedido .edit-itens-pedido-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#edit-modal-pedido #edit-itens-pedido-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+    #edit-modal-pedido .modal-content {
+        width: calc(100vw - 28px) !important;
+        max-width: calc(100vw - 28px) !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    #edit-modal-pedido .modal-body,
+    #edit-modal-pedido #edit-form-pedido {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    #edit-modal-pedido .edit-pedido-pair-grid,
+    #edit-modal-pedido .edit-pedido-grid,
+    #edit-modal-pedido .edit-pedido-grid-financeiro {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    #edit-modal-pedido .edit-inline-action {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    #edit-modal-pedido .edit-inline-action input {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    #edit-modal-pedido .edit-inline-action .edit-action-btn {
+        flex: 0 0 48px !important;
+        min-width: 48px !important;
+        max-width: 48px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        justify-content: center !important;
+    }
+
+    #edit-modal-pedido .edit-inline-action .edit-action-btn:not(.edit-discount-check-btn) {
+        flex-basis: 98px !important;
+        min-width: 98px !important;
+        max-width: 98px !important;
+    }
+
+    #edit-modal-pedido .edit-itens-pedido-box {
+        padding: 12px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    #edit-modal-pedido .edit-item-row {
+        width: 100% !important;
+        max-width: 100% !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 36px !important;
+        gap: 5px !important;
+        align-items: end !important;
+        overflow: hidden !important;
+    }
+
+    #edit-modal-pedido .edit-item-row .edit-item-product-cell {
+        grid-column: 1 / -1 !important;
+        min-width: 0 !important;
+    }
+
+    #edit-modal-pedido .edit-item-row .edit-item-total-cell {
+        grid-column: auto !important;
+        min-width: 0 !important;
+    }
+
+    #edit-modal-pedido .edit-item-row input,
+    #edit-modal-pedido .edit-item-row select {
+        height: 38px !important;
+        font-size: 0.8rem !important;
+        padding: 6px 5px !important;
+    }
+
+    #edit-modal-pedido .edit-item-total {
+        font-size: 0.76rem !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    #edit-modal-pedido .edit-item-remove {
+        width: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        height: 38px !important;
+        padding: 0 !important;
+    }
+
+    #edit-modal-pedido .edit-add-item-zone,
+    #edit-modal-pedido .edit-add-item-btn {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: adicionar item em bloco separado === */
+#edit-modal-pedido .edit-novos-itens-box {
+    margin-top: 16px !important;
+    padding: 14px !important;
+    border: 1px dashed rgba(224, 159, 65, 0.55) !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+#edit-modal-pedido .edit-novos-itens-title {
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-rust) !important;
+    text-transform: uppercase !important;
+    margin-bottom: 10px !important;
+    font-size: 1rem !important;
+}
+#edit-modal-pedido #edit-novos-itens-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#edit-modal-pedido .edit-novo-item-row {
+    display: grid !important;
+    grid-template-columns: minmax(150px, 2fr) 70px 90px 100px 38px !important;
+    gap: 8px !important;
+    align-items: end !important;
+    margin-bottom: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+#edit-modal-pedido .edit-novo-item-row > div,
+#edit-modal-pedido .edit-novo-item-row input,
+#edit-modal-pedido .edit-novo-item-row select {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+#edit-modal-pedido .edit-novo-item-row input,
+#edit-modal-pedido .edit-novo-item-row select {
+    width: 100% !important;
+    height: 40px !important;
+    padding: 8px !important;
+    margin: 0 !important;
+}
+#edit-modal-pedido .edit-novo-item-row label {
+    font-size: 0.78rem !important;
+    margin-bottom: 3px !important;
+}
+#edit-modal-pedido .edit-novo-item-product-cell select {
+    padding-right: 34px !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+#edit-modal-pedido .edit-novo-item-remove {
+    height: 40px !important;
+    width: 38px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+}
+#edit-modal-pedido .edit-add-item-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-top: 8px !important;
+}
+
+@media (max-width: 768px) {
+    #edit-modal-pedido .edit-novos-itens-box {
+        padding: 12px !important;
+    }
+    #edit-modal-pedido .edit-novo-item-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 36px !important;
+        gap: 5px !important;
+        overflow: hidden !important;
+    }
+    #edit-modal-pedido .edit-novo-item-row .edit-novo-item-product-cell {
+        grid-column: 1 / -1 !important;
+    }
+    #edit-modal-pedido .edit-novo-item-row input,
+    #edit-modal-pedido .edit-novo-item-row select {
+        height: 38px !important;
+        font-size: 0.8rem !important;
+        padding: 6px 5px !important;
+    }
+    #edit-modal-pedido .edit-novo-item-row label {
+        font-size: 0.68rem !important;
+    }
+    #edit-modal-pedido .edit-novo-item-total {
+        font-size: 0.76rem !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        font-family: var(--font-numbers) !important;
+        font-weight: 700 !important;
+    }
+    #edit-modal-pedido .edit-novo-item-remove {
+        width: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        height: 38px !important;
+        padding: 0 !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: confirmar novo item === */
+#edit-modal-pedido .edit-novo-item-confirm {
+    height: 40px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    border: 0 !important;
+    justify-content: center !important;
+}
+#edit-modal-pedido .edit-novos-itens-box {
+    background: #fff !important;
+}
+@media (max-width: 768px) {
+    #edit-modal-pedido .edit-novo-item-confirm {
+        width: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        height: 38px !important;
+        padding: 0 !important;
+    }
+}
+
+
+/* === PEDIDOS 2026-06-19: ações do card por ícone === */
+#t-pedidos .card-numero-text {
+    font-family: var(--font-numbers) !important;
+    color: inherit !important;
+    text-decoration: none !important;
+    cursor: default !important;
+}
+#t-pedidos .card-pedido-actions {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+#t-pedidos .card-pedido-actions .btn-card-mini {
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 0.95rem !important;
+}
+#t-pedidos .card-pedido-actions .btn-card-mini i {
+    margin: 0 !important;
+}
+#t-pedidos .card-pedido-actions .btn-card-whatsapp {
+    background: #28a745 !important;
+}
+
+
+/* === PEDIDOS 2026-06-19: botão check do cupom igual ao desconto === */
+#edit-modal-pedido .edit-cupom-check-btn {
+    min-width: 48px !important;
+    max-width: 48px !important;
+    width: 48px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+}
+#edit-modal-pedido .edit-cupom-check-btn i {
+    margin: 0 !important;
+}
+
+
+/* === PEDIDOS 2026-06-19: centralizar títulos dos campos de itens === */
+#edit-modal-pedido .edit-item-row > div:not(.edit-item-product-cell) label,
+#edit-modal-pedido .edit-novo-item-row > div:not(.edit-novo-item-product-cell) label {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
+
+/* === LOGIN 2026-06-19: manter apenas um ícone de visualizar senha === */
+#login-pass::-ms-reveal,
+#login-pass::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+#login-pass::-webkit-credentials-auto-fill-button,
+#login-pass::-webkit-contacts-auto-fill-button {
+    visibility: hidden !important;
+    display: none !important;
+    pointer-events: none !important;
+}
+
 </style>
 
 <style>
@@ -770,6 +1518,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
     .excecao-card::after { content: "Editar"; grid-column: 1 / 2; color: var(--favu-rust); font-size: 0.78rem; font-weight: bold; font-family: var(--font-numbers); margin-top: 2px; }
     .categoria-drag-hint { display:none; }
 }
+
 </style>
 
 </head>
@@ -932,7 +1681,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                         <div class="filter-item">
                             <label>Status Pagamento</label>
                             <select id="filter-status-pagamento" onchange="window.filtrarPedidos()">
-                                <option value="">Todos</option><option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
+                                <option value="">Todos</option><option value="Pendente">Pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
                             </select>
                         </div>
                         <div class="filter-item">
@@ -1000,7 +1749,10 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                 <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-cat')"><i class="fas fa-plus"></i> Nova Categoria</button></div>
                 <div class="panel-card cat-list-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Categorias Cadastradas</h2>
-                    <input type="text" id="search-cat" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="Buscar categoria...">
+                    <div class="search-filter-actions">
+                        <input type="text" id="search-cat" class="search-bar" style="margin: 0;" placeholder="Buscar categoria...">
+                        <button type="button" class="btn btn-outline btn-clear-filter" onclick="window.limparFiltroCategorias()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                    </div>
                 </div>
                 <div id="bulk-actions-categorias" class="bulk-actions-bar">
                     <span class="bulk-selected-label" id="bulk-label-categorias"><strong id="count-categorias">0</strong> categorias</span>
@@ -1033,7 +1785,10 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                 <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-aviso')"><i class="fas fa-bullhorn"></i> Criar Comunicado</button></div>
                 <div class="panel-card aviso-list-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Comunicados Cadastrados</h2>
-                    <input type="text" id="search-aviso" class="search-bar" style="margin: 0; max-width: 320px;" placeholder="Buscar comunicado...">
+                    <div class="search-filter-actions">
+                        <input type="text" id="search-aviso" class="search-bar" style="margin: 0;" placeholder="Buscar comunicado...">
+                        <button type="button" class="btn btn-outline btn-clear-filter" onclick="window.limparFiltroComunicados()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                    </div>
                 </div>
 
                 <div class="avisos-tabs" role="tablist" aria-label="Filtro de comunicados">
@@ -1092,17 +1847,18 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
             </div>
 
             <div id="t-orcamentos" class="tab-pane" style="position: relative; padding-bottom: 80px; background-color: var(--bg-color);">
-                <div class="panel-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
-                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Simulador de Orçamentos</h2>
-                    <div class="orc-search-panel">
-                        <input type="text" id="search-orcamento" class="search-bar" placeholder="🔍 Buscar item no orçamento..." oninput="window.renderOrcamentoMenu()">
+                <div class="panel-card orcamento-header-panel" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display orcamento-title" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Simulador de Orçamentos</h2>
+                    <div class="search-filter-actions">
+                        <input type="text" id="search-orcamento" class="search-bar" style="margin: 0;" placeholder="Buscar item no orçamento..." oninput="window.renderOrcamentoMenu()">
+                        <button type="button" class="btn btn-outline btn-clear-filter" onclick="window.limparFiltroOrcamento()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
                     </div>
                 </div>
-                <div class="categorias-nav-wrapper" style="margin-bottom: 20px;">
+                <div class="categorias-nav-wrapper orc-categorias-nav-wrapper">
                     <div id="orc-cats-nav" class="categorias-draggable"></div>
                 </div>
-                <div class="table-responsive" style="padding: 0; background: transparent; box-shadow: none; border: none;">
-                    <div id="orc-menu-container" style="width: 100%;"></div>
+                <div class="table-responsive orc-table-responsive">
+                    <div id="orc-menu-container" class="orc-menu-content"></div>
                 </div>
                 <button type="button" id="fixed-summary-orc" onclick="window.abrirModalOrcamento()">
                     <div class="summary-content-orc">
@@ -1224,7 +1980,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
         </div>
 
     <div id="modal-orcamento-pedido" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-pedido')">
-        <div class="popup-conteudo" style="max-width: 500px;">
+        <div class="popup-conteudo orc-popup orc-resumo-popup" style="max-width: 500px;">
             <span class="fechar" onclick="window.closeModal('modal-orcamento-pedido')">&times;</span>
             <h2 class="font-display">RESUMO DO ORÇAMENTO</h2>
             <div id="popup-resumo-itens-orc" class="resumo-itens"></div>
@@ -1250,13 +2006,14 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
     </div>
 
     <div id="modal-orcamento-cliente" class="modal" onclick="if(event.target === this) window.closeModal('modal-orcamento-cliente')">
-        <div class="popup-conteudo" style="max-width: 500px;">
+        <div class="popup-conteudo orc-popup orc-cliente-popup" style="max-width: 500px;">
             <span class="fechar" onclick="window.closeModal('modal-orcamento-cliente')">&times;</span>
             <h2 class="font-display">DADOS DO CLIENTE</h2>
+            <div class="orc-popup-scroll">
             <form id="form-pedido-orc">
                 <div class="input-group">
-                    <label>NOME DO CLIENTE:</label>
-                    <input type="text" id="orc-nome" placeholder="NOME DO CLIENTE">
+                    <label>Nome do Cliente:</label>
+                    <input type="text" id="orc-nome" placeholder="Nome do Cliente">
                 </div>
                 <div class="input-group">
                     <label>NÚMERO (WHATSAPP):</label>
@@ -1267,19 +2024,15 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                 </div>
                 <div class="form-grid-2" style="margin-bottom: 0;">
                     <div class="input-group"><label>DATA:</label><input type="date" id="orc-data"></div>
-                    <div class="input-group"><label>HORÁRIO:</label><select id="orc-hora" class="time-slot-select"></select></div>
+                    <div class="input-group"><label>HORÁRIO:</label><input type="text" id="orc-hora" class="time-free-input" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)"></div>
                 </div>
                 <div class="input-group">
                     <label>PAGAMENTO:</label>
-                    <select id="orc-pag"><option value="">SELECIONE...</option><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select>
-                </div>
-                <div class="input-group">
-                    <label>DESCONTO (R$):</label>
-                    <input type="number" step="0.01" id="orc-desconto-cliente" placeholder="0,00" value="0" oninput="window.sincronizarDescontoCliente(this.value)">
+                    <select id="orc-pag"><option value="">Selecione...</option><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select>
                 </div>
                 <div class="input-group">
                     <label>OBSERVAÇÕES:</label>
-                    <textarea id="orc-obs" placeholder="EX: RETIRAR CEBOLA, ALERGIAS, ETC." rows="2"></textarea>
+                    <textarea id="orc-obs" placeholder="Ex: Retirar Itens, Alergias, ETC." rows="2"></textarea>
                 </div>
             </form>
             <div class="popup-footer-actions">
@@ -1287,7 +2040,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                     <button type="button" class="btn-secondary-form" onclick="window.voltarResumoOrcamento()">Editar orçamento</button>
                     <button type="button" class="btn-secondary-form" onclick="window.closeModal('modal-orcamento-cliente')">Adicionar itens</button>
                 </div>
-                <button type="button" class="btn-primary-large" onclick="window.gerarOrcamentoWA()"><i class="fab fa-whatsapp"></i> GERAR PEDIDO / WHATSAPP</button>
+                <button type="button" class="btn-primary-large" onclick="window.gerarOrcamentoWA()"><i class="fab fa-whatsapp"></i> Gerar Orçamento</button>
+            </div>
             </div>
         </div>
     </div>
@@ -1402,8 +2156,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                     
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programar exibição</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ac-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ac-inih" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ac-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ac-fimh" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ac-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ac-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ac-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ac-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
                     </div>
 
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button></div>
@@ -1424,8 +2178,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
 
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programar exibição</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ec-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ec-inih" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ec-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ec-fimh" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ec-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ec-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ec-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ec-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
                     </div>
 
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Atualizar</button></div>
@@ -1439,7 +2193,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
             <div class="modal-header"><h3>Criar Comunicado</h3><button class="close-modal" onclick="window.closeModal('modal-add-aviso', 'form-add-aviso')">&times;</button></div>
             <div class="modal-body">
                 <form id="form-add-aviso">
-                    <div style="margin-bottom:15px;"><label>Título do Aviso</label><input type="text" id="aa-tit" required></div>
+                    <div style="margin-bottom:15px;"><label>Título do Aviso <small style="font-family: var(--font-numbers); color:#999; font-weight: normal; text-transform:none;"></small></label><input type="text" id="aa-tit" placeholder=""></div>
 
                     <div class="aviso-rich-wrapper" style="margin-bottom: 15px;">
                         <label>Texto do Aviso</label>
@@ -1475,8 +2229,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
 
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programação</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="aa-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="aa-inih" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="aa-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="aa-fimh" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="aa-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="aa-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="aa-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="aa-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
                     </div>
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-add-aviso', 'form-add-aviso')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Comunicado</button></div>
                 </form>
@@ -1490,7 +2244,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
             <div class="modal-body">
                 <form id="form-edit-aviso">
                     <input type="hidden" id="ea-id">
-                    <div style="margin-bottom:15px;"><label>Título do Aviso</label><input type="text" id="ea-tit" required></div>
+                    <div style="margin-bottom:15px;"><label>Título do Aviso <small style="font-family: var(--font-numbers); color:#999; font-weight: normal; text-transform:none;"></small></label><input type="text" id="ea-tit" placeholder=""></div>
 
                     <div class="aviso-rich-wrapper" style="margin-bottom: 15px;">
                         <label>Texto do Aviso</label>
@@ -1527,8 +2281,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
 
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programação</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ea-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ea-inih" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ea-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ea-fimh" class="time-free-input" placeholder="Ex: 15:35" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ea-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ea-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ea-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ea-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
                     </div>
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-editar-aviso', 'form-edit-aviso')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Salvar Alterações</button></div>
                 </form>
@@ -1545,44 +2299,54 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                     <input type="hidden" id="edit-id-pedido">
                     <label>Nome do Cliente:</label> <input type="text" id="edit-nome-pedido" required style="margin-bottom:10px;">
                     <label>Telefone:</label> <input type="text" id="edit-telefone-pedido" required style="margin-bottom:10px;">
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <div style="flex:1;"><label>Data Entrega:</label> <input type="date" id="edit-data-pedido" required></div>
-                        <div style="flex:1;"><label>Horário:</label> <select id="edit-hora-pedido" class="time-slot-select" required></select></div>
+                    <div class="edit-pedido-pair-grid">
+                        <div><label>Data Entrega:</label> <input type="date" id="edit-data-pedido" required></div>
+                        <div><label>Horário:</label> <input type="text" id="edit-hora-pedido" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)" required></div>
                     </div>
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <div style="flex:1;"><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
-                        <div style="flex:1;"><label>Status Pagamento:</label><select id="edit-status-pgto-pedido"><option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option></select></div>
+                    <div class="edit-pedido-pair-grid">
+                        <div><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                        <div><label>Status Pagamento:</label><select id="edit-status-pgto-pedido"><option value="Pendente">Pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option></select></div>
                     </div>
-                    <div style="display:flex; gap:10px; margin-bottom:10px; align-items: flex-end;">
-                        <div style="flex:2;">
-                            <label>Cupom:</label> 
-                            <input type="text" id="edit-cupom-pedido" style="margin-bottom:0;">
-                        </div>
-                        <div style="flex:1.5;">
-                            <label>Abater Desconto (R$):</label> 
-                            <div style="display:flex; gap:5px;">
-                                <input type="number" step="0.01" id="edit-desconto-pedido" placeholder="0,00" style="margin:0;">
-                                <button type="button" class="btn btn-secondary" style="padding: 10px 15px; margin:0;" onclick="window.aplicarDescontoEdit()" title="Aplicar Desconto"><i class="fas fa-check"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                    <label>Total Final (R$):</label> <input type="text" id="edit-total-pedido" required style="margin-bottom:10px;">
-                    <label>Observações:</label> <textarea id="edit-obs-pedido" rows="2" style="margin-bottom:10px;"></textarea>
                     
-                    <fieldset style="border: 2px solid var(--favu-rust); border-radius: 8px; padding: 15px; margin: 15px 0;">
-                        <legend style="font-weight: bold; color: var(--favu-rust); padding: 0 10px;">Adicionar Item</legend>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-                            <div style="flex: 2; min-width: 200px;"><label style="font-size:0.9em;">Produto:</label><select id="add-produto-select" onchange="window.toggleCamposOutros()"></select></div>
-                            <div id="add-nome-outros-container" style="flex: 2; min-width: 200px; display: none;"><label style="font-size:0.9em;">Nome do Item:</label><input type="text" id="add-nome-outros" placeholder="Nome"></div>
-                            <div style="flex: 1; min-width: 80px;"><label style="font-size:0.9em;">Qtd:</label><input type="number" id="add-qtd" value="1" min="1"></div>
-                            <div style="flex: 1; min-width: 100px;"><label style="font-size:0.9em;">Preço (R$):</label><input type="text" id="add-preco" placeholder="0,00"></div>
-                            <div><button type="button" class="btn btn-secondary" onclick="window.adicionarItemAoResumoPedido()">Add</button></div>
+                    <div class="edit-pedido-grid edit-pedido-grid-financeiro">
+                        <div class="edit-field-group">
+                            <label>Cupom:</label>
+                            <div class="edit-inline-action">
+                                <input type="text" id="edit-cupom-pedido" oninput="window.resetarCupomEditPedido()" placeholder="Código do cupom">
+                                <button type="button" class="btn btn-secondary edit-action-btn edit-discount-check-btn edit-cupom-check-btn" onclick="window.validarCupomEditPedido()" title="Aplicar cupom"><i class="fas fa-check"></i></button>
+                            </div>
+                            <small id="edit-cupom-status" class="edit-cupom-status"></small>
+                        </div>
+                        <div class="edit-field-group">
+                            <label>Desconto (R$):</label>
+                            <div class="edit-inline-action">
+                                <input type="number" step="0.01" min="0" id="edit-desconto-pedido" placeholder="0,00" oninput="window.onInputDescontoEditPedido()">
+                                <button type="button" class="btn btn-secondary edit-action-btn edit-discount-check-btn" onclick="window.aplicarDescontoManualEditPedido()" title="Aplicar desconto"><i class="fas fa-check"></i></button>
+                            </div>
+                            <small id="edit-desconto-status" class="edit-cupom-status"></small>
+                        </div>
+                    </div>
+
+                    <label>Total Final (R$):</label>
+                    <input type="text" id="edit-total-pedido" required readonly style="margin-bottom:10px;">
+
+                    <label>Observações:</label>
+                    <textarea id="edit-obs-pedido" rows="2" style="margin-bottom:10px;"></textarea>
+
+                    <fieldset class="edit-itens-pedido-box">
+                        <legend>Itens do Pedido</legend>
+                        <div id="edit-itens-pedido-list"></div>
+
+                        <div class="edit-novos-itens-box">
+                            <div class="edit-novos-itens-title">Adicionar item</div>
+                            <div id="edit-novos-itens-list"></div>
+                            <button type="button" class="btn btn-secondary edit-add-item-btn" onclick="window.adicionarLinhaNovoItemPedido()">Adicionar mais</button>
                         </div>
                     </fieldset>
 
-                    <label>Itens do Pedido:</label> <textarea id="edit-resumo-pedido" rows="4"></textarea>
+                    <textarea id="edit-resumo-pedido" rows="4" style="display:none;"></textarea>
                     <div style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
-                        <button type="button" class="btn btn-outline" style="flex:1; border-color:var(--favu-moss); color:var(--favu-moss);" onclick="window.fecharModalPedido('edit-modal-pedido')">Cancelar</button>
+                        <button type="button" class="btn btn-secondary" style="flex:1;" onclick="window.fecharModalPedido('edit-modal-pedido')">Cancelar</button>
                         <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
                     </div>
                 </form>
@@ -1608,7 +2372,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
             <div class="modal-body">
                 <h3 style="color:var(--favu-rust); font-family:'Basic Choice', cursive; margin-bottom:15px;">Alterar Pagamento</h3>
                 <select id="bulk-payment-select" style="width:100%; margin: 10px 0 20px 0;">
-                    <option value="Pagamento pendente">Pagamento pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
+                    <option value="Pendente">Pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option>
                 </select>
                 <div style="display:flex; gap:10px;">
                     <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('bulk-payment-modal').style.display='none'">Cancelar</button>
@@ -2124,6 +2888,7 @@ body.side-menu-open #bulk-actions-categorias {
     line-height: 1.45;
 }
 
+
 </style>
 
 <div id="modal-fechamento-financeiro" class="modal" onclick="if(event.target === this) window.closeModal('modal-fechamento-financeiro')">
@@ -2226,7 +2991,7 @@ body.side-menu-open #bulk-actions-categorias {
                     </div>
                     <div class="form-grid">
                         <div>
-                            <label>Marca (Opcional)</label>
+                            <label>Marca</label>
                             <input type="text" id="rc-marca" placeholder="Ex: Dona Benta">
                         </div>
                         <div>
@@ -2809,9 +3574,645 @@ body.side-menu-open #bulk-actions-avisos { display: none !important; }
     }
 }
 
+
+
+/* === ORÇAMENTO 2026-06-19: ESPELHO VISUAL DO CARDÁPIO === */
+#t-orcamentos {
+    background-color: var(--favu-beige) !important;
+    background: var(--favu-beige) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 10px 0 100px 0 !important;
+    margin-top: 0 !important;
+    overflow-x: hidden !important;
+}
+
+#t-orcamentos .orcamento-header-panel {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
+    padding: 15px 20px !important;
+    background: white !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid #eee !important;
+    margin-bottom: 20px !important;
+}
+
+#t-orcamentos .orcamento-title {
+    margin: 0 !important;
+    font-size: 1.8rem !important;
+    color: var(--favu-green) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+}
+
+#search-orcamento {
+    margin: 0 !important;
+    max-width: 320px !important;
+    width: 100% !important;
+    border-radius: 30px !important;
+    border: 2px solid var(--favu-rust) !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.95rem !important;
+    padding: 12px 16px !important;
+    box-shadow: none !important;
+}
+#search-orcamento::placeholder { color: #888 !important; }
+
+#t-orcamentos .orc-categorias-nav-wrapper,
+#t-orcamentos .categorias-nav-wrapper {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+#orc-cats-nav.categorias-draggable {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding: 12px 15px !important;
+    gap: 10px !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    cursor: grab !important;
+    user-select: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+}
+#orc-cats-nav.categorias-draggable::-webkit-scrollbar { display: none !important; }
+#orc-cats-nav.categorias-draggable:active { cursor: grabbing !important; }
+
+#orc-cats-nav .categoria-btn-orc,
+.categoria-btn-orc {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 18px !important;
+    height: auto !important;
+    background-color: white !important;
+    color: var(--favu-green) !important;
+    text-decoration: none !important;
+    border-radius: 30px !important;
+    font-size: 1rem !important;
+    font-weight: normal !important;
+    font-family: 'Basic Choice', cursive !important;
+    white-space: nowrap !important;
+    transition: 0.3s ease !important;
+    border: 1px solid rgba(224, 159, 65, 0.3) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+    opacity: 1 !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+}
+#orc-cats-nav .categoria-btn-orc:hover { transform: translateY(-2px) !important; border-color: var(--favu-rust) !important; }
+#orc-cats-nav .categoria-btn-orc.active-link,
+.categoria-btn-orc.active-link {
+    background-color: var(--favu-rust) !important;
+    color: white !important;
+    border-color: var(--favu-rust) !important;
+    box-shadow: 0 4px 15px rgba(224, 159, 65, 0.3) !important;
+}
+
+#t-orcamentos .orc-table-responsive,
+#t-orcamentos .table-responsive {
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow-x: hidden !important;
+}
+
+#orc-menu-container.orc-menu-content,
+#orc-menu-container {
+    padding: 10px !important;
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    overflow-x: hidden !important;
+}
+
+.categoria-group-orc { display: none !important; animation: fadeIn 0.4s ease !important; margin-bottom: 40px !important; width: 100% !important; }
+.categoria-group-orc.active-group { display: block !important; }
+.categoria-title-orc {
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 2.6rem !important;
+    color: var(--favu-rust) !important;
+    text-align: center !important;
+    margin: 5px 0 25px 0 !important;
+    font-weight: normal !important;
+    line-height: 1 !important;
+}
+
+.table-card-orc {
+    background: var(--favu-card) !important;
+    border-radius: 16px !important;
+    padding: 15px 10px !important;
+    box-shadow: 0 4px 15px rgba(29, 40, 20, 0.08) !important;
+    border: 1px solid rgba(255,255,255,0.5) !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    margin: 0 auto 20px auto !important;
+}
+
+.orc-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+}
+.orc-table caption { display: none !important; }
+.orc-table thead th {
+    font-family: 'Basic Choice', cursive !important;
+    color: #1D2814 !important;
+    font-size: 1rem !important;
+    padding: 0 0 12px 0 !important;
+    text-align: center !important;
+    border-bottom: 2px solid rgba(29, 40, 20, 0.2) !important;
+    text-transform: uppercase !important;
+    font-weight: normal !important;
+}
+.orc-table th.col-item, .orc-table td.col-item { text-align: left !important; padding-left: 5px !important; width: 35% !important; word-wrap: break-word !important; }
+.orc-table th.col-icon, .orc-table td.col-icon { width: 6% !important; text-align: center !important; vertical-align: middle !important; }
+.orc-table th.col-sec, .orc-table td.col-sec { width: 19.6% !important; text-align: center !important; }
+.orc-table th.col-unid, .orc-table td.col-unid { width: 19.6% !important; text-align: center !important; }
+.orc-table th.col-qtd, .orc-table td.col-qtd { width: 19.6% !important; text-align: center !important; }
+.orc-table tbody tr { border-bottom: 1px dashed rgba(224, 159, 65, 0.2) !important; transition: background-color 0.2s ease !important; }
+.orc-table tbody tr:hover { background-color: rgba(224, 159, 65, 0.05) !important; }
+.orc-table tbody tr.group-separator, .orc-table tbody tr.group-separator-top { border-bottom: 2px solid rgba(224, 159, 65, 0.4) !important; }
+.orc-table tbody tr:last-child { border-bottom: none !important; }
+.orc-table td {
+    padding: 12px 5px !important;
+    vertical-align: middle !important;
+    color: var(--favu-green) !important;
+    font-size: 0.95rem !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+}
+.orc-table td.col-item { font-size: 1.1rem !important; text-transform: uppercase !important; padding-right: 5px !important; }
+.orc-table td.col-icon { padding: 12px 0 !important; }
+.item-nome-texto { line-height: 1.2 !important; }
+.descricao-orc, .orc-table .descricao {
+    font-size: 0.8rem !important;
+    color: var(--favu-moss) !important;
+    font-weight: normal !important;
+    margin-top: 5px !important;
+    line-height: 1.3 !important;
+    font-family: 'Basic Choice', cursive !important;
+    text-transform: none !important;
+    text-align: left !important;
+}
+.orc-table .quantidade-container { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; }
+.orc-table .quantidade-input-group { display: flex !important; align-items: center !important; justify-content: center !important; gap: 5px !important; }
+.orc-table .qtd-btn-table {
+    width: 25px !important;
+    height: 30px !important;
+    border: none !important;
+    background: none !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.3rem !important;
+    font-weight: bold !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    transition: opacity 0.2s !important;
+    line-height: 1 !important;
+}
+.orc-table .qtd-btn-table:hover { opacity: 0.7 !important; }
+.orc-table input[type="number"] {
+    width: 38px !important;
+    height: 30px !important;
+    text-align: center !important;
+    border: 1px solid #ddd !important;
+    border-radius: 6px !important;
+    background-color: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1rem !important;
+    outline: none !important;
+    transition: 0.2s !important;
+    padding: 0 !important;
+}
+.orc-table input[type="number"]:focus { border-color: var(--favu-rust) !important; }
+.orc-table input[type="number"]::-webkit-outer-spin-button,
+.orc-table input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
+.orc-table input[type="number"] { -moz-appearance: textfield !important; }
+
+#fixed-summary-orc {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 5% !important;
+    right: 5% !important;
+    transform: none !important;
+    width: 90% !important;
+    max-width: 540px !important;
+    margin: 0 auto !important;
+    background-color: var(--favu-green) !important;
+    color: #fff !important;
+    padding: 12px 30px !important;
+    border-radius: 50px !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2) !important;
+    z-index: 1000 !important;
+    display: none;
+    cursor: pointer !important;
+    border: none !important;
+    font-family: 'Basic Choice', cursive !important;
+}
+.summary-content-orc { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
+#summary-text-orc { flex: 1 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; justify-content: center !important; }
+#summary-total-orc { font-size: 1.5rem !important; font-family: 'Basic Choice', cursive !important; }
+#summary-item-count-orc { font-size: 0.85rem !important; font-family: 'Basic Choice', cursive !important; }
+.foto-hint { color: var(--favu-rust) !important; opacity: 0.65 !important; font-size: 0.95rem !important; }
+
+#modal-orcamento-pedido .orc-popup,
+#modal-orcamento-cliente .orc-popup {
+    background-color: var(--favu-card) !important;
+    padding: 30px 25px 25px 25px !important;
+    border-radius: 20px !important;
+    width: 90% !important;
+    max-width: 440px !important;
+    text-align: center !important;
+    position: relative !important;
+    max-height: 90vh !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    font-family: 'Basic Choice', cursive !important;
+    transform: translateY(20px);
+    transition: 0.3s !important;
+}
+#modal-orcamento-pedido.show .orc-popup,
+#modal-orcamento-cliente.show .orc-popup { transform: translateY(0) !important; }
+#modal-orcamento-pedido .orc-popup { overflow-y: auto !important; }
+#modal-orcamento-cliente .orc-popup { overflow: hidden !important; display: flex !important; flex-direction: column !important; }
+#modal-orcamento-pedido .orc-popup h2,
+#modal-orcamento-cliente .orc-popup h2 {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.6rem !important;
+    margin: 5px 0 15px 0 !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid rgba(224, 159, 65, 0.2) !important;
+    text-transform: uppercase !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex-shrink: 0 !important;
+}
+#modal-orcamento-cliente .orc-popup-scroll {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    padding-right: 8px !important;
+    margin-right: -12px !important;
+    scrollbar-gutter: stable !important;
+}
+#modal-orcamento-cliente .orc-popup-scroll::-webkit-scrollbar,
+#modal-orcamento-pedido .orc-popup::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+#modal-orcamento-cliente .orc-popup-scroll::-webkit-scrollbar-track,
+#modal-orcamento-pedido .orc-popup::-webkit-scrollbar-track { background: transparent !important; margin: 6px 0 !important; }
+#modal-orcamento-cliente .orc-popup-scroll::-webkit-scrollbar-thumb,
+#modal-orcamento-pedido .orc-popup::-webkit-scrollbar-thumb { background: rgba(224, 159, 65, 0.4) !important; border-radius: 10px !important; }
+#modal-orcamento-cliente .orc-popup-scroll::-webkit-scrollbar-thumb:hover,
+#modal-orcamento-pedido .orc-popup::-webkit-scrollbar-thumb:hover { background: var(--favu-rust) !important; }
+
+/* ajuste fino: barra dentro do popup e rente à borda interna */
+#modal-orcamento-cliente .orc-popup {
+    overflow: hidden !important;
+}
+
+#modal-orcamento-pedido .resumo-itens { border-top: none !important; padding-top: 0 !important; }
+#modal-orcamento-pedido .resumo-grupo-titulo {
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-green) !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+    text-align: left !important;
+    margin-top: 20px !important;
+    margin-bottom: 8px !important;
+}
+#modal-orcamento-pedido .resumo-item-line {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px dashed rgba(29, 40, 20, 0.2) !important;
+    text-align: left !important;
+    gap: 8px !important;
+}
+#modal-orcamento-pedido .resumo-item-name,
+#modal-orcamento-pedido .resumo-item-name small {
+    font-family: var(--font-numbers) !important;
+    text-transform: none !important;
+}
+#modal-orcamento-pedido .resumo-item-name {
+    flex: 1 !important;
+    color: var(--favu-green) !important;
+    font-size: 1rem !important;
+    font-weight: normal !important;
+    padding-right: 10px !important;
+    min-width: 0 !important;
+}
+#modal-orcamento-pedido .resumo-item-name small {
+    display: block !important;
+    font-size: 0.9rem !important;
+    color: var(--favu-moss) !important;
+    font-weight: normal !important;
+    margin-top: 2px !important;
+}
+#modal-orcamento-pedido .resumo-item-input-group { display: flex !important; align-items: center !important; gap: 5px !important; }
+#modal-orcamento-pedido .resumo-qtd-btn { background: none !important; border: none !important; color: var(--favu-rust) !important; font-size: 1.3rem !important; font-weight: bold !important; cursor: pointer !important; padding: 0 5px !important; }
+#modal-orcamento-pedido .resumo-item-input-group input[type="number"] { width: 38px !important; height: 30px !important; border: 1px solid rgba(29, 40, 20, 0.2) !important; border-radius: 6px !important; text-align: center !important; font-family: var(--font-numbers) !important; font-size: 1rem !important; color: var(--favu-green) !important; background: #fff !important; outline: none !important; padding: 0 !important; }
+#modal-orcamento-pedido .btn-excluir { background: none !important; border: none !important; color: #E60000 !important; font-size: 1rem !important; cursor: pointer !important; margin-left: 6px !important; }
+#modal-orcamento-pedido #desconto-container { border: 1px dashed rgba(29, 40, 20, 0.3) !important; border-radius: 12px !important; padding: 20px 15px 12px 15px !important; position: relative !important; margin: 25px 0 15px 0 !important; text-align: center !important; background: transparent !important; }
+#modal-orcamento-pedido #desconto-container strong { background: var(--favu-card) !important; color: var(--favu-green) !important; font-family: 'Basic Choice', cursive !important; font-size: 1rem !important; font-weight: normal !important; text-transform: uppercase !important; }
+#modal-orcamento-pedido #orc-desconto { font-family: var(--font-numbers) !important; color: var(--favu-green) !important; text-transform: none !important; }
+#modal-orcamento-pedido .resumo-footer-area { border-top: 1px solid rgba(224, 159, 65, 0.2) !important; padding-top: 15px !important; margin-top: 15px !important; }
+#modal-orcamento-pedido .resumo-total { text-align: right !important; font-family: 'Basic Choice', cursive !important; font-size: 1.4rem !important; font-weight: normal !important; color: var(--favu-green) !important; margin-bottom: 15px !important; text-transform: uppercase !important; }
+
+#form-pedido-orc { text-align: left !important; display: flex !important; flex-direction: column !important; gap: 12px !important; margin-bottom: 15px !important; width: 100% !important; }
+#form-pedido-orc .input-group { display: flex !important; flex-direction: column !important; gap: 5px !important; width: 100% !important; max-width: 100% !important; overflow: hidden !important; }
+#form-pedido-orc .form-grid-2 { display: flex !important; flex-direction: column !important; gap: 12px !important; margin-bottom: 0 !important; }
+#form-pedido-orc label { font-weight: normal !important; font-size: 0.9rem !important; color: var(--favu-green) !important; font-family: 'Basic Choice', cursive !important; text-transform: uppercase !important; }
+#form-pedido-orc input,
+#form-pedido-orc select,
+#form-pedido-orc textarea { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 10px 12px !important; border-radius: 10px !important; border: 1px solid rgba(29, 40, 20, 0.2) !important; font-family: var(--font-numbers) !important; font-size: 1rem !important; outline: none !important; background: #fff !important; color: var(--favu-green) !important; text-transform: none !important; }
+#form-pedido-orc input::placeholder,
+#form-pedido-orc textarea::placeholder { font-family: var(--font-numbers) !important; color: #aaa !important; text-transform: none !important; }
+#form-pedido-orc input:focus,
+#form-pedido-orc select:focus,
+#form-pedido-orc textarea:focus { border-color: var(--favu-rust) !important; }
+#modal-orcamento-cliente .popup-footer-actions,
+#modal-orcamento-pedido .popup-footer-actions { display: flex !important; flex-direction: column !important; gap: 8px !important; border-top: 1px solid rgba(224, 159, 65, 0.2) !important; padding-top: 15px !important; }
+#modal-orcamento-cliente .popup-footer-actions-top,
+#modal-orcamento-pedido .popup-footer-actions-top { display: flex !important; flex-direction: row !important; gap: 8px !important; width: 100% !important; }
+#modal-orcamento-cliente .btn-secondary-form,
+#modal-orcamento-pedido .btn-secondary-form { background-color: #7FB1C8 !important; color: #fff !important; border: none !important; padding: 10px !important; border-radius: 10px !important; font-family: 'Basic Choice', cursive !important; font-size: 1rem !important; cursor: pointer !important; flex: 1 !important; text-transform: uppercase !important; }
+#modal-orcamento-pedido .btn-secondary-form[style*="favu-rust"] { background-color: var(--favu-rust) !important; }
+#modal-orcamento-cliente .btn-primary-large,
+#modal-orcamento-pedido .btn-primary-large { background-color: var(--favu-rust) !important; color: #fff !important; font-size: 1.1rem !important; padding: 10px !important; border-radius: 10px !important; width: 100% !important; font-family: 'Basic Choice', cursive !important; border: none !important; cursor: pointer !important; text-transform: uppercase !important; }
+#modal-orcamento-cliente .btn-secondary-form:hover,
+#modal-orcamento-pedido .btn-secondary-form:hover,
+#modal-orcamento-cliente .btn-primary-large:hover,
+#modal-orcamento-pedido .btn-primary-large:hover { opacity: 0.85 !important; }
+
+@media (max-width: 600px) {
+    .orc-table { table-layout: fixed !important; width: 100% !important; }
+    .orc-table th.col-icon, .orc-table td.col-icon { width: 20px !important; padding: 0 !important; }
+    .orc-table th.col-sec, .orc-table td.col-sec { width: 45px !important; padding: 0 !important; }
+    .orc-table th.col-unid, .orc-table td.col-unid { width: 55px !important; padding: 12px 0 !important; text-align: center !important; line-height: 1.2 !important; }
+    .orc-table td.col-unid .moeda { display: block !important; font-size: 0.75rem !important; color: var(--favu-moss) !important; margin-bottom: 1px !important; }
+    .orc-table td.col-unid .valor { display: block !important; font-size: 0.85rem !important; }
+    .orc-table th.col-qtd, .orc-table td.col-qtd { width: 90px !important; padding: 12px 0 !important; text-align: center !important; }
+    .orc-table th.col-item, .orc-table td.col-item { width: auto !important; padding-right: 4px !important; }
+    .orc-table .quantidade-input-group { gap: 2px !important; justify-content: center !important; width: 100% !important; }
+    .orc-table input[type="number"] { width: 34px !important; height: 28px !important; padding: 0 !important; margin: 0 !important; }
+    .orc-table .qtd-btn-table { width: 24px !important; }
+}
+
+@media (min-width: 601px) {
+    #t-orcamentos .th-mobile { display: none !important; }
+    #t-orcamentos .th-desktop { display: inline !important; }
+    .table-card-orc { padding: 25px 35px !important; max-width: 850px !important; margin: 0 auto 20px auto !important; }
+    .categoria-title-orc { font-size: 3rem !important; margin: 5px auto 25px auto !important; }
+    .orc-table thead th { font-size: 0.95rem !important; padding-bottom: 10px !important; }
+    .orc-table td { font-size: 0.9rem !important; padding: 12px 5px !important; }
+    .orc-table td.col-item { font-size: 1.05rem !important; padding-right: 15px !important; }
+    .orc-table th.col-icon, .orc-table td.col-icon { width: 5% !important; }
+    .descricao-orc, .orc-table .descricao { font-size: 0.75rem !important; margin-top: 4px !important; }
+    #orc-cats-nav .categoria-btn-orc { font-size: 0.95rem !important; padding: 6px 18px !important; }
+    .orc-table input[type="number"] { width: 36px !important; height: 28px !important; font-size: 0.95rem !important; }
+    .orc-table .qtd-btn-table { font-size: 1.1rem !important; }
+    #modal-orcamento-pedido .orc-popup,
+    #modal-orcamento-cliente .orc-popup { padding: 30px 25px 20px 25px !important; }
+    #modal-orcamento-pedido .orc-popup h2,
+    #modal-orcamento-cliente .orc-popup h2 { font-size: 1.4rem !important; }
+    #modal-orcamento-pedido .resumo-grupo-titulo { font-size: 1rem !important; }
+    #modal-orcamento-pedido .resumo-item-name { font-size: 0.9rem !important; }
+    #modal-orcamento-pedido .resumo-item-name small { font-size: 0.8rem !important; }
+    #modal-orcamento-pedido .resumo-item-input-group input[type="number"] { width: 34px !important; height: 28px !important; font-size: 0.9rem !important; }
+    #modal-orcamento-pedido .resumo-qtd-btn { font-size: 1.2rem !important; }
+    #modal-orcamento-pedido .btn-excluir { font-size: 0.95rem !important; }
+    #modal-orcamento-pedido .resumo-total { font-size: 1.2rem !important; margin-bottom: 10px !important; }
+    #form-pedido-orc label { font-size: 0.8rem !important; }
+    #form-pedido-orc input,
+    #form-pedido-orc select,
+    #form-pedido-orc textarea { font-size: 0.9rem !important; padding: 8px 10px !important; }
+    #modal-orcamento-cliente .btn-secondary-form,
+    #modal-orcamento-pedido .btn-secondary-form { font-size: 0.9rem !important; padding: 8px !important; }
+    #modal-orcamento-cliente .btn-primary-large,
+    #modal-orcamento-pedido .btn-primary-large { font-size: 1rem !important; padding: 8px !important; margin-top: 5px !important; }
+}
+
+@media (max-width: 768px) {
+    #t-orcamentos { padding: 10px 0 100px 0 !important; }
+    #t-orcamentos .orcamento-header-panel { margin: 0 10px 16px 10px !important; }
+    #t-orcamentos .orcamento-title { font-size: 1.45rem !important; max-width: 100% !important; }
+    #search-orcamento { max-width: 320px !important; }
+    #modal-orcamento-pedido .orc-popup h2,
+    #modal-orcamento-cliente .orc-popup h2 { font-size: 1.25rem !important; white-space: nowrap !important; }
+}
+@media (max-width: 390px) {
+    #t-orcamentos .orcamento-title { font-size: 1.22rem !important; }
+    #search-orcamento { max-width: 100% !important; }
+    #modal-orcamento-pedido .orc-popup h2,
+    #modal-orcamento-cliente .orc-popup h2 { font-size: 1.08rem !important; }
+}
+
+
+
+/* === ORÇAMENTO 2026-06-19: AJUSTE FINAL PARA ESPELHAR O CARDÁPIO === */
+#t-orcamentos #orc-menu-container {
+    padding-top: 28px !important;
+}
+
+#t-orcamentos .categoria-title-orc {
+    font-size: 3.333rem !important;
+    line-height: 1 !important;
+    margin: 18px auto 34px auto !important;
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+#t-orcamentos .table-card-orc {
+    background: var(--favu-card) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 15px rgba(29, 40, 20, 0.08) !important;
+    border: 1px solid rgba(255,255,255,0.5) !important;
+}
+
+#t-orcamentos .orc-table thead th {
+    font-size: 1.055rem !important;
+    padding-bottom: 10px !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    color: #1D2814 !important;
+}
+
+#t-orcamentos .orc-table td {
+    font-size: 1rem !important;
+    padding: 12px 5px !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    color: var(--favu-green) !important;
+    vertical-align: middle !important;
+}
+
+#t-orcamentos .orc-table td.col-item {
+    font-size: 1.167rem !important;
+    padding-right: 15px !important;
+    text-transform: uppercase !important;
+}
+
+#t-orcamentos .orc-table td.col-sec {
+    font-size: 1.111rem !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+}
+
+#t-orcamentos .orc-table .peso-mobile {
+    display: block !important;
+    white-space: nowrap !important;
+    font-size: 0.833rem !important;
+    margin-top: 2px !important;
+    color: var(--favu-moss) !important;
+    line-height: 1.2 !important;
+}
+
+#t-orcamentos .orc-table td.col-unid {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+}
+
+#t-orcamentos .orc-table td.col-unid .moeda,
+#t-orcamentos .orc-table td.col-unid .valor {
+    display: inline !important;
+}
+
+#t-orcamentos .orc-table input[type="number"] {
+    width: 40px !important;
+    height: 32px !important;
+    font-size: 1.055rem !important;
+    font-family: 'Basic Choice', cursive !important;
+    padding: 0 !important;
+}
+
+#t-orcamentos .orc-table .qtd-btn-table {
+    font-size: 1.222rem !important;
+    width: 25px !important;
+    height: 32px !important;
+}
+
+#t-orcamentos .orc-table tbody tr.group-separator {
+    border-bottom: 2px solid rgba(224, 159, 65, 0.4) !important;
+}
+
+#t-orcamentos .orc-table tbody tr:not(.group-separator) {
+    border-bottom: 1px dashed rgba(224, 159, 65, 0.2) !important;
+}
+
+@media (min-width: 601px) {
+    #t-orcamentos .table-card-orc {
+        padding: 25px 35px !important;
+        max-width: 850px !important;
+        margin: 0 auto 20px auto !important;
+    }
+}
+
+@media (max-width: 600px) {
+    #t-orcamentos #orc-menu-container {
+        padding-top: 8px !important;
+    }
+
+    #t-orcamentos .categoria-title-orc {
+        font-size: 2.6rem !important;
+        margin: 5px auto 25px auto !important;
+    }
+
+    #t-orcamentos .orc-table td,
+    #t-orcamentos .orc-table thead th {
+        font-size: inherit !important;
+    }
+
+    #t-orcamentos .orc-table td.col-sec {
+        font-size: 0.9rem !important;
+    }
+
+    #t-orcamentos .orc-table .peso-mobile {
+        font-size: 0.75rem !important;
+    }
+
+    #t-orcamentos .orc-table td.col-unid .moeda,
+    #t-orcamentos .orc-table td.col-unid .valor {
+        display: block !important;
+    }
+}
+
+
+
+/* === ORÇAMENTO 2026-06-19: DADOS EM ARIAL ===
+   Mantém os títulos da tabela e os títulos dos itens na fonte atual.
+   Aplica Arial apenas aos dados/valores do orçamento. */
+#t-orcamentos .orc-table tbody td:not(.col-item):not(.col-icon),
+#t-orcamentos .orc-table tbody td:not(.col-item):not(.col-icon) * {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+#t-orcamentos .orc-table td.col-item .descricao-orc,
+#t-orcamentos .orc-table td.col-item .descricao-orc * {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+#t-orcamentos .orc-table thead th,
+#t-orcamentos .orc-table thead th *,
+#t-orcamentos .orc-table td.col-item .item-nome-texto,
+#t-orcamentos .orc-table td.col-item .item-nome-texto * {
+    font-family: 'Basic Choice', cursive !important;
+}
+
+#t-orcamentos .orc-table td.col-sec,
+#t-orcamentos .orc-table td.col-sec *,
+#t-orcamentos .orc-table td.col-unid,
+#t-orcamentos .orc-table td.col-unid *,
+#t-orcamentos .orc-table td.col-qtd,
+#t-orcamentos .orc-table td.col-qtd *,
+#t-orcamentos .orc-table input[type="number"],
+#t-orcamentos .orc-table .qtd-btn-table {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+#summary-total-orc,
+#summary-item-count-orc,
+#form-pedido-orc input,
+#form-pedido-orc select,
+#form-pedido-orc textarea,
+#modal-orcamento-pedido #orc-desconto,
+#modal-orcamento-pedido .resumo-item-name small,
+#modal-orcamento-pedido .resumo-item-input-group input[type="number"] {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
 </style>
 
-    <script type="module" src="./admin.js?v=20260618-comunicados-1"></script>
+    <script type="module" src="./admin.js?v=20260619-login-senha-um-icone-1"></script>
+
+</body>
 
 </body>
 </html>

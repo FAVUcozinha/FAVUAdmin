@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v12';
+const CACHE_NAME = 'favu-app-v39-login-senha-um-icone';
 const urlsToCache = [
   './',
   './index.html',
