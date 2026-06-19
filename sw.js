@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v39-login-senha-um-icone';
+const CACHE_NAME = 'favu-app-v40-correcoes-ios-orc-agenda-retirada';
 const urlsToCache = [
   './',
   './index.html',

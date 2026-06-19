@@ -37,7 +37,7 @@ window.STATUS_FLOW = [
     'Pedidos Orçados',
     'Pedido Recebido',
     'Pedido Confirmado',
-    'Aguardando Retirada',
+    'Retirada',
     'Entregue',
     'Cancelado'
 ];
@@ -1789,8 +1789,7 @@ window.renderOrcamentoMenu = function() {
             htmlFull += gerarTabelaHtml(itens, catObj.tipoColuna);
         }
         
-        const infoBoxHTML = (catObj.mensagemObs && catObj.mensagemObs.trim() !== '') ? `<div class="info-box"><div class="info-box-content">${sanitizeRichText(catObj.mensagemObs)}</div></div>` : '';
-        htmlFull += `${infoBoxHTML}</div>`; 
+        htmlFull += `</div>`; 
         container.innerHTML += htmlFull;
     });
 
@@ -1836,8 +1835,31 @@ window.abrirModalOrcamento = function() { window.openModal('modal-orcamento-pedi
 window.avancarDadosCliente = function() { document.getElementById('modal-orcamento-pedido').classList.remove('show'); setTimeout(() => { document.getElementById('modal-orcamento-pedido').style.display = 'none'; window.openModal('modal-orcamento-cliente'); }, 300); };
 window.voltarResumoOrcamento = function() { document.getElementById('modal-orcamento-cliente').classList.remove('show'); setTimeout(() => { document.getElementById('modal-orcamento-cliente').style.display = 'none'; window.openModal('modal-orcamento-pedido'); }, 300); };
 window.buscarContato = async function() {
-    if (!('contacts' in navigator && 'ContactsManager' in window)) return customAlert("Navegador não suporta busca automática.");
-    try { const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false }); if (contacts.length > 0) { if (contacts[0].name) document.getElementById('orc-nome').value = contacts[0].name[0]; if (contacts[0].tel) document.getElementById('orc-tel').value = contacts[0].tel[0].replace(/\D/g, ''); } } catch (err) { customAlert("Erro.", "Erro"); }
+    const nomeInput = document.getElementById('orc-nome');
+    const telInput = document.getElementById('orc-tel');
+
+    const focarTelefone = () => {
+        if (telInput) {
+            telInput.focus();
+            try { telInput.click(); } catch (e) {}
+        }
+        window.showToast("Preencha o número do cliente.");
+    };
+
+    if ('contacts' in navigator && 'ContactsManager' in window && navigator.contacts?.select) {
+        try {
+            const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+            if (contacts.length > 0) {
+                if (contacts[0].name && nomeInput) nomeInput.value = contacts[0].name[0];
+                if (contacts[0].tel && telInput) telInput.value = contacts[0].tel[0].replace(/\D/g, '');
+                return;
+            }
+        } catch (err) {
+            console.warn("Busca automática de contato indisponível/cancelada:", err);
+        }
+    }
+
+    focarTelefone();
 };
 
 window.gerarOrcamentoWA = async function() {
@@ -1916,12 +1938,19 @@ window.inicializarKanban = function() {
     });
 };
 
+function normalizarStatusPedidoFluxo(status) {
+    const valor = String(status || '').trim();
+    if (valor.toLowerCase() === 'aguardando retirada') return 'Retirada';
+    return valor || 'Pedidos Orçados';
+}
+
 function getStatusPedidoLabel(status) {
     const labels = {
         'Pedidos Orçados': 'Orçados',
         'Pedido Recebido': 'Recebido',
         'Pedido Confirmado': 'Confirmado',
-        'Aguardando Retirada': 'Aguardando Retirada',
+        'Aguardando Retirada': 'Retirada',
+        'Retirada': 'Retirada',
         'Entregue': 'Entregue',
         'Cancelado': 'Cancelado'
     };
@@ -2200,7 +2229,7 @@ window.renderizar = function(pedidos) {
     const contadores = {}; window.STATUS_FLOW.forEach(s => contadores[s] = 0);
     const pedStatus = {}; window.STATUS_FLOW.forEach(s => pedStatus[s] = []);
 
-    pedidos.forEach(p => { const s = window.STATUS_FLOW.find(x => x.toLowerCase() === (p.Status_do_Pedido || 'Pedidos Orçados').toLowerCase()) || 'Pedidos Orçados'; pedStatus[s].push(p); });
+    pedidos.forEach(p => { const statusAtual = normalizarStatusPedidoFluxo(p.Status_do_Pedido || 'Pedidos Orçados'); const s = window.STATUS_FLOW.find(x => x.toLowerCase() === statusAtual.toLowerCase()) || 'Pedidos Orçados'; pedStatus[s].push(p); });
 
     window.STATUS_FLOW.forEach(s => {
         const ord = ordenarPedidosPorDataHorario([...pedStatus[s]]);
@@ -2236,7 +2265,7 @@ window.atualizarDashboardPedidos = function() {
 }
 
 window.criarCardHTML = function(p) {
-    const c = document.createElement('div'); const st = (p.Status_do_Pedido || '').replace(/\s+/g, '-'); const tO = p.Observacoes && p.Observacoes.trim() !== '';
+    const c = document.createElement('div'); const st = normalizarStatusPedidoFluxo(p.Status_do_Pedido || '').replace(/\s+/g, '-'); const tO = p.Observacoes && p.Observacoes.trim() !== '';
     c.className = `pedido-card status-${st} ${tO ? 'com-observacao' : ''} ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'selected' : ''}`;
     if(window.isDragEnabled) c.draggable = true; c.id = `card-${p.ID_do_Pedido}`; c.dataset.id = p.ID_do_Pedido;
     if(window.isDragEnabled) {
@@ -3235,7 +3264,7 @@ window.confirmarEnvioWhatsApp = async function(m) {
     let num = p.Numero ? p.Numero.replace(/\D/g, '') : ''; if(num.length >= 10 && !num.startsWith('55')) num = '55' + num;
     const n = (p.Nome_Cliente || 'Cliente').trim().split(' ')[0]; let t = '';
     if (m === 'resumo') { t = `*Olá ${n}!*\n\n*Resumo do Pedido ${p.ID_do_Pedido}*\n\n*Data de Entrega:* ${p.Data_Entrega || '--/--/----'}\n*Horário:* ${p.Horario_Entrega || '--:--'}\n\n${p.Resumo_dos_Itens ? `*Itens:*\n${p.Resumo_dos_Itens}\n\n` : ''}*Total:* R$ ${formatarValorComCentavos(p.Total_Final)}\n*Forma de Pagamento:* ${p.Forma_de_Pagamento || 'Não informado'}`; } 
-    else if (m === 'pronto') { window.mostrarLoading(true); try { await updateDoc(doc(db, "pedidos", p.ID_do_Pedido), { Status_do_Pedido: 'Aguardando Retirada' }); } catch(e) {} window.mostrarLoading(false); t = `*Olá ${n}!*\n\nSeu pedido *${p.ID_do_Pedido}* está pronto para retirada!\n\n${p.Data_Entrega || '--/--/----'}\n${p.Horario_Entrega || '--:--'}\n\nAguardamos você!`; } 
+    else if (m === 'pronto') { window.mostrarLoading(true); try { await updateDoc(doc(db, "pedidos", p.ID_do_Pedido), { Status_do_Pedido: 'Retirada' }); } catch(e) {} window.mostrarLoading(false); t = `*Olá ${n}!*\n\nSeu pedido *${p.ID_do_Pedido}* está pronto para retirada!\n\n${p.Data_Entrega || '--/--/----'}\n${p.Horario_Entrega || '--:--'}\n\nAguardamos você!`; } 
     else { t = `Olá ${n}!`; }
     if(num) window.open(`https://wa.me/${num}?text=${encodeURIComponent(t)}`, '_blank'); document.getElementById('whatsapp-confirm-modal').style.display = 'none';
 }

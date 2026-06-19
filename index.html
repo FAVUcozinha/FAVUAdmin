@@ -262,7 +262,7 @@
         .pedido-card { background-color: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; border-left: 5px solid #ccc; cursor: grab; transition: transform 0.2s; display: flex; flex-direction: column; gap: 5px; }
         .pedido-card.selected { border: 2px solid var(--favu-rust); }
         .observacao-tag { display: inline-block; background-color: #fff9c4; color: #f57f17; font-size: 0.65em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; margin-top: 2px; }
-        .status-Pedidos-Orçados { border-left-color: #E09F41; } .status-Pedido-Recebido { border-left-color: #3498db; } .status-Pedido-Confirmado { border-left-color: #f39c12; } .status-Aguardando-Retirada { border-left-color: #9b59b6; } .status-Entregue { border-left-color: #28a745; } .status-Cancelado { border-left-color: #e74c3c; opacity: 0.6; }
+        .status-Pedidos-Orçados { border-left-color: #E09F41; } .status-Pedido-Recebido { border-left-color: #3498db; } .status-Pedido-Confirmado { border-left-color: #f39c12; } .status-Retirada, .status-Aguardando-Retirada { border-left-color: #9b59b6; } .status-Entregue { border-left-color: #28a745; } .status-Cancelado { border-left-color: #e74c3c; opacity: 0.6; }
         .card-header { display: flex; justify-content: space-between; align-items: center; }
         .card-checkbox { cursor: pointer; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--favu-rust); }
         .card-id { font-size: 0.75em; color: #888; font-family: var(--font-numbers); font-weight: bold; }
@@ -1463,6 +1463,29 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
     pointer-events: none !important;
 }
 
+
+/* === FAVU 2026-06-19: correção campos de data no iOS === */
+input[type="date"] {
+    min-height: 44px !important;
+    height: 44px !important;
+    line-height: 22px !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    box-sizing: border-box !important;
+    background-color: #fff !important;
+}
+input[type="date"]::-webkit-date-and-time-value {
+    min-height: 22px !important;
+    line-height: 22px !important;
+    text-align: left !important;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    min-height: 22px !important;
+}
+
 </style>
 
 <style>
@@ -2018,7 +2041,7 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
                 <div class="input-group">
                     <label>NÚMERO (WHATSAPP):</label>
                     <div style="display: flex; gap: 5px;">
-                        <input type="tel" id="orc-tel" placeholder="(DDD) 9XXXX-XXXX">
+                        <input type="tel" id="orc-tel" placeholder="(DDD) 9XXXX-XXXX" autocomplete="tel">
                         <button type="button" class="btn btn-secondary" onclick="window.buscarContato()" title="Buscar nos contatos" style="padding: 10px; border-radius: 10px;"><i class="fas fa-address-book"></i></button>
                     </div>
                 </div>
@@ -4210,7 +4233,7 @@ body.side-menu-open #bulk-actions-avisos { display: none !important; }
 
 </style>
 
-    <script type="module" src="./admin.js?v=20260619-login-senha-um-icone-1"></script>
+    <script type="module" src="./admin.js?v=20260619-correcoes-ios-orc-agenda-retirada-1"></script>
 
 </body>
 
