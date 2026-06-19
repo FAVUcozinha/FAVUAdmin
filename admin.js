@@ -1864,36 +1864,116 @@ window.buscarContato = async function() {
 
 window.gerarOrcamentoWA = async function() {
     let temItens = false; const groups = {}; let bruto = 0;
-    allProducts.forEach(p => { const q = orcQtdState[p.id] || 0; if(q > 0) { temItens = true; const cat = p.categoria || 'Geral'; bruto += (q * p.preco); if(!groups[cat]) groups[cat] = []; groups[cat].push({ q, p: p.preco, desc: p.descricaoResumo || p.nome }); } });
-    if(!temItens) return customAlert("Adicione itens ao orçamento.");
-    
-    const nm = document.getElementById('orc-nome').value.trim().toUpperCase(), tel = document.getElementById('orc-tel').value.trim(), dt = document.getElementById('orc-data').value, hrInput = document.getElementById('orc-hora'), hr = normalizarHoraPedidoManual(hrInput?.value || ''), pag = document.getElementById('orc-pag').value, obs = document.getElementById('orc-obs').value.trim(); if (hrInput && hr) hrInput.value = hr;
-    if(!nm || !dt || !hr || !pag || !tel) return customAlert("Preencha todos os dados.");
+    allProducts.forEach(p => {
+        const q = orcQtdState[p.id] || 0;
+        if (q > 0) {
+            temItens = true;
+            const cat = p.categoria || 'Geral';
+            const preco = converterValorParaNumero(p.preco);
+            bruto += (q * preco);
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push({ q, p: preco, desc: p.descricaoResumo || p.nome });
+        }
+    });
 
-    let txt = `Segue o orçamento do seu pedido!\n\n*_- Resumo do pedido_:*\n\n`, resumoTextoFirestore = '';
-    for(const cat in groups) {
-        txt += `*${cat}:*\n`; resumoTextoFirestore += `- ${cat}:\n`;
-        groups[cat].forEach(i => { 
-            const tot = i.p * i.q; 
-            txt += `${i.desc} - ${i.q} un. (R$ ${i.p.toFixed(2).replace('.',',')} cada) = R$ ${tot.toFixed(2).replace('.',',')}\n`; 
-            resumoTextoFirestore += `${i.q} un. - ${i.desc} (R$ ${i.p.toFixed(2).replace('.',',')}) = R$ ${tot.toFixed(2).replace('.',',')}\n`; 
+    if (!temItens) return customAlert("Adicione itens ao orçamento.");
+
+    const nm = document.getElementById('orc-nome').value.trim().toUpperCase(),
+        tel = document.getElementById('orc-tel').value.trim(),
+        dt = document.getElementById('orc-data').value,
+        hrInput = document.getElementById('orc-hora'),
+        hr = normalizarHoraPedidoManual(hrInput?.value || ''),
+        pag = document.getElementById('orc-pag').value,
+        obs = document.getElementById('orc-obs').value.trim();
+
+    if (hrInput && hr) hrInput.value = hr;
+    if (!nm || !dt || !hr || !pag || !tel) return customAlert("Preencha todos os dados.");
+
+    const desc = Math.max(0, converterValorParaNumero(document.getElementById('orc-desconto')?.value || 0));
+    const liq = Math.max(0, bruto - desc);
+    const cupomOrcamento = (
+        window.orcCupomAplicado?.codigo ||
+        document.getElementById('orc-cupom')?.value ||
+        ''
+    ).trim().toUpperCase();
+
+    const formatarMoedaOrc = (valor) => Number(valor || 0).toFixed(2).replace('.', ',');
+    const descontoLinha = desc > 0 ? `Desconto: -R$${formatarMoedaOrc(desc)}\n` : '';
+    const cupomLinha = cupomOrcamento ? `Cupom: ${cupomOrcamento}\n` : '';
+
+    let txt = `Segue o resumo do orçamento do seu pedido!\n\n*_- Resumo do pedido_:*\n\n`, resumoTextoFirestore = '';
+
+    for (const cat in groups) {
+        txt += `*${cat}:*\n`;
+        resumoTextoFirestore += `- ${cat}:\n`;
+
+        groups[cat].forEach(i => {
+            const tot = i.p * i.q;
+            txt += `${i.desc} - ${i.q} un. (R$ ${formatarMoedaOrc(i.p)} cada) = R$ ${formatarMoedaOrc(tot)}\n`;
+            resumoTextoFirestore += `${i.q} un. - ${i.desc} (R$ ${formatarMoedaOrc(i.p)}) = R$ ${formatarMoedaOrc(tot)}\n`;
         });
+
         txt += `\n`;
     }
-    const desc = parseFloat(document.getElementById('orc-desconto').value) || 0; const liq = Math.max(0, bruto - desc);
-    txt += `*- Valor dos Itens (Bruto)*: R$ ${bruto.toFixed(2).replace('.',',')}\n`;
-    if(desc > 0) txt += `*- Desconto Aplicado*: R$ ${desc.toFixed(2).replace('.',',')}\n`;
+
+    txt += `Valor dos Itens: R$ ${formatarMoedaOrc(bruto)}\n`;
+    if (cupomLinha || descontoLinha) {
+        txt += `${cupomLinha}${descontoLinha}`;
+    }
+
     const dateFormatted = `${dt.split('-')[2]}/${dt.split('-')[1]}/${dt.split('-')[0]}`;
-    txt += `\n* - Valor final do Pedido_*: *R$ ${liq.toFixed(2).replace('.',',')}*\n\n\n*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*\n\n_*- Informações do pedido:*_\n\n*Nome*: ${nm}\n*Data*: ${dateFormatted}\n*Horário*: ${hr}\n*Forma de Pagamento*: ${pag}`;
+    txt += `Valor Final: R$ ${formatarMoedaOrc(liq)}\n\n`;
+    txt += `*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*\n\n`;
+    txt += `_*- Informações do pedido:*_\n\n*Nome*: ${nm}\n*Data*: ${dateFormatted}\n*Horário*: ${hr}\n*Forma de Pagamento*: ${pag}`;
+
+    if (obs) txt += `\n*Observações*: ${obs}`;
+
+    const cupomFirestore = [
+        cupomOrcamento ? `Cupom: ${cupomOrcamento}` : '',
+        desc > 0 ? `Desconto: -R$${formatarMoedaOrc(desc)}` : ''
+    ].filter(Boolean).join(' | ');
 
     const orderId = 'ORC-' + Date.now().toString();
-    try { await setDoc(doc(db, "pedidos", orderId), { ID_do_Pedido: orderId, origem: 'orcamento', Status_do_Pedido: 'Pedidos Orçados', Nome_Cliente: nm, Numero: tel, Data_Entrega: dateFormatted, Horario_Entrega: hr, Total_Final: liq.toFixed(2).replace('.', ','), Forma_de_Pagamento: pag, Status_Pagamento: 'Pendente', Cupom: desc > 0 ? `Desconto Manual R$ ${desc.toFixed(2).replace('.', ',')}` : '', Observacoes: obs, Resumo_dos_Itens: resumoTextoFirestore.trim(), createdAt: Date.now() }); window.showToast("Orçamento salvo como Pedido!"); } catch (e) {}
+    const dadosPedido = {
+        ID_do_Pedido: orderId,
+        origem: 'orcamento',
+        Status_do_Pedido: 'Pedidos Orçados',
+        Nome_Cliente: nm,
+        Numero: tel,
+        Data_Entrega: dateFormatted,
+        Horario_Entrega: hr,
+        Total_Final: formatarMoedaOrc(liq),
+        Forma_de_Pagamento: pag,
+        Status_Pagamento: 'Pendente',
+        Cupom: cupomFirestore,
+        Observacoes: obs,
+        Resumo_dos_Itens: resumoTextoFirestore.trim(),
+        createdAt: Date.now()
+    };
 
-    let cleanTel = tel.replace(/\D/g, ''); if(cleanTel.length >= 10 && !cleanTel.startsWith('55')) cleanTel = '55' + cleanTel;
-    window.open(`https://wa.me/${cleanTel}?text=${encodeURIComponent(txt)}`, '_blank');
-    
-    orcQtdState = {}; document.getElementById('form-pedido-orc').reset(); document.getElementById('orc-desconto').value = '0';
-    window.renderOrcamentoMenu(); document.getElementById('modal-orcamento-cliente').classList.remove('show'); setTimeout(() => { document.getElementById('modal-orcamento-cliente').style.display = 'none'; }, 300);
+    let cleanTel = tel.replace(/\D/g, '');
+    if (cleanTel.length >= 10 && !cleanTel.startsWith('55')) cleanTel = '55' + cleanTel;
+
+    const whatsappUrl = `https://wa.me/${cleanTel}?text=${encodeURIComponent(txt)}`;
+
+    const salvamentoPedido = setDoc(doc(db, "pedidos", orderId), dadosPedido)
+        .then(() => window.showToast("Orçamento salvo como Pedido!"))
+        .catch((e) => {
+            console.error("Erro ao salvar orçamento:", e);
+            window.showToast("Resumo aberto no WhatsApp, mas houve erro ao salvar o orçamento.", true);
+        });
+
+    const janelaWhatsApp = window.open(whatsappUrl, '_blank');
+    if (!janelaWhatsApp) window.location.href = whatsappUrl;
+
+    await salvamentoPedido;
+
+    orcQtdState = {};
+    document.getElementById('form-pedido-orc').reset();
+    document.getElementById('orc-desconto').value = '0';
+    window.renderOrcamentoMenu();
+    document.getElementById('modal-orcamento-cliente').classList.remove('show');
+    setTimeout(() => { document.getElementById('modal-orcamento-cliente').style.display = 'none'; }, 300);
 };
 
 function configurarEventosDragOrcamento() {
