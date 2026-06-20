@@ -1486,6 +1486,289 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-height: 22px !important;
 }
 
+
+/* === PEDIDOS 2026-06-19: cupom e desconto separados === */
+#t-pedidos .card-cupom {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    line-height: 1.25 !important;
+}
+#t-pedidos .card-cupom-line {
+    display: block !important;
+}
+#t-pedidos .card-cupom-label {
+    font-weight: 700 !important;
+}
+
+
+/* === HORÁRIOS 2026-06-19: melhorias de layout e datas específicas === */
+#t-horarios .agenda-admin-grid {
+    align-items: stretch !important;
+}
+#t-horarios .agenda-form-card {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+#t-horarios .agenda-excecao-form {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+#t-horarios .agenda-excecao-form .btn {
+    margin-top: auto !important;
+}
+#t-horarios .agenda-save-btn {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+#t-horarios .agenda-datas-header {
+    justify-content: flex-start !important;
+}
+#t-horarios .agenda-datas-hint {
+    display: none !important;
+}
+#t-horarios .agenda-check-fechado {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+    font-family: var(--font-numbers) !important;
+}
+#t-horarios .agenda-dia-lista,
+#t-horarios .agenda-dia-row,
+#t-horarios .agenda-dia-row label,
+#t-horarios .agenda-dia-row input,
+#t-horarios .agenda-excecao-form input,
+#t-horarios .agenda-excecao-form label,
+#t-horarios .lista-excecoes-grid,
+#t-horarios .lista-excecoes-grid *,
+#modal-editar-excecao input,
+#modal-editar-excecao label,
+#modal-editar-excecao .agenda-check-fechado {
+    font-family: var(--font-numbers) !important;
+}
+#t-horarios .agenda-dia-row {
+    grid-template-columns: 92px minmax(0, 1fr) !important;
+}
+#t-horarios .agenda-dia-label {
+    display: grid !important;
+    grid-template-columns: 24px 1fr !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+#t-horarios .lista-excecoes-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#t-horarios .excecao-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: #fff !important;
+    padding: 12px !important;
+    border-radius: 10px !important;
+    border: 1px solid #ddd !important;
+    cursor: pointer !important;
+}
+#t-horarios .excecao-card-main {
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+#t-horarios .excecao-card-data {
+    color: var(--favu-rust) !important;
+    font-weight: 700 !important;
+    display: block !important;
+    margin-bottom: 4px !important;
+    white-space: normal !important;
+}
+#t-horarios .excecao-card-resumo {
+    color: #555 !important;
+    font-size: 0.86rem !important;
+    line-height: 1.35 !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+}
+#t-horarios .excecao-card-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+#t-horarios .excecao-card-actions button {
+    flex: 0 0 auto !important;
+}
+@media (max-width: 768px) {
+    #t-horarios .agenda-dia-row {
+        grid-template-columns: 82px minmax(0, 1fr) !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+    #t-horarios .agenda-dia-label {
+        grid-template-columns: 24px 36px !important;
+        gap: 7px !important;
+    }
+    #t-horarios .agenda-dia-row input[type="text"] {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    #t-horarios .agenda-check-fechado {
+        font-size: 0.9rem !important;
+    }
+    #t-horarios .excecao-card {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        padding: 12px !important;
+        overflow: hidden !important;
+    }
+    #t-horarios .excecao-card::after {
+        display: none !important;
+        content: none !important;
+    }
+}
+
+
+/* === HORÁRIOS 2026-06-19: ajustes de datas específicas === */
+#t-horarios #exc-data,
+#modal-editar-excecao #edit-exc-data-display {
+    position: relative !important;
+    text-align: left !important;
+    padding-right: 42px !important;
+}
+#t-horarios #exc-data::-webkit-calendar-picker-indicator,
+#modal-editar-excecao #edit-exc-data-display::-webkit-calendar-picker-indicator {
+    margin-left: auto !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+#t-horarios .agenda-excecao-form > .agenda-check-fechado {
+    margin-top: 12px !important;
+    margin-bottom: 18px !important;
+    text-transform: none !important;
+}
+#modal-editar-excecao .agenda-check-fechado {
+    margin-top: 12px !important;
+    margin-bottom: 18px !important;
+    text-transform: none !important;
+}
+#t-horarios .excecao-card {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+}
+#t-horarios .excecao-card-actions {
+    justify-content: center !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+    border-top: 1px dashed rgba(224, 159, 65, 0.35) !important;
+}
+#t-horarios .excecao-card-actions .btn-action {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+}
+#t-horarios .excecao-card-actions .btn-action.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+@media (max-width: 768px) {
+    #t-horarios .excecao-card {
+        grid-template-columns: 1fr !important;
+    }
+    #t-horarios .excecao-card-actions {
+        justify-content: center !important;
+        width: 100% !important;
+    }
+}
+
+
+/* === HORÁRIOS 2026-06-19: ícones e ações das datas específicas === */
+#t-horarios .excecao-card {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+}
+#t-horarios .excecao-card-actions {
+    justify-content: flex-end !important;
+    align-items: center !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: 0 !important;
+    width: auto !important;
+}
+#t-horarios .excecao-card-actions .btn-action {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    font-size: 1rem !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+}
+#t-horarios .excecao-card-actions .btn-action i {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    line-height: 1 !important;
+    color: inherit !important;
+}
+#t-horarios .excecao-card-actions .btn-action.edit {
+    background: var(--favu-moss) !important;
+    color: #fff !important;
+}
+#t-horarios .excecao-card-actions .btn-action.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+#t-horarios .excecao-card-actions .btn-action.del {
+    background: #E60000 !important;
+    color: #fff !important;
+}
+#modal-editar-excecao .btn.btn-secondary {
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* X dos modais de Atenção no canto superior direito */
+#custom-alert .popup-conteudo,
+#custom-confirm .popup-conteudo {
+    position: relative !important;
+}
+#custom-alert .close-modal,
+#custom-confirm .close-modal {
+    position: absolute !important;
+    top: 12px !important;
+    right: 16px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    z-index: 2 !important;
+}
+@media (max-width: 768px) {
+    #t-horarios .excecao-card {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+    }
+    #t-horarios .excecao-card-actions {
+        justify-content: flex-end !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: 0 !important;
+        width: auto !important;
+    }
+}
+
 </style>
 
 <style>
@@ -1620,10 +1903,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <ul class="nav-links">
                 <li><a class="menu-link" onclick="switchTab('t-cats', this)"><i class="fas fa-tags"></i> Categorias</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-avisos', this)"><i class="fas fa-bullhorn"></i> Comunicados</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-cupons', this)"><i class="fas fa-ticket-alt"></i> Cupons</a></li>
+                <li><a class="menu-link" onclick="switchTab('t-horarios', this)"><i class="fas fa-calendar-alt"></i> Horários</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-tema', this)"><i class="fas fa-paint-roller"></i> Layout</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-orcamentos', this)"><i class="fas fa-calculator"></i> Orçamentos</a></li>
                 <li><a class="menu-link active" onclick="switchTab('t-pedidos', this)"><i class="fas fa-clipboard-list"></i> Pedidos</a></li>
-                <li><a class="menu-link" onclick="switchTab('t-horarios', this)"><i class="fas fa-calendar-alt"></i> Horários</a></li>
                 <li><a class="menu-link" onclick="switchTab('t-prods', this)"><i class="fas fa-box-open"></i> Produtos</a></li>
             </ul>
 
@@ -1894,79 +2178,219 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         </div>
 
         <!-- NOVA ABA DE HORÁRIOS RESTRITOS -->
+
+            <div id="t-cupons" class="tab-pane">
+                <div class="panel-card cupom-header-panel">
+                    <h2 class="font-display cupom-title"><i class="fas fa-ticket-alt"></i> Cupons</h2>
+                </div>
+
+                <div class="cupons-grid">
+                    <div class="panel-card cupom-form-card">
+                        <h3 class="font-display cupom-section-title">Cadastrar Cupom</h3>
+                        <form id="form-cupom">
+                            <input type="hidden" id="cupom-id-original">
+                            <div class="form-grid">
+                                <div>
+                                    <label>Nome do cupom</label>
+                                    <input type="text" id="cupom-codigo" placeholder="Ex: BEMVINDO" required>
+                                </div>
+                                <div>
+                                    <label>Validade</label>
+                                    <input type="date" id="cupom-validade" required>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Máximo de uso</label>
+                                    <input type="number" id="cupom-max-uso" min="1" placeholder="Ex: 10" required>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Tipo de desconto</label>
+                                    <select id="cupom-tipo" required>
+                                        <option value="fixo">Valor fixo</option>
+                                        <option value="percentual">Porcentagem</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Valor do desconto</label>
+                                    <input type="number" id="cupom-valor" min="0" step="0.01" placeholder="Ex: 25 ou 10" required>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Pedido mínimo (R$)</label>
+                                    <input type="number" id="cupom-minimo" min="0" step="0.01" placeholder="Ex: 200">
+                                </div>
+                            </div>
+                            <div class="cupom-form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="window.limparFormCupom()">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar Cupom</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="panel-card cupom-list-card">
+                        <div class="cupom-list-header-inline">
+                            <h3 class="font-display cupom-section-title">Cupons Cadastrados</h3>
+                            <div class="search-filter-actions cupom-search-actions">
+                                <input type="text" id="search-cupom" class="search-bar" style="margin: 0;" placeholder="Buscar cupom..." oninput="window.renderCupons()">
+                                <button type="button" class="btn btn-outline btn-clear-filter" onclick="window.limparFiltroCupons()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                            </div>
+                        </div>
+                        <div class="cupons-tabs">
+                            <button type="button" id="tab-cupons-ativos" class="cupons-tab-btn active" onclick="window.setFiltroCupons('ativos')">Cupons Ativos</button>
+                            <button type="button" id="tab-cupons-inativos" class="cupons-tab-btn" onclick="window.setFiltroCupons('inativos')">Cupons Inativos</button>
+                        </div>
+                        <div id="cupons-lista" class="cupons-lista"></div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div id="modal-editar-cupom" class="modal" onclick="if(event.target === this) window.closeModal('modal-editar-cupom', 'form-edit-cupom')">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h3>Editar Cupom</h3>
+                        <button class="close-modal" onclick="window.closeModal('modal-editar-cupom', 'form-edit-cupom')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-edit-cupom">
+                            <input type="hidden" id="edit-cupom-id-original">
+                            <div class="form-grid">
+                                <div>
+                                    <label>Nome do cupom</label>
+                                    <input type="text" id="edit-cupom-codigo" disabled>
+                                </div>
+                                <div>
+                                    <label>Validade</label>
+                                    <input type="date" id="edit-cupom-validade" required>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Máximo de uso</label>
+                                    <input type="number" id="edit-cupom-max-uso" min="1" required>
+                                </div>
+                                <div>
+                                    <label>Tipo de desconto</label>
+                                    <select id="edit-cupom-tipo" required>
+                                        <option value="fixo">Valor fixo</option>
+                                        <option value="percentual">Porcentagem</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div>
+                                    <label>Valor do desconto</label>
+                                    <input type="number" id="edit-cupom-valor" min="0" step="0.01" required>
+                                </div>
+                                <div>
+                                    <label>Pedido mínimo (R$)</label>
+                                    <input type="number" id="edit-cupom-minimo" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top:18px;">
+                                <button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-editar-cupom', 'form-edit-cupom')" style="flex:1;">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" style="flex:1;">Salvar Cupom</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <div id="t-horarios" class="tab-pane">
-            <div class="agenda-admin-grid">
-                <div class="panel-card agenda-form-card">
-                    <h2 class="font-display agenda-title"><i class="fas fa-clock"></i> Horários por Dia da Semana</h2>
-                    <div class="agenda-dia-lista">
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-1-ativo"> Seg</label>
-                            <input type="text" id="dia-1-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-2-ativo"> Ter</label>
-                            <input type="text" id="dia-2-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-3-ativo"> Qua</label>
-                            <input type="text" id="dia-3-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-4-ativo"> Qui</label>
-                            <input type="text" id="dia-4-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-5-ativo"> Sex</label>
-                            <input type="text" id="dia-5-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-6-ativo"> Sáb</label>
-                            <input type="text" id="dia-6-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                        <div class="agenda-dia-row">
-                            <label><input type="checkbox" id="dia-0-ativo"> Dom</label>
-                            <input type="text" id="dia-0-horas" placeholder="Ex: 11:00, 12:00, 15:00">
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary agenda-save-btn" onclick="window.salvarConfigAgendaGeral()">Salvar Horários</button>
+                <div class="buttons-area">
+                    <button class="btn btn-primary" onclick="window.abrirModalNovaDataEspecifica()"><i class="fas fa-plus"></i> Nova Data Específica</button>
                 </div>
 
-                <div class="panel-card agenda-form-card">
-                    <h2 class="font-display agenda-title"><i class="fas fa-calendar-day"></i> Exceções para Dias Específicos</h2>
-                    <div class="agenda-excecao-form">
-                        <div class="input-group">
-                            <label>Escolha a Data Especial:</label>
-                            <input type="date" id="exc-data">
+                <div class="panel-card horarios-list-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
+                    <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Horários</h2>
+                </div>
+
+                <div class="agenda-admin-grid">
+                    <div class="panel-card agenda-form-card">
+                        <h2 class="font-display agenda-title"><i class="fas fa-clock"></i> Horários de Entrega</h2>
+                        <div class="agenda-dia-lista">
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-1-ativo"><span>Seg</span></label>
+                                <input type="text" id="dia-1-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-2-ativo"><span>Ter</span></label>
+                                <input type="text" id="dia-2-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-3-ativo"><span>Qua</span></label>
+                                <input type="text" id="dia-3-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-4-ativo"><span>Qui</span></label>
+                                <input type="text" id="dia-4-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-5-ativo"><span>Sex</span></label>
+                                <input type="text" id="dia-5-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-6-ativo"><span>Sáb</span></label>
+                                <input type="text" id="dia-6-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
+                            <div class="agenda-dia-row">
+                                <label class="agenda-dia-label"><input type="checkbox" id="dia-0-ativo"><span>Dom</span></label>
+                                <input type="text" id="dia-0-horas" placeholder="Ex: 11:00, 12:00, 15:00">
+                            </div>
                         </div>
-                        <label class="agenda-check-fechado">
-                            <input type="checkbox" id="exc-fechado" onchange="window.toggleExcecaoCampos()">
-                            FECHAR AGENDA NESTA DATA
-                        </label>
-                        <div id="container-exc-horas" class="input-group">
-                            <label>Intervalos ou Horários Permitidos:</label>
-                            <input type="text" id="exc-horas" placeholder="Ex: 08h às 12h, 14h às 18h">
+                        <button class="btn btn-primary agenda-save-btn" onclick="window.salvarConfigAgendaGeral()">Salvar Horários</button>
+                    </div>
+
+                    <div class="panel-card agenda-datas-card agenda-datas-card-inline">
+                        <div class="agenda-datas-header">
+                            <h2 class="font-display agenda-title"><i class="fas fa-list"></i> Datas Específicas</h2>
                         </div>
-                        <div id="container-exc-msg" class="input-group" style="display:none;">
-                            <label>Mensagem de aviso para os clientes:</label>
-                            <input type="text" id="exc-mensagem" placeholder="Ex: Estaremos fechados nesta data.">
+                        <div class="excecoes-tabs">
+                            <button type="button" id="tab-excecoes-futuras" class="excecoes-tab-btn active" onclick="window.setFiltroExcecoes('futuras')">Datas Específicas</button>
+                            <button type="button" id="tab-excecoes-passadas" class="excecoes-tab-btn" onclick="window.setFiltroExcecoes('passadas')">Datas Passadas</button>
                         </div>
-                        <button type="button" onclick="window.salvarExcecaoData()" class="btn btn-primary" style="width:100%;">Adicionar Regra Especial</button>
+                        <div id="lista-excecoes-container" class="lista-excecoes-grid"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="panel-card agenda-datas-card">
-                <div class="agenda-datas-header">
-                    <h2 class="font-display agenda-title"><i class="fas fa-list"></i> Datas específicas</h2>
-                    <span class="agenda-datas-hint">Toque/click em uma data para editar. Use a lixeira para remover.</span>
+            <div id="modal-add-excecao" class="modal" onclick="if(event.target === this) window.closeModal('modal-add-excecao', 'form-add-excecao')">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h3>Nova Data Específica</h3>
+                        <button class="close-modal" onclick="window.closeModal('modal-add-excecao', 'form-add-excecao')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-add-excecao" onsubmit="event.preventDefault(); window.salvarExcecaoData();">
+                            <div class="input-group">
+                                <label>Escolha a Data Especial:</label>
+                                <input type="date" id="exc-data">
+                            </div>
+                            <label class="agenda-check-fechado">
+                                <input type="checkbox" id="exc-fechado" onchange="window.toggleExcecaoCampos()">
+                                Fechar agenda nesta data
+                            </label>
+                            <div id="container-exc-horas" class="input-group">
+                                <label>Horários Disponíveis:</label>
+                                <input type="text" id="exc-horas" placeholder="Ex: 08h às 12h, 14h às 18h">
+                            </div>
+                            <div id="container-exc-msg" class="input-group" style="display:none;">
+                                <label>Mensagem de aviso para os clientes:</label>
+                                <input type="text" id="exc-mensagem" placeholder="Ex: Estaremos fechados nesta data.">
+                            </div>
+                            <div style="display:flex; gap:10px; margin-top: 18px;">
+                                <button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-add-excecao', 'form-add-excecao')" style="flex:1;">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="excecoes-tabs">
-                    <button type="button" id="tab-excecoes-futuras" class="excecoes-tab-btn active" onclick="window.setFiltroExcecoes('futuras')">Datas futuras</button>
-                    <button type="button" id="tab-excecoes-passadas" class="excecoes-tab-btn" onclick="window.setFiltroExcecoes('passadas')">Datas passadas</button>
-                </div>
-                <div id="lista-excecoes-container" class="lista-excecoes-grid"></div>
             </div>
-        </div>
+
 
         <div id="modal-editar-excecao" class="modal" onclick="if(event.target === this) window.closeModal('modal-editar-excecao', 'form-edit-excecao')">
             <div class="modal-content" style="max-width: 520px;">
@@ -1979,14 +2403,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <input type="hidden" id="edit-exc-data">
                         <div class="input-group">
                             <label>Data:</label>
-                            <input type="date" id="edit-exc-data-display" disabled>
+                            <input type="date" id="edit-exc-data-display">
                         </div>
                         <label class="agenda-check-fechado">
                             <input type="checkbox" id="edit-exc-fechado" onchange="window.toggleEditExcecaoCampos()">
-                            FECHAR AGENDA NESTA DATA
+                            Fechar agenda nesta data
                         </label>
                         <div id="edit-container-exc-horas" class="input-group">
-                            <label>Intervalos ou Horários Permitidos:</label>
+                            <label>Horários Disponíveis:</label>
                             <input type="text" id="edit-exc-horas" placeholder="Ex: 08h às 12h, 14h às 18h">
                         </div>
                         <div id="edit-container-exc-msg" class="input-group" style="display:none;">
@@ -1994,8 +2418,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             <input type="text" id="edit-exc-mensagem" placeholder="Ex: Estaremos fechados nesta data.">
                         </div>
                         <div style="display:flex; gap:10px; margin-top: 18px;">
-                            <button type="button" class="btn btn-outline" onclick="window.closeModal('modal-editar-excecao', 'form-edit-excecao')" style="flex:1;">Cancelar</button>
-                            <button type="submit" class="btn btn-secondary" style="flex:1;">Salvar</button>
+                            <button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-editar-excecao', 'form-edit-excecao')" style="flex:1;">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
                         </div>
                     </form>
                 </div>
@@ -2007,6 +2431,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <span class="fechar" onclick="window.closeModal('modal-orcamento-pedido')">&times;</span>
             <h2 class="font-display">RESUMO DO ORÇAMENTO</h2>
             <div id="popup-resumo-itens-orc" class="resumo-itens"></div>
+
+            <div id="orc-cupom-container" style="border: 1px dashed rgba(29, 40, 20, 0.3); border-radius: 12px; padding: 20px 15px 12px 15px; position: relative; margin: 25px 0 15px 0; text-align: center; background: transparent;">
+                <strong style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--favu-card); padding: 0 10px; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; white-space: nowrap;">CUPOM</strong>
+                <div class="orc-cupom-input-row">
+                    <input type="text" id="orc-cupom" placeholder="Código do cupom" oninput="window.resetarCupomOrcamento()">
+                    <button type="button" id="orc-cupom-check" onclick="window.validarCupomOrcamento()" title="Aplicar cupom"><i class="fas fa-check"></i></button>
+                </div>
+                <div id="orc-cupom-status" class="edit-cupom-status"></div>
+            </div>
+
             <div id="desconto-container" style="border: 1px dashed rgba(29, 40, 20, 0.3); border-radius: 12px; padding: 20px 15px 12px 15px; position: relative; margin: 25px 0 15px 0; text-align: center; background: transparent;">
                 <strong style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--favu-card); padding: 0 10px; color: var(--text-dark); font-family: 'Basic Choice', cursive; font-size: 1rem; font-weight: normal; text-transform: uppercase; white-space: nowrap;">DESCONTO (R$)</strong>
                 <div style="display: flex; gap: 8px; justify-content: center;">
@@ -2179,8 +2613,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programar exibição</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ac-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ac-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ac-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ac-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ac-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ac-inih" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ac-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ac-fimh" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)"></div></div>
                     </div>
 
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-add-cat', 'form-add-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Criar Categoria</button></div>
@@ -2201,8 +2635,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
                     <div class="aviso-schedule-box cat-schedule-box">
                         <label class="aviso-schedule-title cat-schedule-title"><strong>Programar exibição</strong></label>
-                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ec-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ec-inih" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
-                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ec-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ec-fimh" class="time-free-input" placeholder="" inputmode="text" autocomplete="off"></div></div>
+                        <div class="form-grid" style="margin-bottom:10px;"><div><label style="font-size:0.85rem;">Data Início</label><input type="date" id="ec-inid"></div><div><label style="font-size:0.85rem;">Hora Início</label><input type="text" id="ec-inih" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)"></div></div>
+                        <div class="form-grid" style="margin-bottom:0;"><div><label style="font-size:0.85rem;">Data Fim</label><input type="date" id="ec-fimd"></div><div><label style="font-size:0.85rem;">Hora Fim</label><input type="text" id="ec-fimh" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)"></div></div>
                     </div>
 
                     <div style="display: flex; gap: 10px;"><button type="button" class="btn btn-secondary" onclick="window.closeModal('modal-editar-cat', 'form-edit-cat')" style="flex:1;">Cancelar</button><button type="submit" class="btn btn-primary" style="flex:1;">Atualizar</button></div>
@@ -4231,9 +4665,513 @@ body.side-menu-open #bulk-actions-avisos { display: none !important; }
     font-family: Arial, Helvetica, sans-serif !important;
 }
 
+
+/* === HORÁRIOS 2026-06-19: centralizar ícone do calendário na altura do campo === */
+#t-horarios .agenda-excecao-form input[type="date"],
+#modal-editar-excecao input[type="date"] {
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 42px !important;
+    display: block !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+#t-horarios .agenda-excecao-form input[type="date"]::-webkit-datetime-edit,
+#modal-editar-excecao input[type="date"]::-webkit-datetime-edit {
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 44px !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#t-horarios .agenda-excecao-form input[type="date"]::-webkit-date-and-time-value,
+#modal-editar-excecao input[type="date"]::-webkit-date-and-time-value {
+    min-height: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#t-horarios .agenda-excecao-form input[type="date"]::-webkit-calendar-picker-indicator,
+#modal-editar-excecao input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+
+/* === HORÁRIOS 2026-06-19: ações abaixo no mobile e label horários disponíveis === */
+@media (max-width: 768px) {
+    #t-horarios .excecao-card {
+        grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+    }
+    #t-horarios .excecao-card-actions {
+        grid-column: 1 / -1 !important;
+        justify-content: center !important;
+        width: 100% !important;
+        margin-top: 12px !important;
+        padding-top: 10px !important;
+        border-top: 1px dashed rgba(224, 159, 65, 0.35) !important;
+    }
+}
+
+
+/* === HORÁRIOS 2026-06-19: botões abaixo das informações no não desktop === */
+@media (max-width: 900px) {
+    #t-horarios .excecao-card {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-areas:
+            "dados"
+            "acoes" !important;
+        align-items: stretch !important;
+    }
+
+    #t-horarios .excecao-card-main {
+        grid-area: dados !important;
+        order: 1 !important;
+        width: 100% !important;
+    }
+
+    #t-horarios .excecao-card-actions {
+        grid-area: acoes !important;
+        order: 2 !important;
+        justify-content: center !important;
+        width: 100% !important;
+        margin-top: 12px !important;
+        padding-top: 10px !important;
+        border-top: 1px dashed rgba(224, 159, 65, 0.35) !important;
+    }
+}
+
+
+/* === CUPONS 2026-06-20: aba de cadastro e uso de cupons === */
+#t-cupons .cupom-header-panel {
+    padding: 18px 22px !important;
+}
+#t-cupons .cupom-title {
+    margin: 0 !important;
+    color: var(--favu-green) !important;
+    font-size: 2rem !important;
+}
+#t-cupons .cupom-subtitle {
+    margin: 6px 0 0 0 !important;
+    font-family: var(--font-numbers) !important;
+    color: #666 !important;
+}
+#t-cupons .cupons-grid {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr) !important;
+    gap: 20px !important;
+    align-items: start !important;
+}
+#t-cupons .cupom-section-title {
+    margin: 0 0 15px 0 !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.7rem !important;
+}
+#t-cupons label,
+#t-cupons input,
+#t-cupons select,
+#t-cupons .cupom-subtitle,
+#t-cupons .cupom-card,
+#t-cupons .cupom-meta {
+    font-family: var(--font-numbers) !important;
+}
+#t-cupons .cupom-ativo-check {
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    border: 1px solid rgba(29,40,20,0.2) !important;
+    border-radius: 10px !important;
+    padding: 0 12px !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-weight: 700 !important;
+}
+#t-cupons .cupom-ativo-check input {
+    width: 20px !important;
+    height: 20px !important;
+    accent-color: var(--favu-rust) !important;
+}
+#t-cupons .cupom-form-actions {
+    display: flex !important;
+    gap: 10px !important;
+    margin-top: 12px !important;
+}
+#t-cupons .cupom-form-actions .btn {
+    flex: 1 !important;
+}
+#t-cupons .cupons-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+}
+#t-cupons .cupons-tab-btn {
+    flex: 1 !important;
+    border: 1px solid rgba(224,159,65,0.35) !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    font-family: 'Basic Choice', cursive !important;
+    cursor: pointer !important;
+}
+#t-cupons .cupons-tab-btn.active {
+    background: var(--favu-green) !important;
+    border-color: var(--favu-green) !important;
+    color: #fff !important;
+}
+#t-cupons .cupons-lista {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+#t-cupons .cupom-card {
+    background: #fff !important;
+    border: 1px solid rgba(224,159,65,0.35) !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+#t-cupons .cupom-card-title {
+    color: var(--favu-rust) !important;
+    font-weight: 800 !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 6px !important;
+}
+#t-cupons .cupom-meta {
+    color: #555 !important;
+    font-size: 0.9rem !important;
+    line-height: 1.45 !important;
+}
+#t-cupons .cupom-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    border-radius: 999px !important;
+    padding: 3px 8px !important;
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    margin-left: 6px !important;
+}
+#t-cupons .cupom-badge.ativo { background: #e8f8ed !important; color: #0d7a28 !important; }
+#t-cupons .cupom-badge.inativo { background: #fff0f0 !important; color: #b00000 !important; }
+#t-cupons .cupom-card-actions {
+    display: flex !important;
+    gap: 8px !important;
+}
+#t-cupons .cupom-card-actions .btn-action {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px !important;
+}
+#t-cupons .cupom-card-actions .btn-action.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+#t-cupons .cupom-card-actions .btn-action.toggle {
+    background: #28a745 !important;
+    color: #fff !important;
+}
+#modal-orcamento-pedido .orc-cupom-input-row {
+    display: flex !important;
+    gap: 8px !important;
+    justify-content: center !important;
+}
+#modal-orcamento-pedido #orc-cupom {
+    flex: 1 !important;
+    min-width: 130px !important;
+    border: 1px solid rgba(29, 40, 20, 0.2) !important;
+    border-radius: 30px !important;
+    padding: 8px 12px !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    color: var(--favu-green) !important;
+    text-align: center !important;
+    outline: none !important;
+}
+#modal-orcamento-pedido #orc-cupom-check {
+    width: 44px !important;
+    min-width: 44px !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    cursor: pointer !important;
+}
+#modal-orcamento-pedido #orc-cupom-status {
+    min-height: 16px !important;
+    margin-top: 5px !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 0.8rem !important;
+}
+@media (max-width: 900px) {
+    #t-cupons .cupons-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+@media (max-width: 768px) {
+    #t-cupons .cupom-card {
+        grid-template-columns: 1fr !important;
+    }
+    #t-cupons .cupom-card-actions {
+        justify-content: center !important;
+        border-top: 1px dashed rgba(224,159,65,0.35) !important;
+        padding-top: 10px !important;
+    }
+    #t-cupons .cupom-form-actions {
+        flex-direction: column !important;
+    }
+}
+
+
+/* === CUPONS 2026-06-20: lista abaixo do cadastro e estados === */
+#t-cupons .cupons-grid {
+    grid-template-columns: 1fr !important;
+}
+#t-cupons .cupom-list-card {
+    margin-top: 0 !important;
+}
+#t-cupons .cupom-badge.pausado {
+    background: #fff6dc !important;
+    color: #9a6400 !important;
+}
+#t-cupons .cupom-card-actions .btn-action.pause {
+    background: #777 !important;
+    color: #fff !important;
+}
+#t-cupons .cupom-card-actions .btn-action.inactive {
+    background: #E60000 !important;
+    color: #fff !important;
+}
+#t-cupons .cupom-card-actions .btn-action.activate {
+    background: #28a745 !important;
+    color: #fff !important;
+}
+
+
+/* === CUPONS 2026-06-20: cupom e desconto no card e nos itens === */
+#t-pedidos .card-cupom {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+#edit-modal-pedido .edit-discount-row + .edit-discount-row {
+    margin-top: 6px !important;
+}
+
+
+/* === HORÁRIOS/CUPONS 2026-06-20: popup data específica, histórico e filtro === */
+#t-horarios .horarios-list-header {
+    margin-bottom: 16px !important;
+}
+#t-horarios .agenda-datas-card-inline {
+    height: 100% !important;
+}
+#t-horarios .agenda-datas-card-inline .lista-excecoes-grid {
+    max-height: 470px !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+}
+#modal-add-excecao label,
+#modal-add-excecao input,
+#modal-add-excecao .agenda-check-fechado {
+    font-family: var(--font-numbers) !important;
+}
+#modal-add-excecao .agenda-check-fechado {
+    margin-top: 12px !important;
+    margin-bottom: 18px !important;
+    text-transform: none !important;
+}
+#modal-add-excecao input[type="date"] {
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+    padding: 0 42px 0 12px !important;
+    position: relative !important;
+}
+#modal-add-excecao input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+}
+#t-cupons .cupom-header-panel {
+    display: none !important;
+}
+#t-cupons .cupons-grid {
+    grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) !important;
+    align-items: start !important;
+}
+#t-cupons .cupom-list-header-inline {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 12px !important;
+}
+#t-cupons .cupom-list-header-inline .cupom-section-title {
+    margin: 0 !important;
+}
+#t-cupons .cupom-search-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+}
+#t-cupons #search-cupom {
+    min-width: 220px !important;
+}
+#t-cupons .cupom-card-actions .btn-action.pause {
+    display: none !important;
+}
+@media (max-width: 1024px) {
+    #t-cupons .cupons-grid,
+    #t-horarios .agenda-admin-grid {
+        grid-template-columns: 1fr !important;
+    }
+    #t-cupons .cupom-search-actions {
+        justify-content: stretch !important;
+        width: 100% !important;
+    }
+    #t-cupons #search-cupom {
+        min-width: 0 !important;
+        flex: 1 !important;
+    }
+}
+@media (max-width: 768px) {
+    #t-cupons .cupom-search-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    #t-cupons .cupom-search-actions .btn {
+        width: 100% !important;
+    }
+}
+
+
+/* === HORÁRIOS/CUPONS 2026-06-20: ajustes finais de alinhamento e filtro === */
+#t-horarios .agenda-admin-grid {
+    align-items: start !important;
+}
+#t-horarios .agenda-form-card,
+#t-horarios .agenda-datas-card-inline {
+    margin-top: 0 !important;
+    align-self: start !important;
+}
+#t-cupons .cupom-list-header-inline {
+    align-items: flex-start !important;
+}
+#t-cupons .cupom-search-actions {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    justify-content: stretch !important;
+}
+#t-cupons #search-cupom {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+}
+#t-cupons .cupom-form-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+}
+
+
+/* === CUPOM/CATEGORIA 2026-06-20: popup edição, filtro, datas e horários === */
+#t-cupons .cupom-list-header-inline {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+}
+#t-cupons .cupom-list-header-inline .cupom-section-title {
+    width: 100% !important;
+    margin: 0 !important;
+}
+#t-cupons .cupom-search-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: stretch !important;
+}
+#t-cupons #search-cupom {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+#modal-editar-cupom label,
+#modal-editar-cupom input,
+#modal-editar-cupom select {
+    font-family: var(--font-numbers) !important;
+}
+input[type="date"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    position: relative !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 12px !important;
+    padding-right: 42px !important;
+    box-sizing: border-box !important;
+    background-color: #fff !important;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+input[type="date"]::-webkit-date-and-time-value {
+    text-align: left !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+}
+@media (max-width: 768px) {
+    #t-cupons .cupom-search-actions {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 </style>
 
-    <script type="module" src="./admin.js?v=20260619-pedidos-card-total-pelos-itens-1"></script>
+    <script type="module" src="./admin.js?v=20260620-cupom-popup-categoria-2"></script>
 
 </body>
 

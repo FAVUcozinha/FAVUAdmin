@@ -515,6 +515,27 @@ function buildOptionalTimestamp(data, hora, isFim = false) {
     return isNaN(d.getTime()) ? null : d.getTime();
 }
 
+function getCategoriaTimestamp(c, prefix) {
+    if (!c) return null;
+    const existente = c[prefix];
+    if (existente) return existente;
+    return buildOptionalTimestamp(c[`${prefix}Data`] || '', c[`${prefix}Hora`] || '', prefix === 'fim');
+}
+
+function isCategoriaVisivelAgora(c) {
+    if (!c || c.ativo === false) return false;
+
+    const agora = Date.now();
+    const inicio = getCategoriaTimestamp(c, 'inicio');
+    const fim = getCategoriaTimestamp(c, 'fim');
+
+    if (inicio && agora < inicio) return false;
+    if (fim && agora > fim) return false;
+
+    return true;
+}
+
+
 function getCatScheduleFromForm(prefix) {
     const inicioData = document.getElementById(`${prefix}-inid`).value || '';
     const inicioHora = document.getElementById(`${prefix}-inih`).value || '';
@@ -874,7 +895,7 @@ window.renderCatsTable = function() {
                 <td class="cat-status-cell" data-label="Status:"><span class="badge ${isAtivo ? 'ativo' : 'inativo'}">${isAtivo ? 'Ativa' : 'Oculta'}</span></td>
                 <td class="cat-actions-cell" data-label="Ações:">
                     <div class="action-btns-wrapper">
-                        <button class="btn-action edit" onclick="window.openEditCat('${c.id}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn-action edit" onclick="window.openEditCat('${c.id}')"><i class="fas fa-pencil-alt"></i></button>
                         <button class="btn-action copy" title="Copiar categoria" onclick="window.copyCat('${c.id}')"><i class="fas fa-copy"></i></button>
                         <button class="btn-action toggle ${isAtivo ? 'cat-toggle-visible' : 'cat-toggle-hidden'}" onclick="window.togC('${c.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
                         <button class="btn-action del" onclick="window.delC('${c.id}')"><i class="fas fa-trash"></i></button>
@@ -1372,7 +1393,7 @@ window.renderProdsTable = function() {
             <td data-label="Status:"><span class="badge ${p.ativo?'ativo':'inativo'}">${p.ativo?'Visível':'Oculto'}</span></td>
             <td data-label="Ações:">
                 <div class="action-btns-wrapper">
-                    <button class="btn-action edit" onclick="window.openEditor('${p.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action edit" onclick="window.openEditor('${p.id}')"><i class="fas fa-pencil-alt"></i></button>
                     <button class="btn-action toggle" onclick="window.togP('${p.id}', ${!p.ativo})"><i class="fas fa-${p.ativo?'eye':'eye-slash'}"></i></button>
                     <button class="btn-action del" onclick="window.delP('${p.id}')"><i class="fas fa-trash"></i></button>
                 </div>
@@ -1578,7 +1599,7 @@ window.renderAvisosTable = function() {
             <td class="aviso-status-cell" data-label="Status:"><span class="badge ${status.stClass}">${status.st}</span></td>
             <td class="aviso-actions-cell" data-label="Ações:">
                 <div class="action-btns-wrapper">
-                    <button class="btn-action edit" onclick="window.openEditAviso('${a.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action edit" onclick="window.openEditAviso('${a.id}')"><i class="fas fa-pencil-alt"></i></button>
                     <button class="btn-action copy" title="Copiar comunicado" onclick="window.copyAviso('${a.id}')"><i class="fas fa-copy"></i></button>
                     <button class="btn-action toggle ${isAtivo ? 'cat-toggle-visible' : 'cat-toggle-hidden'}" onclick="window.togA('${a.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
                     <button class="btn-action del" onclick="window.delDoc('avisos','${a.id}')"><i class="fas fa-trash"></i></button>
@@ -1669,6 +1690,7 @@ window.togA = async(id, s) => {
 
 let currentOrcCatFilter = '';
 let orcQtdState = {};
+window.orcCupomAplicado = null;
 
 window.getOrcQtd = function(id) { return orcQtdState[id] || 0; };
 window.inputQtdOrcamento = function(input, itemId) { let val = parseInt(input.value); if(isNaN(val) || val < 0) val = 0; orcQtdState[itemId] = val; window.calcOrcamentoTotal(); };
@@ -1694,7 +1716,7 @@ window.renderOrcamentoMenu = function() {
     const nav = document.getElementById('orc-cats-nav');
     container.innerHTML = ""; nav.innerHTML = "";
     
-    const categoriasAtivas = globalCategories.filter(c => c.ativo !== false).map(c => c.nome);
+    const categoriasAtivas = globalCategories.filter(isCategoriaVisivelAgora).map(c => c.nome);
     const termoBuscaOrcamento = (document.getElementById('search-orcamento')?.value || '').trim().toLowerCase();
     const normalizarBuscaOrcamento = (valor) => (valor || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const termoNormalizado = normalizarBuscaOrcamento(termoBuscaOrcamento);
@@ -1802,36 +1824,101 @@ window.alterarQtdOrcamento = function(itemId, delta) { let val = (orcQtdState[it
 window.removerItemOrcamento = function(itemId) { orcQtdState[itemId] = 0; window.renderOrcamentoMenu(); window.calcOrcamentoTotal(); };
 
 window.calcOrcamentoTotal = function() {
-    let bruto = 0, totalItens = 0; const resumoItensPopup = document.getElementById("popup-resumo-itens-orc"); if(resumoItensPopup) resumoItensPopup.innerHTML = '';
+    let bruto = 0, totalItens = 0;
+    const resumoItensPopup = document.getElementById("popup-resumo-itens-orc");
+    if (resumoItensPopup) resumoItensPopup.innerHTML = '';
+
     const gruposResumo = {};
     allProducts.forEach(p => {
         const q = orcQtdState[p.id] || 0;
-        if(q > 0) { bruto += (q * p.preco); totalItens += q; const cat = p.categoria || 'Geral'; if(!gruposResumo[cat]) gruposResumo[cat] = []; gruposResumo[cat].push({ q, p: p.preco, desc: p.descricaoResumo || p.nome, id: p.id }); }
+        const preco = converterValorParaNumero(p.preco);
+        if (q > 0) {
+            bruto += (q * preco);
+            totalItens += q;
+            const cat = p.categoria || 'Geral';
+            if (!gruposResumo[cat]) gruposResumo[cat] = [];
+            gruposResumo[cat].push({ q, p: preco, desc: p.descricaoResumo || p.nome, id: p.id });
+        }
     });
 
-    const desc = parseFloat(document.getElementById('orc-desconto').value) || 0; let liq = Math.max(0, bruto - desc);
-    if(document.getElementById('orc-bruto-txt')) document.getElementById('orc-bruto-txt').textContent = bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-    if(document.getElementById('orc-liquido-txt')) document.getElementById('orc-liquido-txt').textContent = liq.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    const descManual = Math.max(0, converterValorParaNumero(document.getElementById('orc-desconto')?.value || 0));
+    const descCupom = window.orcCupomAplicado?.desconto || 0;
+    const liq = Math.max(0, bruto - descCupom - descManual);
+
+    if (document.getElementById('orc-bruto-txt')) document.getElementById('orc-bruto-txt').textContent = bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    if (document.getElementById('orc-liquido-txt')) document.getElementById('orc-liquido-txt').textContent = liq.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
     const btnSummary = document.getElementById('fixed-summary-orc');
-    if(bruto > 0) {
-        if(btnSummary) { btnSummary.style.display = 'block'; document.getElementById('summary-total-orc').textContent = `R$ ${liq.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`; document.getElementById('summary-item-count-orc').textContent = `/ ${totalItens} itens`; }
-        if(resumoItensPopup) {
-            for(const grupo in gruposResumo) {
+    if (bruto > 0) {
+        if (btnSummary) {
+            btnSummary.style.display = 'block';
+            document.getElementById('summary-total-orc').textContent = `R$ ${liq.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('summary-item-count-orc').textContent = `/ ${totalItens} itens`;
+        }
+        if (resumoItensPopup) {
+            for (const grupo in gruposResumo) {
                 resumoItensPopup.innerHTML += `<div class="resumo-grupo-titulo">${grupo}:</div>`;
                 gruposResumo[grupo].forEach(item => {
                     const descricaoItemPopupFormatada = window.formatText(item.desc);
                     resumoItensPopup.innerHTML += `<div class="resumo-item-line"><div class="resumo-item-name">${descricaoItemPopupFormatada} <small>R$ ${(item.q * item.p).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</small></div><div style="display: flex; flex-direction: column; align-items: center; gap: 4px;"><div style="display: flex; align-items: center; gap: 8px;"><div class="resumo-item-input-group"><button type="button" class="resumo-qtd-btn" onclick="window.alterarQtdOrcamento('${item.id}', -1)">-</button><input type="number" value="${item.q}" oninput="window.inputQtdOrcamento(this, '${item.id}')"><button type="button" class="resumo-qtd-btn" onclick="window.alterarQtdOrcamento('${item.id}', 1)">+</button></div><button type="button" class="btn-excluir" onclick="window.removerItemOrcamento('${item.id}')"><i class="fas fa-trash"></i></button></div></div></div>`;
                 });
             }
+
+            if (window.orcCupomAplicado?.codigo || descManual > 0) {
+                resumoItensPopup.innerHTML += `<div class="resumo-grupo-titulo">Descontos:</div>`;
+                if (window.orcCupomAplicado?.codigo) resumoItensPopup.innerHTML += `<div class="resumo-item-line"><div class="resumo-item-name">Cupom: ${window.orcCupomAplicado.codigo}</div></div>`;
+                if ((descCupom + descManual) > 0) resumoItensPopup.innerHTML += `<div class="resumo-item-line"><div class="resumo-item-name">Desconto: -R$ ${formatarNumeroMoedaPedido(descCupom + descManual)}</div></div>`;
+            }
         }
     } else {
-        if(btnSummary) btnSummary.style.display = 'none';
-        const modal = document.getElementById('modal-orcamento-pedido'); if(modal) { modal.classList.remove('show'); setTimeout(() => { modal.style.display = 'none'; }, 300); }
+        if (btnSummary) btnSummary.style.display = 'none';
+        const modal = document.getElementById('modal-orcamento-pedido');
+        if (modal) { modal.classList.remove('show'); setTimeout(() => { modal.style.display = 'none'; }, 300); }
     }
 };
 
 window.abrirModalOrcamento = function() { window.openModal('modal-orcamento-pedido'); };
+
+window.resetarCupomOrcamento = function() {
+    window.orcCupomAplicado = null;
+    const status = document.getElementById('orc-cupom-status');
+    if (status) { status.textContent = ''; status.className = 'edit-cupom-status'; }
+    window.calcOrcamentoTotal();
+};
+
+window.validarCupomOrcamento = async function() {
+    const input = document.getElementById('orc-cupom');
+    const status = document.getElementById('orc-cupom-status');
+    const codigo = (input?.value || '').trim().toUpperCase();
+
+    let subtotal = 0;
+    allProducts.forEach(p => {
+        const q = orcQtdState[p.id] || 0;
+        if (q > 0) subtotal += q * converterValorParaNumero(p.preco);
+    });
+
+    window.orcCupomAplicado = null;
+    if (status) { status.textContent = ''; status.className = 'edit-cupom-status'; }
+
+    try {
+        const resultado = await validarCupomAdmin(codigo, subtotal);
+        if (!resultado.ok) {
+            if (status) { status.textContent = resultado.motivo; status.className = 'edit-cupom-status erro'; }
+            window.calcOrcamentoTotal();
+            return;
+        }
+
+        window.orcCupomAplicado = { codigo: resultado.codigo, desconto: resultado.desconto };
+        if (input) input.value = resultado.codigo;
+        if (status) { status.textContent = `Cupom aplicado: -R$ ${formatarNumeroMoedaPedido(resultado.desconto)}`; status.className = 'edit-cupom-status ok'; }
+        window.calcOrcamentoTotal();
+    } catch (err) {
+        console.error(err);
+        if (status) { status.textContent = 'Erro ao validar cupom.'; status.className = 'edit-cupom-status erro'; }
+        window.calcOrcamentoTotal();
+    }
+};
+
 window.avancarDadosCliente = function() { document.getElementById('modal-orcamento-pedido').classList.remove('show'); setTimeout(() => { document.getElementById('modal-orcamento-pedido').style.display = 'none'; window.openModal('modal-orcamento-cliente'); }, 300); };
 window.voltarResumoOrcamento = function() { document.getElementById('modal-orcamento-cliente').classList.remove('show'); setTimeout(() => { document.getElementById('modal-orcamento-cliente').style.display = 'none'; window.openModal('modal-orcamento-pedido'); }, 300); };
 window.buscarContato = async function() {
@@ -1889,13 +1976,11 @@ window.gerarOrcamentoWA = async function() {
     if (hrInput && hr) hrInput.value = hr;
     if (!nm || !dt || !hr || !pag || !tel) return customAlert("Preencha todos os dados.");
 
-    const desc = Math.max(0, converterValorParaNumero(document.getElementById('orc-desconto')?.value || 0));
+    const descManual = Math.max(0, converterValorParaNumero(document.getElementById('orc-desconto')?.value || 0));
+    const descCupom = window.orcCupomAplicado?.desconto || 0;
+    const desc = descManual + descCupom;
     const liq = Math.max(0, bruto - desc);
-    const cupomOrcamento = (
-        window.orcCupomAplicado?.codigo ||
-        document.getElementById('orc-cupom')?.value ||
-        ''
-    ).trim().toUpperCase();
+    const cupomOrcamento = (window.orcCupomAplicado?.codigo || '').trim().toUpperCase();
 
     const formatarMoedaOrc = (valor) => Number(valor || 0).toFixed(2).replace('.', ',');
     const descontoLinha = desc > 0 ? `Desconto: -R$${formatarMoedaOrc(desc)}\n` : '';
@@ -1957,7 +2042,7 @@ window.gerarOrcamentoWA = async function() {
     const whatsappUrl = `https://wa.me/${cleanTel}?text=${encodeURIComponent(txt)}`;
 
     const salvamentoPedido = setDoc(doc(db, "pedidos", orderId), dadosPedido)
-        .then(() => window.showToast("Orçamento salvo como Pedido!"))
+        .then(async () => { if (cupomOrcamento) await registrarUsoCupom(cupomOrcamento); window.showToast("Orçamento salvo como Pedido!"); })
         .catch((e) => {
             console.error("Erro ao salvar orçamento:", e);
             window.showToast("Resumo aberto no WhatsApp, mas houve erro ao salvar o orçamento.", true);
@@ -1971,6 +2056,9 @@ window.gerarOrcamentoWA = async function() {
     orcQtdState = {};
     document.getElementById('form-pedido-orc').reset();
     document.getElementById('orc-desconto').value = '0';
+    const orcCupomInput = document.getElementById('orc-cupom'); if (orcCupomInput) orcCupomInput.value = '';
+    window.orcCupomAplicado = null;
+    const orcCupomStatus = document.getElementById('orc-cupom-status'); if (orcCupomStatus) { orcCupomStatus.textContent = ''; orcCupomStatus.className = 'edit-cupom-status'; }
     window.renderOrcamentoMenu();
     document.getElementById('modal-orcamento-cliente').classList.remove('show');
     setTimeout(() => { document.getElementById('modal-orcamento-cliente').style.display = 'none'; }, 300);
@@ -2236,24 +2324,206 @@ function formatarNumeroMoedaPedido(v) {
     const n = Number(v);
     return (isNaN(n) ? 0 : n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function extrairDescontoManualPedido(...fontes) {
+
+function getDataValidadeCupom(dadosCupom) {
+    if (!dadosCupom) return null;
+    const raw = dadosCupom.dataValidade;
+    if (!raw) return null;
+    const data = raw?.toDate ? raw.toDate() : new Date(raw);
+    if (isNaN(data.getTime())) return null;
+    data.setHours(23, 59, 59, 999);
+    return data;
+}
+
+function isCupomVencido(dadosCupom) {
+    const validade = getDataValidadeCupom(dadosCupom);
+    return validade ? new Date() > validade : false;
+}
+
+function getCupomMaxUsos(dadosCupom) {
+    return Number(dadosCupom?.quantidadeDisponivel ?? dadosCupom?.maxUsos ?? 0) || 0;
+}
+
+function contarPedidosComCupom(codigo) {
+    const cupomCodigo = String(codigo || '').trim().toUpperCase();
+    if (!cupomCodigo || !Array.isArray(window.todosPedidos)) return 0;
+
+    return window.todosPedidos.filter(p => {
+        if (isPedidoExcluidoPainel(p)) return false;
+        return extrairCodigoCupomPedido(p.Cupom || '') === cupomCodigo;
+    }).length;
+}
+
+function getCupomUsosAtuais(dadosCupom) {
+    const usosSalvos = Number(dadosCupom?.usosAtuais ?? dadosCupom?.usos ?? 0) || 0;
+    const codigo = String(dadosCupom?.codigo || dadosCupom?.id || '').trim().toUpperCase();
+    const usosEmPedidos = contarPedidosComCupom(codigo);
+    return Math.max(usosSalvos, usosEmPedidos);
+}
+
+function isCupomEsgotado(dadosCupom) {
+    const max = getCupomMaxUsos(dadosCupom);
+    const usos = getCupomUsosAtuais(dadosCupom);
+    return max > 0 && usos >= max;
+}
+
+function calcularDescontoCupom(dadosCupom, subtotal) {
+    const valor = converterValorParaNumero(dadosCupom?.valor || 0);
+    let desconto = 0;
+    if (dadosCupom?.tipo === 'percentual') desconto = subtotal * (valor / 100);
+    else desconto = valor;
+    return Math.min(Math.max(0, desconto), subtotal);
+}
+
+async function validarCupomAdmin(codigo, subtotal) {
+    const cupomCodigo = String(codigo || '').trim().toUpperCase();
+    if (!cupomCodigo) return { ok: false, motivo: 'Informe um cupom.' };
+
+    const cupomSnap = await getDoc(doc(db, "cupons", cupomCodigo));
+    if (!cupomSnap.exists()) return { ok: false, motivo: 'Cupom não encontrado.' };
+
+    const dadosCupom = { codigo: cupomCodigo, ...cupomSnap.data() };
+
+    const statusOperacional = getStatusOperacionalCupom(dadosCupom);
+    if (statusOperacional === 'inativo') return { ok: false, motivo: 'Cupom inativo.' };
+    if (isCupomVencido(dadosCupom)) return { ok: false, motivo: 'Cupom expirado.' };
+    if (isCupomEsgotado(dadosCupom)) return { ok: false, motivo: 'Cupom esgotado.' };
+
+    const minimo = converterValorParaNumero(dadosCupom.valorMinimo || 0);
+    if (subtotal < minimo) return { ok: false, motivo: `Mínimo de R$ ${formatarNumeroMoedaPedido(minimo)} para usar.` };
+
+    const desconto = calcularDescontoCupom(dadosCupom, subtotal);
+    if (desconto <= 0) return { ok: false, motivo: 'Cupom sem desconto válido.' };
+
+    return { ok: true, codigo: cupomCodigo, dados: dadosCupom, desconto };
+}
+
+async function ajustarUsoCupom(codigo, delta) {
+    const cupomCodigo = String(codigo || '').trim().toUpperCase();
+    const ajuste = Number(delta) || 0;
+    if (!cupomCodigo || ajuste === 0) return;
+
+    try {
+        const refCupom = doc(db, "cupons", cupomCodigo);
+        const snapCupom = await getDoc(refCupom);
+        if (!snapCupom.exists()) return;
+
+        const dados = snapCupom.data();
+        const usosSalvos = Number(dados.usosAtuais ?? dados.usos ?? 0) || 0;
+        await updateDoc(refCupom, {
+            usosAtuais: Math.max(0, usosSalvos + ajuste),
+            updatedAt: Date.now()
+        });
+    } catch (err) {
+        console.warn("Não foi possível ajustar uso do cupom:", err);
+    }
+}
+
+async function registrarUsoCupom(codigo) {
+    await ajustarUsoCupom(codigo, 1);
+}
+
+async function ajustarUsoCupomPedidoEditado(cupomAnterior, cupomAtual, novoPedido = false) {
+    const anterior = String(cupomAnterior || '').trim().toUpperCase();
+    const atual = String(cupomAtual || '').trim().toUpperCase();
+
+    if (novoPedido) {
+        if (atual) await ajustarUsoCupom(atual, 1);
+        return;
+    }
+
+    if (anterior === atual) return;
+    if (anterior) await ajustarUsoCupom(anterior, -1);
+    if (atual) await ajustarUsoCupom(atual, 1);
+}
+
+function escapeHtmlPedido(valor) {
+    return String(valor || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function extrairCodigoCupomPedido(...fontes) {
     for (const fonte of fontes) {
-        const texto = String(fonte || '');
-        const match = texto.match(/Desconto(?:\s+Manual)?[^\d-]*-?\s*R?\$?\s*([\d.,]+)/i);
-        if (match) {
-            const valor = converterValorParaNumero(match[1]);
-            if (valor > 0) return valor;
+        const partes = String(fonte || '')
+            .split(/\n|\|/g)
+            .map(parte => parte.trim())
+            .filter(Boolean);
+
+        for (let parte of partes) {
+            if (/^Desconto(?:\s+Manual)?\b/i.test(parte)) continue;
+
+            let texto = parte
+                .replace(/^Cupom\s*:?\s*/i, '')
+                .replace(/\(-?\s*R?\$\s*[\d.,]+\)/gi, '')
+                .replace(/:\s*-?\s*R?\$\s*[\d.,]+.*$/i, '')
+                .replace(/-?\s*R?\$\s*[\d.,]+.*$/i, '')
+                .replace(/\s*\([^)]*\)\s*$/g, '')
+                .trim();
+
+            if (!texto || /^(desconto|total|valor dos itens|bruto|liquido|líquido)$/i.test(texto)) continue;
+            return texto.toUpperCase();
         }
     }
-    return 0;
+
+    return '';
 }
+
+function extrairDescontoManualPedido(...fontes) {
+    let total = 0;
+
+    fontes.forEach(fonte => {
+        String(fonte || '')
+            .split(/\n|\|/g)
+            .map(parte => parte.trim())
+            .filter(Boolean)
+            .forEach(parte => {
+                const ehLinhaDesconto = /^Desconto(?:\s+Manual)?\b/i.test(parte);
+                const ehCupomLegadoComValor = /^Cupom\b/i.test(parte) && /R\$/i.test(parte);
+
+                if (!ehLinhaDesconto && !ehCupomLegadoComValor) return;
+
+                total += extrairValorDescontoLinhaPedido(parte);
+            });
+    });
+
+    return total;
+}
+
 function limparDescontoManualPedido(valor) {
-    return String(valor || '')
-        .split('|')
-        .map(parte => parte.trim())
-        .filter(parte => parte && !/^Desconto(?:\s+Manual)?\b/i.test(parte))
-        .join(' | ');
+    return extrairCodigoCupomPedido(valor);
 }
+
+function montarCupomDescontoPedido(codigoCupom, descontoTotal) {
+    const codigo = String(codigoCupom || '').trim().toUpperCase();
+    const desconto = Math.max(0, Number(descontoTotal) || 0);
+    const linhas = [];
+
+    if (codigo) linhas.push(`Cupom: ${codigo}`);
+    if (desconto > 0) linhas.push(`Desconto: -R$${formatarNumeroMoedaPedido(desconto)}`);
+
+    return linhas.join('\n');
+}
+
+function formatarCupomDescontoPedido(valor) {
+    const codigo = extrairCodigoCupomPedido(valor);
+    const desconto = extrairDescontoManualPedido(valor);
+    const linhas = [];
+
+    if (codigo) {
+        linhas.push(`<div class="card-cupom-line"><span class="card-cupom-label">Cupom:</span> ${escapeHtmlPedido(codigo)}</div>`);
+    }
+
+    if (desconto > 0) {
+        linhas.push(`<div class="card-cupom-line"><span class="card-cupom-label">Desconto:</span> -R$${formatarNumeroMoedaPedido(desconto)}</div>`);
+    }
+
+    return linhas.join('');
+}
+
 function preencherDescontoManualEditPedido(valor) {
     const desconto = Math.max(0, Number(valor) || 0);
     const campo = document.getElementById('edit-desconto-pedido');
@@ -2298,6 +2568,34 @@ function isPedidoExcluidoPainel(p) {
     const status = String(p?.Status_do_Pedido || '').toLowerCase();
     return p?.excluido === true || /^EXC-|^EXD-/i.test(id) || status === 'excluído' || status === 'excluido';
 }
+function extrairValorDescontoLinhaPedido(linha) {
+    const texto = String(linha || '').trim();
+    if (!/(desconto|cupom)/i.test(texto)) return 0;
+
+    let total = 0;
+
+    // Prioriza apenas valores monetários explícitos com R$.
+    const valoresMonetarios = texto.match(/-?\s*R\$\s*[\d.,]+/gi) || [];
+    valoresMonetarios.forEach(valor => {
+        const numero = Math.abs(converterValorParaNumero(valor));
+        if (numero > 0) total += numero;
+    });
+
+    if (total > 0) return total;
+
+    // Compatibilidade com algum registro antigo do tipo "Desconto: 27,00".
+    // Não vale para linha de Cupom, para não capturar números no código do cupom.
+    if (/^Desconto(?:\s+Manual)?\b/i.test(texto)) {
+        const match = texto.match(/:\s*-?\s*([\d.,]+)/i) || texto.match(/Desconto(?:\s+Manual)?[^\d-]*-?\s*([\d.,]+)/i);
+        if (match) {
+            const numero = Math.abs(converterValorParaNumero(match[1]));
+            if (numero > 0) return numero;
+        }
+    }
+
+    return 0;
+}
+
 function extrairDescontosTotaisPedido(...fontes) {
     let total = 0;
 
@@ -2307,13 +2605,7 @@ function extrairDescontosTotaisPedido(...fontes) {
             .map(linha => linha.trim())
             .filter(Boolean)
             .forEach(linha => {
-                if (!/(desconto|cupom)/i.test(linha)) return;
-
-                const valores = linha.match(/-?\s*R?\$\s*[\d.,]+|R?\$?\s*[\d.,]+/gi) || [];
-                valores.forEach(valor => {
-                    const numero = converterValorParaNumero(valor);
-                    if (numero > 0) total += numero;
-                });
+                total += extrairValorDescontoLinhaPedido(linha);
             });
     });
 
@@ -2335,8 +2627,7 @@ function calcularValorPedidoPorItensCorrigidos(p) {
     if (subtotal <= 0) return null;
 
     const descontoCupom = extrairDescontosTotaisPedido(p.Cupom || '');
-    const descontoResumo = descontoCupom > 0 ? 0 : extrairDescontosTotaisPedido(p.Resumo_dos_Itens || '');
-    return Math.max(0, subtotal - descontoCupom - descontoResumo);
+    return Math.max(0, subtotal - descontoCupom);
 }
 
 function calcularValorPedido(p) {
@@ -2350,6 +2641,7 @@ function listenPedidos() {
     onSnapshot(collection(db, "pedidos"), (snap) => {
         window.todosPedidos = []; snap.forEach(docSnap => { let d = docSnap.data(); if (!d.ID_do_Pedido) d.ID_do_Pedido = docSnap.id; d._docId = docSnap.id; window.todosPedidos.push(d); });
         window.filtrarPedidos();
+        window.renderCupons?.();
     });
 }
 
@@ -2452,10 +2744,11 @@ window.criarCardHTML = function(p) {
     const pgStatus = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente');
     const pg = pgStatus.toLowerCase(); let pC = pg.includes('50%') ? 'pg-parcial' : (pg.includes('100%') || pg === 'pago' ? 'pg-pago' : 'pg-pendente');
     const totalExibicaoPedido = calcularValorPedido(p);
+    const cupomDescontoHTML = formatarCupomDescontoPedido(p.Cupom || '');
     const fP = (p.Forma_de_Pagamento || '').trim().toLowerCase(); let tt = '', tc = '';
     if (fP.includes('pix')) { tt = 'PIX'; tc = 'pix'; } else if (fP.includes('dinheiro')) { tt = 'DINHEIRO'; tc = 'dinheiro'; } else if (fP.includes('cartão') || fP.includes('cartao')) { tt = 'CARTÃO'; tc = 'cartao'; } else if (fP.includes('confirmar')) { tt = 'A CONFIRMAR'; tc = 'a-confirmar'; } else if (fP) { tt = fP.toUpperCase(); tc = fP.replace(/[^a-z0-9]/g, ''); }
 
-    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${p.Cupom ? `<div class="card-cupom"><span class="card-cupom-label">Cupom/Desc:</span> ${p.Cupom}</div>` : ''}<div class="card-price"><span>R$ ${formatarNumeroMoedaPedido(totalExibicaoPedido)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
+    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${cupomDescontoHTML ? `<div class="card-cupom">${cupomDescontoHTML}</div>` : ''}<div class="card-price"><span>R$ ${formatarNumeroMoedaPedido(totalExibicaoPedido)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
     return c;
 }
 
@@ -2486,8 +2779,8 @@ window.copiarPedido = function(id) {
     if (horaPedidoInput && horaPedidoInput.tagName === 'SELECT') garantirValorSelectPedido(horaPedidoInput, p.Horario_Entrega || '');
     else if (horaPedidoInput) horaPedidoInput.value = normalizarHoraPedidoManual(p.Horario_Entrega || '') || p.Horario_Entrega || '';
 
-    const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '', p.Resumo_dos_Itens || '');
-    const cupomSemDescontoManual = limparDescontoManualPedido(p.Cupom || '');
+    const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '');
+    const cupomSemDescontoManual = extrairCodigoCupomPedido(p.Cupom || '');
 
     document.getElementById('edit-forma-pedido').value = p.Forma_de_Pagamento || 'Pix';
     document.getElementById('edit-status-pgto-pedido').value = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente');
@@ -2610,8 +2903,8 @@ window.abrirModalEdicao = function(id) {
     if (horaPedidoInput && horaPedidoInput.tagName === 'SELECT') garantirValorSelectPedido(horaPedidoInput, p.Horario_Entrega || '');
     else if (horaPedidoInput) horaPedidoInput.value = normalizarHoraPedidoManual(p.Horario_Entrega || '') || p.Horario_Entrega || '';
 
-    const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '', p.Resumo_dos_Itens || '');
-    const cupomSemDescontoManual = limparDescontoManualPedido(p.Cupom || '');
+    const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '');
+    const cupomSemDescontoManual = extrairCodigoCupomPedido(p.Cupom || '');
     document.getElementById('edit-forma-pedido').value = p.Forma_de_Pagamento || 'Pix'; document.getElementById('edit-status-pgto-pedido').value = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente'); document.getElementById('edit-cupom-pedido').value = cupomSemDescontoManual; document.getElementById('edit-total-pedido').value = p.Total_Final || ''; document.getElementById('edit-obs-pedido').value = p.Observacoes || ''; document.getElementById('edit-resumo-pedido').value = p.Resumo_dos_Itens || '';
     const cupomStatusEdit = document.getElementById('edit-cupom-status');
     if (cupomStatusEdit) { cupomStatusEdit.textContent = ''; cupomStatusEdit.className = 'edit-cupom-status'; }
@@ -2739,7 +3032,7 @@ function getSubtotalEditPedido() {
 
 function getDescontoManualEditPedido() {
     const campo = document.getElementById('edit-desconto-pedido');
-    return Math.max(0, parseFloat(String(campo?.value || '0').replace(',', '.')) || 0);
+    return Math.max(0, Math.abs(converterValorParaNumero(campo?.value || '0')) || 0);
 }
 
 function atualizarResumoHiddenEditPedido() {
@@ -2762,12 +3055,14 @@ function atualizarResumoHiddenEditPedido() {
     });
 
     const cupomDesc = window.editCupomAplicado?.desconto || 0;
+    const codigoCupomAplicado = window.editCupomAplicado?.codigo || '';
     const descontoManualAplicado = window.editDescontoManualAplicado || 0;
+    const descontoTotal = cupomDesc + descontoManualAplicado;
 
-    if (cupomDesc > 0 || descontoManualAplicado > 0) {
+    if (codigoCupomAplicado || descontoTotal > 0) {
         texto += '- Descontos:\n';
-        if (cupomDesc > 0) texto += `Cupom ${window.editCupomAplicado.codigo}: -R$ ${formatarValorComCentavos(cupomDesc)}\n`;
-        if (descontoManualAplicado > 0) texto += `Desconto: -R$ ${formatarValorComCentavos(descontoManualAplicado)}\n`;
+        if (codigoCupomAplicado) texto += `Cupom: ${codigoCupomAplicado}\n`;
+        if (descontoTotal > 0) texto += `Desconto: -R$ ${formatarNumeroMoedaPedido(descontoTotal)}\n`;
     }
 
     const hidden = document.getElementById('edit-resumo-pedido');
@@ -2838,8 +3133,23 @@ window.renderItensPedidoEdit = function() {
         `;
     });
 
-    if ((window.editDescontoManualAplicado || 0) > 0) {
-        html += `<div class="edit-discount-row">Desconto aplicado: -R$ ${formatarNumeroMoedaPedido(window.editDescontoManualAplicado)}</div>`;
+    const cupomAplicadoCodigo = (
+        window.editCupomAplicado?.codigo ||
+        (document.getElementById('edit-cupom-pedido')?.value || '').trim().toUpperCase()
+    );
+    const cupomDesconto = window.editCupomAplicado?.desconto || 0;
+    const descontoManual = window.editDescontoManualAplicado || 0;
+    const descontoTotal = cupomDesconto + descontoManual;
+
+    if (cupomAplicadoCodigo || descontoTotal > 0) {
+        let descontoHtml = '';
+        if (cupomAplicadoCodigo) {
+            descontoHtml += `<div class="edit-discount-row">Cupom: ${escapeHtmlPedido(cupomAplicadoCodigo)}</div>`;
+        }
+        if (descontoTotal > 0) {
+            descontoHtml += `<div class="edit-discount-row">Desconto aplicado: -R$ ${formatarNumeroMoedaPedido(descontoTotal)}</div>`;
+        }
+        html += descontoHtml;
     }
 
     container.innerHTML = html;
@@ -3141,6 +3451,7 @@ window.resetarCupomEditPedido = function() {
     window.editCupomAplicado = null;
     const status = document.getElementById('edit-cupom-status');
     if (status) { status.textContent = ''; status.className = 'edit-cupom-status'; }
+    window.renderItensPedidoEdit();
     window.recalcularPedidoEditado();
 };
 
@@ -3153,55 +3464,21 @@ window.validarCupomEditPedido = async function() {
     window.editCupomAplicado = null;
     if (status) { status.textContent = ''; status.className = 'edit-cupom-status'; }
 
-    if (!codigo) {
-        window.recalcularPedidoEditado();
-        return window.showToast('Informe um cupom.', true);
-    }
-
     try {
-        const cupomSnap = await getDoc(doc(db, "cupons", codigo));
-        if (!cupomSnap.exists()) {
-            if (status) { status.textContent = 'Cupom não encontrado.'; status.className = 'edit-cupom-status erro'; }
+        const resultado = await validarCupomAdmin(codigo, subtotal);
+        if (!resultado.ok) {
+            if (status) { status.textContent = resultado.motivo; status.className = 'edit-cupom-status erro'; }
             window.recalcularPedidoEditado();
             return;
         }
 
-        const dadosCupom = cupomSnap.data();
-        const validade = dadosCupom.dataValidade?.toDate ? dadosCupom.dataValidade.toDate() : (dadosCupom.dataValidade ? new Date(dadosCupom.dataValidade) : null);
-
-        if (dadosCupom.ativo === false) {
-            if (status) { status.textContent = 'Cupom inativo.'; status.className = 'edit-cupom-status erro'; }
-            window.recalcularPedidoEditado();
-            return;
+        window.editCupomAplicado = { codigo: resultado.codigo, desconto: resultado.desconto };
+        if (input) input.value = resultado.codigo;
+        if (status) {
+            status.textContent = `Cupom aplicado: -R$ ${formatarNumeroMoedaPedido(resultado.desconto)}`;
+            status.className = 'edit-cupom-status ok';
         }
-
-        if (validade && !isNaN(validade.getTime()) && new Date() > validade) {
-            if (status) { status.textContent = 'Cupom expirado.'; status.className = 'edit-cupom-status erro'; }
-            window.recalcularPedidoEditado();
-            return;
-        }
-
-        if (dadosCupom.quantidadeDisponivel !== undefined && Number(dadosCupom.quantidadeDisponivel) <= 0) {
-            if (status) { status.textContent = 'Cupom esgotado.'; status.className = 'edit-cupom-status erro'; }
-            window.recalcularPedidoEditado();
-            return;
-        }
-
-        if (subtotal < (Number(dadosCupom.valorMinimo) || 0)) {
-            if (status) { status.textContent = `Mínimo de R$ ${formatarValorComCentavos(dadosCupom.valorMinimo)} para usar.`; status.className = 'edit-cupom-status erro'; }
-            window.recalcularPedidoEditado();
-            return;
-        }
-
-        let desconto = 0;
-        if (dadosCupom.tipo === 'percentual') desconto = subtotal * ((Number(dadosCupom.valor) || 0) / 100);
-        else if (dadosCupom.tipo === 'fixo') desconto = Number(dadosCupom.valor) || 0;
-        else desconto = Number(dadosCupom.valor) || 0;
-
-        desconto = Math.min(desconto, subtotal);
-        window.editCupomAplicado = { codigo, desconto };
-        if (input) input.value = codigo;
-        if (status) { status.textContent = `Cupom aplicado: -R$ ${formatarValorComCentavos(desconto)}`; status.className = 'edit-cupom-status ok'; }
+        window.renderItensPedidoEdit();
         window.recalcularPedidoEditado();
     } catch (err) {
         console.error(err);
@@ -3241,24 +3518,18 @@ window.submitEditForm = async function(e) {
 
     window.recalcularPedidoEditado();
 
-    const descontosInfo = [];
-    if (window.editCupomAplicado?.desconto > 0) {
-        descontosInfo.push(`${window.editCupomAplicado.codigo} (-R$ ${formatarValorComCentavos(window.editCupomAplicado.desconto)})`);
-    }
-
+    const cupomInputAtual = (document.getElementById('edit-cupom-pedido')?.value || '').trim().toUpperCase();
+    const cupomOriginal = String(window.editCupomPedidoOriginal || '').trim().toUpperCase();
+    const descontoCupom = window.editCupomAplicado?.desconto || 0;
+    const codigoCupomAplicado = window.editCupomAplicado?.codigo || (cupomInputAtual && cupomInputAtual === cupomOriginal ? cupomOriginal : '');
     const descontoManual = getDescontoManualEditPedido();
     window.editDescontoManualAplicado = descontoManual;
 
-    if (descontoManual > 0) {
-        descontosInfo.push(`Desconto Manual R$ ${formatarNumeroMoedaPedido(descontoManual)}`);
-    }
-
-    const partesCupomFinal = [];
-    partesCupomFinal.push(...descontosInfo);
-    const cupomFinal = partesCupomFinal.join(' | ');
+    const descontoTotal = descontoCupom + descontoManual;
+    const cupomFinal = montarCupomDescontoPedido(codigoCupomAplicado, descontoTotal);
 
     const totalFinalCalculado = formatarNumeroMoedaPedido(
-        Math.max(0, getSubtotalEditPedido() - (window.editCupomAplicado?.desconto || 0) - descontoManual)
+        Math.max(0, getSubtotalEditPedido() - descontoCupom - descontoManual)
     );
     const totalPedidoInput = document.getElementById('edit-total-pedido');
     if (totalPedidoInput) totalPedidoInput.value = totalFinalCalculado;
@@ -3287,6 +3558,7 @@ window.submitEditForm = async function(e) {
                 idOriginal: window.editPedidoIdCopiaOriginal || '',
                 createdAt: Date.now()
             });
+            await ajustarUsoCupomPedidoEditado('', codigoCupomAplicado, true);
             const pedidoCopiadoLocal = {
                 ...dadosPedidoEditado,
                 ID_do_Pedido: id,
@@ -3304,6 +3576,7 @@ window.submitEditForm = async function(e) {
             window.showToast("Pedido copiado!");
         } else {
             await updateDoc(doc(db, "pedidos", getPedidoDocumentoId(id)), dadosPedidoEditado);
+            await ajustarUsoCupomPedidoEditado(cupomOriginal, codigoCupomAplicado, false);
 
             const idxPedido = window.todosPedidos.findIndex(p => p.ID_do_Pedido === id || p._docId === id);
             if (idxPedido >= 0) {
@@ -3546,7 +3819,7 @@ window.renderEstoqueTable = function() {
             <td data-label="Status:"><span class="badge ${isBaixo ? 'inativo' : 'ativo'}">${isBaixo ? 'Baixo / Faltando' : 'Suficiente'}</span></td>
             <td data-label="Ações:">
                 <div class="action-btns-wrapper">
-                    <button class="btn-action edit" onclick="window.openEditEstoque('${e.id}')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-action edit" onclick="window.openEditEstoque('${e.id}')"><i class="fas fa-pencil-alt"></i></button>
                     <button class="btn-action del" onclick="window.delEstoque('${e.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
@@ -4066,6 +4339,41 @@ window.editarExcecaoData = async function(dataString) {
     }
 };
 
+
+window.copiarExcecaoData = async function(dataString) {
+    let regra = window.cacheExcecoesAgenda?.[dataString];
+
+    if (!regra) {
+        try {
+            const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+            window.cacheExcecoesAgenda = docSnap.exists() ? (docSnap.data() || {}) : {};
+            regra = window.cacheExcecoesAgenda[dataString];
+        } catch (error) {
+            window.showToast('Erro ao copiar data específica.', true);
+            return;
+        }
+    }
+
+    if (!regra) return;
+
+    const dataHidden = document.getElementById('edit-exc-data');
+    const dataDisplay = document.getElementById('edit-exc-data-display');
+    const fechado = document.getElementById('edit-exc-fechado');
+    const horas = document.getElementById('edit-exc-horas');
+    const msg = document.getElementById('edit-exc-mensagem');
+
+    if (dataHidden) dataHidden.value = '';
+    if (dataDisplay) dataDisplay.value = '';
+    if (fechado) fechado.checked = !!regra.indisponivel;
+    if (horas) horas.value = regra.horarios || '';
+    if (msg) msg.value = regra.mensagem || '';
+
+    window.toggleEditExcecaoCampos();
+    window.openModal('modal-editar-excecao');
+    window.showToast('Escolha uma nova data para salvar a cópia.');
+};
+
+
 // Apaga uma exceção criada
 window.deletarExcecaoData = async function(dataString) {
     if (!confirm(`Deseja remover a regra especial da data ${dataString}?`)) return;
@@ -4162,6 +4470,275 @@ window.deletarExcecaoData = async function(dataString) {
     window.mostrarLoading(false);
 };
 
+
+// === HORÁRIOS 2026-06-19: datas específicas com filtro, popup e layout mobile ===
+window.filtroExcecoesAtual = window.filtroExcecoesAtual || 'futuras';
+window.cacheExcecoesAgenda = window.cacheExcecoesAgenda || {};
+
+function escapeHtmlAgenda(valor) {
+    return String(valor || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function dataHojeAgendaKey() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, '0');
+    const d = String(hoje.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function formatarDataAgendaBR(dataString) {
+    const [ano, mes, dia] = String(dataString || '').split('-');
+    if (!ano || !mes || !dia) return dataString || '';
+    return `${dia}/${mes}/${ano}`;
+}
+
+function resumoRegraAgenda(regra) {
+    if (!regra) return '';
+    if (regra.indisponivel) {
+        return `Fechado${regra.mensagem ? ` — ${regra.mensagem}` : ''}`;
+    }
+
+    const horarios = regra.horarios || '';
+    const preview = window.previewHorariosAdmin ? window.previewHorariosAdmin(horarios).join(', ') : '';
+    return preview ? `Horários: ${preview}` : `Horários: ${horarios || 'Nenhum'}`;
+}
+
+window.toggleExcecaoCampos = function() {
+    const fechado = document.getElementById('exc-fechado')?.checked;
+    const horas = document.getElementById('container-exc-horas');
+    const msg = document.getElementById('container-exc-msg') || document.getElementById('container-exc-mensagem');
+
+    if (horas) horas.style.display = fechado ? 'none' : 'block';
+    if (msg) msg.style.display = fechado ? 'block' : 'none';
+};
+
+window.toggleEditExcecaoCampos = function() {
+    const fechado = document.getElementById('edit-exc-fechado')?.checked;
+    const horas = document.getElementById('edit-container-exc-horas');
+    const msg = document.getElementById('edit-container-exc-msg') || document.getElementById('edit-container-exc-mensagem');
+
+    if (horas) horas.style.display = fechado ? 'none' : 'block';
+    if (msg) msg.style.display = fechado ? 'block' : 'none';
+};
+
+window.setFiltroExcecoes = function(tipo) {
+    window.filtroExcecoesAtual = tipo === 'passadas' ? 'passadas' : 'futuras';
+
+    const btnFuturas = document.getElementById('tab-excecoes-futuras');
+    const btnPassadas = document.getElementById('tab-excecoes-passadas');
+
+    if (btnFuturas) btnFuturas.classList.toggle('active', window.filtroExcecoesAtual === 'futuras');
+    if (btnPassadas) btnPassadas.classList.toggle('active', window.filtroExcecoesAtual === 'passadas');
+
+    window.renderizarExcecoesAgendaLista();
+};
+
+window.renderizarExcecoesAgendaLista = function() {
+    const container = document.getElementById('lista-excecoes-container');
+    if (!container) return;
+
+    const dados = window.cacheExcecoesAgenda || {};
+    const hoje = dataHojeAgendaKey();
+
+    let datas = Object.keys(dados).filter(dataString => {
+        return window.filtroExcecoesAtual === 'passadas'
+            ? dataString < hoje
+            : dataString >= hoje;
+    });
+
+    datas.sort((a, b) => {
+        return window.filtroExcecoesAtual === 'passadas'
+            ? b.localeCompare(a)
+            : a.localeCompare(b);
+    });
+
+    container.innerHTML = '';
+
+    if (!datas.length) {
+        container.innerHTML = `<p style="color:#888; font-size:0.9rem; font-family:var(--font-numbers);">${window.filtroExcecoesAtual === 'passadas' ? 'Nenhuma data passada.' : 'Nenhuma data específica vigente ou futura.'}</p>`;
+        return;
+    }
+
+    datas.forEach(dataString => {
+        const regra = dados[dataString] || {};
+        const dataFormatada = formatarDataAgendaBR(dataString);
+        const resumo = resumoRegraAgenda(regra);
+
+        container.innerHTML += `
+            <div class="excecao-card" onclick="window.editarExcecaoData('${dataString}')">
+                <div class="excecao-card-main">
+                    <strong class="excecao-card-data">${dataFormatada}</strong>
+                    <div class="excecao-card-resumo">${escapeHtmlAgenda(resumo)}</div>
+                </div>
+                <div class="excecao-card-actions" onclick="event.stopPropagation();">
+                    <button type="button" class="btn-action edit" title="Editar" aria-label="Editar" onclick="window.editarExcecaoData('${dataString}')"><i class="fas fa-pencil-alt"></i></button>
+                    <button type="button" class="btn-action copy" title="Copiar" aria-label="Copiar" onclick="window.copiarExcecaoData('${dataString}')"><i class="fas fa-copy"></i></button>
+                    <button type="button" class="btn-action del" title="Excluir" aria-label="Excluir" onclick="window.deletarExcecaoData('${dataString}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
+};
+
+window.carregarExcecoesLista = async function() {
+    const container = document.getElementById('lista-excecoes-container');
+    if (!container) return;
+
+    try {
+        const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+        window.cacheExcecoesAgenda = docSnap.exists() ? (docSnap.data() || {}) : {};
+        window.renderizarExcecoesAgendaLista();
+    } catch (error) {
+        console.error("Erro ao listar exceções:", error);
+        container.innerHTML = '<p style="color:#E60000; font-size:0.9rem; font-family:var(--font-numbers);">Erro ao carregar datas específicas.</p>';
+    }
+};
+
+window.editarExcecaoData = async function(dataString) {
+    let regra = window.cacheExcecoesAgenda?.[dataString];
+
+    if (!regra) {
+        try {
+            const docSnap = await getDoc(doc(db, 'config', 'agenda_excecoes'));
+            window.cacheExcecoesAgenda = docSnap.exists() ? (docSnap.data() || {}) : {};
+            regra = window.cacheExcecoesAgenda[dataString];
+        } catch (error) {
+            window.showToast('Erro ao carregar data específica.', true);
+            return;
+        }
+    }
+
+    if (!regra) return;
+
+    const dataHidden = document.getElementById('edit-exc-data');
+    const dataDisplay = document.getElementById('edit-exc-data-display');
+    const fechado = document.getElementById('edit-exc-fechado');
+    const horas = document.getElementById('edit-exc-horas');
+    const msg = document.getElementById('edit-exc-mensagem');
+
+    if (dataHidden) dataHidden.value = dataString;
+    if (dataDisplay) dataDisplay.value = dataString;
+    if (fechado) fechado.checked = !!regra.indisponivel;
+    if (horas) horas.value = regra.horarios || '';
+    if (msg) msg.value = regra.mensagem || '';
+
+    window.toggleEditExcecaoCampos();
+    window.openModal('modal-editar-excecao');
+};
+
+
+window.abrirModalNovaDataEspecifica = function() {
+    const form = document.getElementById('form-add-excecao');
+    if (form) form.reset();
+
+    const horas = document.getElementById('container-exc-horas');
+    const msg = document.getElementById('container-exc-msg');
+    if (horas) horas.style.display = 'block';
+    if (msg) msg.style.display = 'none';
+
+    window.openModal('modal-add-excecao');
+};
+
+window.salvarExcecaoData = async function() {
+    const dataAlvo = document.getElementById('exc-data')?.value;
+    const estaFechado = document.getElementById('exc-fechado')?.checked;
+    const horariosTexto = document.getElementById('exc-horas')?.value.trim() || '';
+    const mensagemTexto = document.getElementById('exc-mensagem')?.value.trim() || '';
+
+    if (!dataAlvo) {
+        window.showToast('Selecione uma data.', true);
+        return;
+    }
+
+    window.mostrarLoading(true);
+    try {
+        const payload = {
+            indisponivel: !!estaFechado,
+            horarios: estaFechado ? "" : horariosTexto,
+            mensagem: estaFechado ? mensagemTexto : ""
+        };
+
+        await setDoc(doc(db, 'config', 'agenda_excecoes'), { [dataAlvo]: payload }, { merge: true });
+        window.showToast('Regra aplicada!');
+
+        document.getElementById('exc-data').value = '';
+        document.getElementById('exc-fechado').checked = false;
+        document.getElementById('exc-horas').value = '';
+        document.getElementById('exc-mensagem').value = '';
+        window.toggleExcecaoCampos();
+
+        await window.carregarExcecoesLista();
+        window.closeModal('modal-add-excecao', 'form-add-excecao');
+    } catch (error) {
+        window.showToast('Erro ao gravar.', true);
+    }
+    window.mostrarLoading(false);
+};
+
+window.deletarExcecaoData = async function(dataString) {
+    window.customConfirm(`Remover a data específica ${formatarDataAgendaBR(dataString)}?`, async () => {
+        window.mostrarLoading(true);
+        try {
+            const docRef = doc(db, 'config', 'agenda_excecoes');
+            await updateDoc(docRef, { [dataString]: deleteField() });
+            window.showToast('Data específica removida!');
+            await window.carregarExcecoesLista();
+        } catch (error) {
+            window.showToast('Erro ao remover data específica.', true);
+        }
+        window.mostrarLoading(false);
+    });
+};
+
+const formEditExcecaoAgenda = document.getElementById('form-edit-excecao');
+if (formEditExcecaoAgenda) {
+    formEditExcecaoAgenda.onsubmit = async function(e) {
+        e.preventDefault();
+
+        const dataOriginal = document.getElementById('edit-exc-data')?.value || '';
+        const dataAlvo = document.getElementById('edit-exc-data-display')?.value || '';
+        const estaFechado = document.getElementById('edit-exc-fechado')?.checked;
+        const horariosTexto = document.getElementById('edit-exc-horas')?.value.trim() || '';
+        const mensagemTexto = document.getElementById('edit-exc-mensagem')?.value.trim() || '';
+
+        if (!dataAlvo) {
+            window.showToast('Informe a data específica.', true);
+            return;
+        }
+
+        window.mostrarLoading(true);
+        try {
+            const payload = {
+                indisponivel: !!estaFechado,
+                horarios: estaFechado ? "" : horariosTexto,
+                mensagem: estaFechado ? mensagemTexto : ""
+            };
+
+            const docRef = doc(db, 'config', 'agenda_excecoes');
+
+            if (dataOriginal && dataOriginal !== dataAlvo) {
+                await updateDoc(docRef, { [dataOriginal]: deleteField() });
+            }
+
+            await setDoc(docRef, { [dataAlvo]: payload }, { merge: true });
+            window.closeModal('modal-editar-excecao', 'form-edit-excecao');
+            window.showToast(dataOriginal && dataOriginal !== dataAlvo ? 'Data específica alterada!' : 'Data específica atualizada!');
+            await window.carregarExcecoesLista();
+        } catch (error) {
+            console.error(error);
+            window.showToast('Erro ao salvar data específica.', true);
+        }
+        window.mostrarLoading(false);
+    };
+}
+
 document.getElementById('form-add-agenda').onsubmit = async(e) => {
     e.preventDefault();
     const dataRef = document.getElementById('ag-data').value; 
@@ -4222,6 +4799,324 @@ window.setFiltroSemanaAtualVisivel = function() {
     window.atualizarDisplayData(); // Mostra visualmente no campo
 }
 
+
+// ==========================================
+// MÓDULO DE CUPONS
+// ==========================================
+window.allCupons = [];
+window.filtroCuponsAtual = 'ativos';
+
+window.setFiltroCupons = function(tipo) {
+    window.filtroCuponsAtual = tipo === 'inativos' ? 'inativos' : 'ativos';
+    document.getElementById('tab-cupons-ativos')?.classList.toggle('active', window.filtroCuponsAtual === 'ativos');
+    document.getElementById('tab-cupons-inativos')?.classList.toggle('active', window.filtroCuponsAtual === 'inativos');
+    window.renderCupons();
+};
+
+window.limparFiltroCupons = function() {
+    const campo = document.getElementById('search-cupom');
+    if (campo) campo.value = '';
+    window.renderCupons();
+};
+
+function formatarDataCupomBR(dataString) {
+    if (!dataString) return 'Sem validade';
+    const d = String(dataString).split('T')[0];
+    const partes = d.split('-');
+    if (partes.length !== 3) return dataString;
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function getStatusOperacionalCupom(cupom) {
+    const status = String(cupom?.statusCupom || '').trim().toLowerCase();
+    if (status === 'inativo' || status === 'pausado' || cupom?.ativo === false) return 'inativo';
+    return 'ativo';
+}
+
+function isCupomFuncionando(cupom) {
+    return getStatusOperacionalCupom(cupom) === 'ativo' && !isCupomVencido(cupom) && !isCupomEsgotado(cupom);
+}
+
+function getCupomStatusTexto(cupom) {
+    const statusOperacional = getStatusOperacionalCupom(cupom);
+    if (statusOperacional === 'inativo') return 'Inativo';
+    if (isCupomVencido(cupom)) return 'Expirado';
+    if (isCupomEsgotado(cupom)) return 'Esgotado';
+    return 'Ativo';
+}
+
+function getCupomBadgeClasse(cupom) {
+    const status = getCupomStatusTexto(cupom).toLowerCase();
+    if (status === 'ativo') return 'ativo';
+    if (status === 'pausado') return 'pausado';
+    return 'inativo';
+}
+
+function formatarTipoValorCupom(cupom) {
+    const valor = converterValorParaNumero(cupom?.valor || 0);
+    if (cupom?.tipo === 'percentual') return `${formatarNumeroMoedaPedido(valor).replace(',00', '')}%`;
+    return `R$ ${formatarNumeroMoedaPedido(valor)}`;
+}
+
+window.loadCupons = function() {
+    const lista = document.getElementById('cupons-lista');
+    if (!lista) return;
+
+    onSnapshot(collection(db, "cupons"), snap => {
+        window.allCupons = [];
+        snap.forEach(docSnap => {
+            window.allCupons.push({
+                id: docSnap.id,
+                codigo: docSnap.data().codigo || docSnap.id,
+                ...docSnap.data()
+            });
+        });
+        window.renderCupons();
+    }, err => {
+        console.error("Erro ao carregar cupons:", err);
+        lista.innerHTML = '<p style="color:#E60000; font-family:var(--font-numbers);">Erro ao carregar cupons.</p>';
+    });
+};
+
+window.renderCupons = function() {
+    const lista = document.getElementById('cupons-lista');
+    if (!lista) return;
+
+    const termoBusca = (document.getElementById('search-cupom')?.value || '').trim().toLowerCase();
+    const normalizarBusca = (valor) => String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+    const termoNormalizado = normalizarBusca(termoBusca);
+
+    const filtrados = [...(window.allCupons || [])]
+        .filter(cupom => window.filtroCuponsAtual === 'ativos' ? isCupomFuncionando(cupom) : !isCupomFuncionando(cupom))
+        .filter(cupom => {
+            if (!termoNormalizado) return true;
+            return [
+                cupom.codigo,
+                cupom.id,
+                getCupomStatusTexto(cupom),
+                cupom.tipo,
+                cupom.valor,
+                cupom.valorMinimo,
+                cupom.dataValidade
+            ].some(valor => normalizarBusca(valor).includes(termoNormalizado));
+        })
+        .sort((a, b) => String(a.codigo || '').localeCompare(String(b.codigo || ''), 'pt-BR'));
+
+    if (!filtrados.length) {
+        lista.innerHTML = `<p style="color:#888; font-family:var(--font-numbers);">${window.filtroCuponsAtual === 'ativos' ? 'Nenhum cupom ativo encontrado.' : 'Nenhum cupom inativo encontrado.'}</p>`;
+        return;
+    }
+
+    lista.innerHTML = filtrados.map(cupom => {
+        const usos = getCupomUsosAtuais(cupom);
+        const max = getCupomMaxUsos(cupom);
+        const status = getCupomStatusTexto(cupom);
+        const badgeClasse = getCupomBadgeClasse(cupom);
+        const statusOperacional = getStatusOperacionalCupom(cupom);
+
+        const acaoStatus = statusOperacional === 'ativo'
+            ? `<button type="button" class="btn-action inactive" title="Inativar" onclick="window.definirStatusCupom('${cupom.id}', 'inativo')"><i class="fas fa-ban"></i></button>`
+            : `<button type="button" class="btn-action activate" title="Ativar" onclick="window.definirStatusCupom('${cupom.id}', 'ativo')"><i class="fas fa-eye"></i></button>`;
+
+        return `
+            <div class="cupom-card">
+                <div>
+                    <div class="cupom-card-title">${escapeHtmlPedido(cupom.codigo || cupom.id)} <span class="cupom-badge ${badgeClasse}">${status}</span></div>
+                    <div class="cupom-meta">
+                        Uso: <strong>${usos}/${max || '∞'}</strong><br>
+                        Validade: <strong>${formatarDataCupomBR(cupom.dataValidade)}</strong><br>
+                        Desconto: <strong>${formatarTipoValorCupom(cupom)}</strong> • Pedido mínimo: <strong>R$ ${formatarNumeroMoedaPedido(cupom.valorMinimo || 0)}</strong>
+                    </div>
+                </div>
+                <div class="cupom-card-actions">
+                    <button type="button" class="btn-action edit" title="Editar" onclick="window.editarCupom('${cupom.id}')"><i class="fas fa-pen"></i></button>
+                    <button type="button" class="btn-action copy" title="Copiar" onclick="window.copiarCupom('${cupom.id}')"><i class="fas fa-copy"></i></button>
+                    ${acaoStatus}
+                    <button type="button" class="btn-action del" title="Excluir" onclick="window.excluirCupom('${cupom.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+window.limparFormCupom = function() {
+    const form = document.getElementById('form-cupom');
+    if (form) form.reset();
+    const original = document.getElementById('cupom-id-original');
+    if (original) original.value = '';
+    const codigo = document.getElementById('cupom-codigo');
+    if (codigo) codigo.disabled = false;
+};
+
+window.editarCupom = function(id) {
+    const cupom = window.allCupons.find(c => c.id === id);
+    if (!cupom) return;
+
+    document.getElementById('edit-cupom-id-original').value = id;
+    document.getElementById('edit-cupom-codigo').value = cupom.codigo || id;
+    document.getElementById('edit-cupom-validade').value = String(cupom.dataValidade || '').split('T')[0];
+    document.getElementById('edit-cupom-max-uso').value = getCupomMaxUsos(cupom) || '';
+    document.getElementById('edit-cupom-tipo').value = cupom.tipo || 'fixo';
+    document.getElementById('edit-cupom-valor').value = converterValorParaNumero(cupom.valor || 0);
+    document.getElementById('edit-cupom-minimo').value = converterValorParaNumero(cupom.valorMinimo || 0);
+
+    window.openModal('modal-editar-cupom');
+};
+
+window.copiarCupom = function(id) {
+    const cupom = window.allCupons.find(c => c.id === id);
+    if (!cupom) return;
+
+    window.limparFormCupom();
+    document.getElementById('cupom-codigo').value = `${cupom.codigo || id}_COPIA`;
+    document.getElementById('cupom-validade').value = String(cupom.dataValidade || '').split('T')[0];
+    document.getElementById('cupom-max-uso').value = getCupomMaxUsos(cupom) || '';
+    document.getElementById('cupom-tipo').value = cupom.tipo || 'fixo';
+    document.getElementById('cupom-valor').value = converterValorParaNumero(cupom.valor || 0);
+    document.getElementById('cupom-minimo').value = converterValorParaNumero(cupom.valorMinimo || 0);
+    document.getElementById('form-cupom')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.definirStatusCupom = async function(id, status) {
+    const cupom = window.allCupons.find(c => c.id === id);
+    if (!cupom) return;
+
+    const statusFinal = ['ativo', 'inativo'].includes(status) ? status : 'ativo';
+    await updateDoc(doc(db, "cupons", id), {
+        ativo: statusFinal === 'ativo',
+        statusCupom: statusFinal,
+        updatedAt: Date.now()
+    });
+
+    const mensagens = { ativo: 'Cupom ativado!', inativo: 'Cupom inativado!' };
+    window.showToast(mensagens[statusFinal] || 'Cupom atualizado!');
+};
+
+window.alternarCupom = async function(id) {
+    const cupom = window.allCupons.find(c => c.id === id);
+    if (!cupom) return;
+    await window.definirStatusCupom(id, getStatusOperacionalCupom(cupom) === 'ativo' ? 'inativo' : 'ativo');
+};
+
+window.excluirCupom = function(id) {
+    window.customConfirm(`Excluir o cupom ${id}?`, async () => {
+        window.mostrarLoading(true);
+        try {
+            await deleteDoc(doc(db, "cupons", id));
+            window.showToast('Cupom excluído!');
+            window.limparFormCupom();
+        } catch (err) {
+            console.error(err);
+            window.showToast('Erro ao excluir cupom.', true);
+        }
+        window.mostrarLoading(false);
+    });
+};
+
+
+const formEditCupom = document.getElementById('form-edit-cupom');
+if (formEditCupom) {
+    formEditCupom.onsubmit = async function(e) {
+        e.preventDefault();
+
+        const original = document.getElementById('edit-cupom-id-original').value.trim().toUpperCase();
+        const cupomExistente = original ? window.allCupons.find(c => c.id === original) : null;
+        const maxUso = parseInt(document.getElementById('edit-cupom-max-uso').value, 10) || 0;
+        const tipo = document.getElementById('edit-cupom-tipo').value;
+        const valor = converterValorParaNumero(document.getElementById('edit-cupom-valor').value || 0);
+        const valorMinimo = converterValorParaNumero(document.getElementById('edit-cupom-minimo').value || 0);
+        const statusCupom = cupomExistente ? getStatusOperacionalCupom(cupomExistente) : 'ativo';
+        const ativo = statusCupom === 'ativo';
+        const usosAtuais = cupomExistente ? getCupomUsosAtuais(cupomExistente) : 0;
+
+        if (!original || maxUso <= 0 || valor <= 0) {
+            window.showToast('Preencha validade, máximo de uso e valor do desconto.', true);
+            return;
+        }
+
+        window.mostrarLoading(true);
+        try {
+            await setDoc(doc(db, "cupons", original), {
+                codigo: original,
+                dataValidade: document.getElementById('edit-cupom-validade').value,
+                quantidadeDisponivel: maxUso,
+                usosAtuais: Math.min(usosAtuais, maxUso),
+                tipo,
+                valor,
+                valorMinimo,
+                ativo,
+                statusCupom,
+                updatedAt: Date.now()
+            }, { merge: true });
+
+            window.showToast('Cupom atualizado!');
+            window.closeModal('modal-editar-cupom', 'form-edit-cupom');
+        } catch (err) {
+            console.error(err);
+            window.showToast('Erro ao atualizar cupom.', true);
+        }
+        window.mostrarLoading(false);
+    };
+}
+
+const formCupom = document.getElementById('form-cupom');
+if (formCupom) {
+    formCupom.onsubmit = async function(e) {
+        e.preventDefault();
+
+        const original = document.getElementById('cupom-id-original').value.trim().toUpperCase();
+        const codigo = document.getElementById('cupom-codigo').value.trim().toUpperCase().replace(/\s+/g, '');
+        const validade = document.getElementById('cupom-validade').value;
+        const maxUso = parseInt(document.getElementById('cupom-max-uso').value, 10) || 0;
+        const cupomExistente = original ? window.allCupons.find(c => c.id === original) : null;
+        const usosAtuais = cupomExistente ? getCupomUsosAtuais(cupomExistente) : 0;
+        const statusCupom = cupomExistente ? getStatusOperacionalCupom(cupomExistente) : 'ativo';
+        const tipo = document.getElementById('cupom-tipo').value;
+        const valor = converterValorParaNumero(document.getElementById('cupom-valor').value || 0);
+        const valorMinimo = converterValorParaNumero(document.getElementById('cupom-minimo').value || 0);
+        const ativo = statusCupom === 'ativo';
+
+        if (!codigo || !validade || maxUso <= 0 || valor <= 0) {
+            window.showToast('Preencha código, validade, máximo de uso e valor do desconto.', true);
+            return;
+        }
+
+        window.mostrarLoading(true);
+        try {
+            const payload = {
+                codigo,
+                dataValidade: validade,
+                quantidadeDisponivel: maxUso,
+                usosAtuais: Math.min(usosAtuais, maxUso),
+                tipo,
+                valor,
+                valorMinimo,
+                ativo,
+                statusCupom,
+                updatedAt: Date.now()
+            };
+
+            if (!original) payload.createdAt = Date.now();
+
+            if (original && original !== codigo) {
+                await deleteDoc(doc(db, "cupons", original));
+            }
+
+            await setDoc(doc(db, "cupons", codigo), payload, { merge: true });
+            window.showToast('Cupom salvo!');
+            window.limparFormCupom();
+        } catch (err) {
+            console.error(err);
+            window.showToast('Erro ao salvar cupom.', true);
+        }
+        window.mostrarLoading(false);
+    };
+}
+
+
 async function init() { 
     window.addVariation(false); 
     await syncCats(); 
@@ -4234,6 +5129,7 @@ async function init() {
     listenPedidos(); 
     window.carregarConfigAgendaGeral();
     window.carregarExcecoesLista(); // <-- Carrega a nova lista de exceções
+    window.loadCupons?.();
 }
 
 // ==========================================

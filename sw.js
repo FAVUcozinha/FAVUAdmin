@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v44-pedidos-card-total-pelos-itens';
+const CACHE_NAME = 'favu-app-v60-cupom-popup-categoria';
 const urlsToCache = [
   './',
   './index.html',
