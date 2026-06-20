@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v41-orcamento-envia-resumo';
+const CACHE_NAME = 'favu-app-v44-pedidos-card-total-pelos-itens';
 const urlsToCache = [
   './',
   './index.html',

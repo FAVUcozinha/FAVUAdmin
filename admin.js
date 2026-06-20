@@ -2181,7 +2181,56 @@ window.normalizarCampoHoraPedido = function(input) {
 
 function parseHorario(s) { if (!s || typeof s !== 'string') return 0; const p = s.trim().split(':'); if (p.length !== 2) return 0; const h = parseInt(p[0], 10), m = parseInt(p[1], 10); if (isNaN(h) || isNaN(m)) return 0; return h * 60 + m; }
 function ordenarPedidosPorDataHorario(pedidos) { return pedidos.sort((a, b) => { const dA = parseDataBR(a.Data_Entrega), dB = parseDataBR(b.Data_Entrega); if (!dA && !dB) return 0; if (!dA) return 1; if (!dB) return -1; const diff = dA.getTime() - dB.getTime(); if (diff !== 0) return diff; return parseHorario(a.Horario_Entrega) - parseHorario(b.Horario_Entrega); }); }
-function converterValorParaNumero(v) { if (!v) return 0; let s = String(v).replace(/R\$/gi, '').trim(); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/\D/g, ''); const n = parseFloat(s); return isNaN(n) ? 0 : n; }
+function converterValorParaNumero(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return isNaN(v) ? 0 : v;
+
+    let s = String(v)
+        .replace(/R\$/gi, '')
+        .replace(/\s/g, '')
+        .replace(/[^\d,.-]/g, '');
+
+    if (!s || s === '-' || s === ',' || s === '.') return 0;
+
+    const temVirgula = s.includes(',');
+    const temPonto = s.includes('.');
+
+    if (temVirgula && temPonto) {
+        const ultimaVirgula = s.lastIndexOf(',');
+        const ultimoPonto = s.lastIndexOf('.');
+
+        if (ultimaVirgula > ultimoPonto) {
+            // Formato BR: 1.234,56
+            s = s.replace(/\./g, '').replace(',', '.');
+        } else {
+            // Formato US: 1,234.56
+            s = s.replace(/,/g, '');
+        }
+    } else if (temVirgula) {
+        const partes = s.split(',');
+        const decimais = partes[partes.length - 1] || '';
+
+        if (decimais.length > 0 && decimais.length <= 2) {
+            s = partes.slice(0, -1).join('').replace(/\./g, '') + '.' + decimais;
+        } else {
+            s = s.replace(/,/g, '');
+        }
+    } else if (temPonto) {
+        const partes = s.split('.');
+        const decimais = partes[partes.length - 1] || '';
+
+        if (partes.length === 2 && decimais.length > 0 && decimais.length <= 2) {
+            // Decimal com ponto: 1.30
+            s = partes[0] + '.' + decimais;
+        } else {
+            // Milhar com ponto: 1.300 ou 1.300.000
+            s = s.replace(/\./g, '');
+        }
+    }
+
+    const n = Number(s);
+    return isNaN(n) ? 0 : n;
+}
 function formatarValorComCentavos(v) { return converterValorParaNumero(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatarNumeroMoedaPedido(v) {
     const n = Number(v);
@@ -2249,7 +2298,53 @@ function isPedidoExcluidoPainel(p) {
     const status = String(p?.Status_do_Pedido || '').toLowerCase();
     return p?.excluido === true || /^EXC-|^EXD-/i.test(id) || status === 'excluído' || status === 'excluido';
 }
-function calcularValorPedido(p) { if (!p || !p.Total_Final) return 0; let v = String(p.Total_Final).trim(); if (v.includes(',')) v = v.replace(/\./g, '').replace(',', '.'); v = v.replace(/[^\d.]/g, ''); return parseFloat(v) || 0; }
+function extrairDescontosTotaisPedido(...fontes) {
+    let total = 0;
+
+    fontes.forEach(fonte => {
+        String(fonte || '')
+            .split(/\n|\|/g)
+            .map(linha => linha.trim())
+            .filter(Boolean)
+            .forEach(linha => {
+                if (!/(desconto|cupom)/i.test(linha)) return;
+
+                const valores = linha.match(/-?\s*R?\$\s*[\d.,]+|R?\$?\s*[\d.,]+/gi) || [];
+                valores.forEach(valor => {
+                    const numero = converterValorParaNumero(valor);
+                    if (numero > 0) total += numero;
+                });
+            });
+    });
+
+    return total;
+}
+
+function calcularValorPedidoPorItensCorrigidos(p) {
+    if (!p || !p.Resumo_dos_Itens) return null;
+
+    const itens = parseResumoEditPedido(p.Resumo_dos_Itens || '');
+    if (!itens.length) return null;
+
+    const subtotal = itens.reduce((acc, item) => {
+        const qtd = parseInt(item.qtd) || 0;
+        const preco = converterValorParaNumero(item.preco);
+        return acc + (qtd * preco);
+    }, 0);
+
+    if (subtotal <= 0) return null;
+
+    const descontoCupom = extrairDescontosTotaisPedido(p.Cupom || '');
+    const descontoResumo = descontoCupom > 0 ? 0 : extrairDescontosTotaisPedido(p.Resumo_dos_Itens || '');
+    return Math.max(0, subtotal - descontoCupom - descontoResumo);
+}
+
+function calcularValorPedido(p) {
+    const valorCorrigidoPorItens = calcularValorPedidoPorItensCorrigidos(p);
+    if (valorCorrigidoPorItens !== null) return valorCorrigidoPorItens;
+    if (!p || !p.Total_Final) return 0;
+    return converterValorParaNumero(p.Total_Final);
+}
 
 function listenPedidos() {
     onSnapshot(collection(db, "pedidos"), (snap) => {
@@ -2356,10 +2451,11 @@ window.criarCardHTML = function(p) {
 
     const pgStatus = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente');
     const pg = pgStatus.toLowerCase(); let pC = pg.includes('50%') ? 'pg-parcial' : (pg.includes('100%') || pg === 'pago' ? 'pg-pago' : 'pg-pendente');
+    const totalExibicaoPedido = calcularValorPedido(p);
     const fP = (p.Forma_de_Pagamento || '').trim().toLowerCase(); let tt = '', tc = '';
     if (fP.includes('pix')) { tt = 'PIX'; tc = 'pix'; } else if (fP.includes('dinheiro')) { tt = 'DINHEIRO'; tc = 'dinheiro'; } else if (fP.includes('cartão') || fP.includes('cartao')) { tt = 'CARTÃO'; tc = 'cartao'; } else if (fP.includes('confirmar')) { tt = 'A CONFIRMAR'; tc = 'a-confirmar'; } else if (fP) { tt = fP.toUpperCase(); tc = fP.replace(/[^a-z0-9]/g, ''); }
 
-    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${p.Cupom ? `<div class="card-cupom"><span class="card-cupom-label">Cupom/Desc:</span> ${p.Cupom}</div>` : ''}<div class="card-price"><span>R$ ${formatarValorComCentavos(p.Total_Final)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
+    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${p.Cupom ? `<div class="card-cupom"><span class="card-cupom-label">Cupom/Desc:</span> ${p.Cupom}</div>` : ''}<div class="card-price"><span>R$ ${formatarNumeroMoedaPedido(totalExibicaoPedido)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
     return c;
 }
 
@@ -3161,13 +3257,19 @@ window.submitEditForm = async function(e) {
     partesCupomFinal.push(...descontosInfo);
     const cupomFinal = partesCupomFinal.join(' | ');
 
+    const totalFinalCalculado = formatarNumeroMoedaPedido(
+        Math.max(0, getSubtotalEditPedido() - (window.editCupomAplicado?.desconto || 0) - descontoManual)
+    );
+    const totalPedidoInput = document.getElementById('edit-total-pedido');
+    if (totalPedidoInput) totalPedidoInput.value = totalFinalCalculado;
+
     try {
         const dadosPedidoEditado = {
             Nome_Cliente: document.getElementById('edit-nome-pedido').value,
             Numero: document.getElementById('edit-telefone-pedido').value,
             Data_Entrega: dataEntregaFormatada,
             Horario_Entrega: horaEntregaFormatada,
-            Total_Final: document.getElementById('edit-total-pedido').value.replace('.', ','),
+            Total_Final: totalFinalCalculado,
             Forma_de_Pagamento: document.getElementById('edit-forma-pedido').value,
             Status_Pagamento: document.getElementById('edit-status-pgto-pedido').value,
             Cupom: cupomFinal,
@@ -3185,14 +3287,33 @@ window.submitEditForm = async function(e) {
                 idOriginal: window.editPedidoIdCopiaOriginal || '',
                 createdAt: Date.now()
             });
+            const pedidoCopiadoLocal = {
+                ...dadosPedidoEditado,
+                ID_do_Pedido: id,
+                Status_do_Pedido: 'Pedidos Orçados',
+                origem: 'copia',
+                idOriginal: window.editPedidoIdCopiaOriginal || '',
+                createdAt: Date.now()
+            };
+            const idxCopia = window.todosPedidos.findIndex(p => p.ID_do_Pedido === id || p._docId === id);
+            if (idxCopia >= 0) window.todosPedidos[idxCopia] = { ...window.todosPedidos[idxCopia], ...pedidoCopiadoLocal };
+            else window.todosPedidos.push(pedidoCopiadoLocal);
+
             window.editPedidoModoCopia = false;
             window.editPedidoIdCopiaOriginal = '';
             window.showToast("Pedido copiado!");
         } else {
             await updateDoc(doc(db, "pedidos", getPedidoDocumentoId(id)), dadosPedidoEditado);
+
+            const idxPedido = window.todosPedidos.findIndex(p => p.ID_do_Pedido === id || p._docId === id);
+            if (idxPedido >= 0) {
+                window.todosPedidos[idxPedido] = { ...window.todosPedidos[idxPedido], ...dadosPedidoEditado };
+            }
+
             window.showToast("Salvo!");
         }
 
+        window.filtrarPedidos();
         window.fecharModalPedido('edit-modal-pedido');
     } catch (err) {
         console.error(err);
