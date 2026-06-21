@@ -1716,14 +1716,14 @@ window.renderOrcamentoMenu = function() {
     const nav = document.getElementById('orc-cats-nav');
     container.innerHTML = ""; nav.innerHTML = "";
     
-    const categoriasAtivas = globalCategories.filter(isCategoriaVisivelAgora).map(c => c.nome);
+    // No orçamento do Admin, as categorias ficam disponíveis mesmo se estiverem ocultas/agendadas para o site de clientes.
     const termoBuscaOrcamento = (document.getElementById('search-orcamento')?.value || '').trim().toLowerCase();
     const normalizarBuscaOrcamento = (valor) => (valor || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const termoNormalizado = normalizarBuscaOrcamento(termoBuscaOrcamento);
     
     const orcAgrupados = {}; 
     allProducts
-        .filter(p => p.ativo && categoriasAtivas.includes(p.categoria || 'Geral'))
+        .filter(p => p.ativo)
         .filter(p => {
             if (!termoNormalizado) return true;
             return [p.nome, p.categoria, p.tamanho, p.descricaoItem, p.descricaoResumo, p.descricaoPopup]
@@ -2184,6 +2184,124 @@ function parseDataISO(s) {
     return parseDataBR(s);
 }
 
+function normalizarTextoBuscaPedido(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function normalizarNumeroBuscaPedido(valor) {
+    return String(valor || '').replace(/\D/g, '');
+}
+
+function telefoneCombinaBuscaPedido(telefonePedido, buscaDigitada) {
+    const numeroPedido = normalizarNumeroBuscaPedido(telefonePedido);
+    const numeroBusca = normalizarNumeroBuscaPedido(buscaDigitada);
+
+    if (!numeroBusca) return false;
+    if (!numeroPedido) return false;
+
+    return numeroPedido.includes(numeroBusca) || numeroBusca.includes(numeroPedido);
+}
+
+function nomeCombinaBuscaPedido(nomePedido, buscaDigitada) {
+    const nome = normalizarTextoBuscaPedido(nomePedido);
+    const busca = normalizarTextoBuscaPedido(buscaDigitada);
+
+    if (!busca) return false;
+    if (!nome) return false;
+
+    return nome.includes(busca) || busca.includes(nome);
+}
+
+function pedidoCombinaBuscaLivre(p, buscaDigitada) {
+    const busca = String(buscaDigitada || '').trim();
+    if (!busca) return true;
+
+    const buscaTexto = normalizarTextoBuscaPedido(busca);
+    const buscaNumero = normalizarNumeroBuscaPedido(busca);
+
+    if (nomeCombinaBuscaPedido(p.Nome_Cliente || '', busca)) return true;
+    if (telefoneCombinaBuscaPedido(p.Numero || '', busca)) return true;
+
+    const idPedido = normalizarTextoBuscaPedido(p.ID_do_Pedido || '');
+    if (idPedido && idPedido.includes(buscaTexto)) return true;
+
+    if (buscaNumero && normalizarNumeroBuscaPedido(p.ID_do_Pedido || '').includes(buscaNumero)) return true;
+
+    return false;
+}
+
+function formatarDataDisplayPedido(data) {
+    if (!data) return '';
+    return `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}/${data.getFullYear()}`;
+}
+
+function formatarDataISOFiltroPedido(data) {
+    if (!data) return '';
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+}
+
+function parseFiltroDataDigitadoPedido(valor) {
+    const texto = String(valor || '').trim();
+    if (!texto) return null;
+
+    const partes = texto
+        .split(/\s*(?:-|–|—|a|até|ate|,)\s*/i)
+        .map(p => p.trim())
+        .filter(Boolean);
+
+    if (partes.length >= 2) {
+        const inicio = parseDataBR(partes[0]) || parseDataISO(partes[0]);
+        const fim = parseDataBR(partes[1]) || parseDataISO(partes[1]);
+        if (inicio && fim) {
+            if (fim < inicio) return { inicio: fim, fim: inicio };
+            return { inicio, fim };
+        }
+    }
+
+    const unica = parseDataBR(texto) || parseDataISO(texto);
+    if (unica) return { inicio: unica, fim: null };
+
+    return null;
+}
+
+function sincronizarFiltroDataOcultoPeloDisplay(valor, normalizarDisplay = false) {
+    const campoOculto = document.getElementById('date-input');
+    const campoDisplay = document.getElementById('date-filter-display');
+    if (!campoOculto) return;
+
+    const texto = String(valor || '').trim();
+    if (!texto) {
+        campoOculto.value = '';
+        window.dataInicialIntervalo = null;
+        window.dataFinalIntervalo = null;
+        return;
+    }
+
+    const intervalo = parseFiltroDataDigitadoPedido(texto);
+    if (!intervalo) return;
+
+    window.dataInicialIntervalo = intervalo.inicio;
+    window.dataFinalIntervalo = intervalo.fim;
+
+    if (intervalo.inicio && intervalo.fim) {
+        campoOculto.value = `${formatarDataISOFiltroPedido(intervalo.inicio)},${formatarDataISOFiltroPedido(intervalo.fim)}`;
+        if (normalizarDisplay && campoDisplay) campoDisplay.value = `${formatarDataDisplayPedido(intervalo.inicio)} - ${formatarDataDisplayPedido(intervalo.fim)}`;
+    } else if (intervalo.inicio) {
+        campoOculto.value = formatarDataISOFiltroPedido(intervalo.inicio);
+        if (normalizarDisplay && campoDisplay) campoDisplay.value = formatarDataDisplayPedido(intervalo.inicio);
+    }
+}
+
+window.aplicarFiltroDataDigitada = function(valor, normalizarDisplay = false) {
+    sincronizarFiltroDataOcultoPeloDisplay(valor, normalizarDisplay);
+    window.filtrarPedidos?.();
+};
+
+
 function formatarDataParaInputPedido(valor) {
     const data = parseDataBR(valor);
     if (!data) return '';
@@ -2641,12 +2759,16 @@ function calcularValorPedido(p) {
 }
 
 function normalizarFormaPagamentoPedido(valor) {
-    const v = String(valor || '').trim().toLowerCase();
+    const v = String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
 
-    if ((v.includes('credito') || v.includes('crédito') || v.includes('cart')) && v.includes('link')) return 'Crédito Link';
-    if ((v.includes('credito') || v.includes('crédito') || v.includes('cart')) && v.includes('retirada')) return 'Crédito Retirada';
-    if (v === 'credito' || v === 'crédito' || v.includes('cart')) return 'Crédito';
-    if (v.includes('debito') || v.includes('débito')) return 'Débito';
+    if (v.includes('link')) return 'Crédito Link';
+    if (v.includes('retirada')) return 'Crédito Retirada';
+    if (v.includes('credito') || v.includes('cart')) return 'Crédito';
+    if (v.includes('debito')) return 'Débito';
     if (v.includes('dinheiro')) return 'Dinheiro';
     if (v.includes('pix')) return 'Pix';
     if (v.includes('confirmar')) return 'A confirmar';
@@ -2668,6 +2790,26 @@ function formatarPagamentoPedidoTexto(forma, modalidadeCredito = '') {
     }
     return formaNormalizada || '';
 }
+
+function obterFormaPagamentoFiltroPedido(p) {
+    const textoCompleto = `${p?.Forma_de_Pagamento || ''} ${p?.Modalidade_Credito || ''} ${p?.Modalidade_Pagamento || ''}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    if (textoCompleto.includes('link')) return 'Crédito Link';
+    if (textoCompleto.includes('retirada')) return 'Crédito Retirada';
+    if (textoCompleto.includes('debito')) return 'Débito';
+
+    const forma = normalizarFormaPagamentoPedido(p?.Forma_de_Pagamento || '');
+
+    if (forma === 'Crédito') {
+        return 'Crédito Link';
+    }
+
+    return forma;
+}
+
 
 function getTaxaPagamentoInfo(p) {
     const forma = normalizarFormaPagamentoPedido(p?.Forma_de_Pagamento || '');
@@ -2744,7 +2886,10 @@ window.obterPedidosDaSemanaAtual = function() {
 }
 
 window.obterPedidosFiltrados = function() {
-    const s = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim().toLowerCase() : '';
+    const s = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
+    const displayData = document.getElementById('date-filter-display') ? document.getElementById('date-filter-display').value.trim() : '';
+    if (displayData) sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
+
     const df = document.getElementById('date-input') ? document.getElementById('date-input').value : ''; 
     const sp = document.getElementById('filter-status-pagamento') ? document.getElementById('filter-status-pagamento').value : '';
     const fp = document.getElementById('filter-forma-pagamento') ? document.getElementById('filter-forma-pagamento').value : '';
@@ -2752,10 +2897,29 @@ window.obterPedidosFiltrados = function() {
 
     return window.todosPedidos.filter(p => {
         if (isPedidoExcluidoPainel(p)) return false;
-        if (s && !((p.Nome_Cliente || '').toLowerCase().includes(s) || (p.ID_do_Pedido || '').toLowerCase().includes(s) || (p.Numero || '').includes(s))) return false;
-        if (df) { const dp = parseDataBR(p.Data_Entrega); if (!dp) return false; if (df.includes(',')) { const [di, dF] = df.split(','); const dtI = parseDataISO(di.trim()), dtF = parseDataISO(dF.trim()); if (!dtI || !dtF || !(dp.getTime() >= dtI.getTime() && dp.getTime() <= dtF.getTime())) return false; } else { const dt = parseDataISO(df.trim()); if (!dt || dp.getTime() !== dt.getTime()) return false; } }
+        if (s && !pedidoCombinaBuscaLivre(p, s)) return false;
+
+        if (df) {
+            const dp = parseDataBR(p.Data_Entrega);
+            if (!dp) return false;
+
+            if (df.includes(',')) {
+                const [di, dF] = df.split(',');
+                const dtI = parseDataISO(di.trim());
+                const dtF = parseDataISO(dF.trim());
+                if (!dtI || !dtF || !(dp.getTime() >= dtI.getTime() && dp.getTime() <= dtF.getTime())) return false;
+            } else {
+                const dt = parseDataISO(df.trim());
+                if (!dt || dp.getTime() !== dt.getTime()) return false;
+            }
+        }
+
         if (sp && normalizarStatusPagamentoPedido(p.Status_Pagamento) !== normalizarStatusPagamentoPedido(sp)) return false;
-        if (fp && normalizarFormaPagamentoPedido(p.Forma_de_Pagamento || '') !== fp) return false;
+        if (fp) {
+            const formaFiltro = normalizarFormaPagamentoPedido(fp);
+            const formaPedido = obterFormaPagamentoFiltroPedido(p);
+            if (formaPedido !== formaFiltro) return false;
+        }
         if (ob) { const tO = p.Observacoes && p.Observacoes.trim() !== ''; if (ob === 'com' && !tO) return false; if (ob === 'sem' && tO) return false; }
         return true;
     });
@@ -2766,11 +2930,13 @@ window.filtrarPedidos = function() {
     // Cancela a busca anterior se o usuário ainda estiver digitando (Debounce)
     clearTimeout(timerFiltroPedidos);
     timerFiltroPedidos = setTimeout(() => {
-        const txt = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
-        const dt = document.getElementById('date-input') ? document.getElementById('date-input').value : '';
-        let escopo = (txt || dt) ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p));
+        const displayData = document.getElementById('date-filter-display') ? document.getElementById('date-filter-display').value.trim() : '';
+        if (displayData) sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
+
+        // Sem filtro de data, a tela deve exibir TODOS os pedidos, não apenas a semana atual.
+        const escopo = window.obterPedidosFiltrados();
         window.renderizar(escopo);
-    }, 350); // Só busca 350ms depois que ele parar de digitar!
+    }, 350);
 }
 
 window.renderizar = function(pedidos) {
@@ -3867,6 +4033,8 @@ window.confirmarEnvioWhatsApp = async function(m) {
 }
 
 window.openDatePicker = function() {
+    const displayManual = document.getElementById('date-filter-display')?.value || '';
+    if (displayManual) sincronizarFiltroDataOcultoPeloDisplay(displayManual, false);
     const dF = document.getElementById('date-input').value;
     if (dF) { if (dF.includes(',')) { const [di, dFim] = dF.split(','); window.dataInicialIntervalo = new Date(parseInt(di.split('-')[0]), parseInt(di.split('-')[1]) - 1, parseInt(di.split('-')[2]), 0,0,0,0); window.dataFinalIntervalo = new Date(parseInt(dFim.split('-')[0]), parseInt(dFim.split('-')[1]) - 1, parseInt(dFim.split('-')[2]), 0,0,0,0); } else { window.dataInicialIntervalo = new Date(parseInt(dF.split('-')[0]), parseInt(dF.split('-')[1]) - 1, parseInt(dF.split('-')[2]), 0,0,0,0); window.dataFinalIntervalo = null; } } else { window.dataInicialIntervalo = null; window.dataFinalIntervalo = null; }
     document.getElementById('date-picker-modal').style.display = 'flex'; window.renderCalendar();
