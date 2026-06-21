@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v99-botoes-editar-produto-mesmo-tamanho';
+const CACHE_NAME = 'favu-app-v100-upload-sem-nome-sem-preview-vazio';
 const urlsToCache = [
   './',
   './index.html',

@@ -2410,6 +2410,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 52px !important;
 }
 
+
+/* === IMAGENS 2026-06-21: sem nome do arquivo e sem preview vazio === */
+.upload-image-info {
+    display: none !important;
+}
+
+.upload-image-row {
+    grid-template-columns: 42px 74px auto !important;
+}
+
+.upload-image-actions {
+    margin-left: auto !important;
+}
+
+.upload-current-carousel[style*="display: none"] {
+    display: none !important;
+}
+
+#modal-add-prod .upload-current-carousel:has(img[src=""]),
+#modal-editar-prod .upload-current-carousel:has(img[src=""]),
+#modal-add-aviso .upload-current-carousel:has(img[src=""]),
+#modal-editar-aviso .upload-current-carousel:has(img[src=""]) {
+    display: none !important;
+}
+
+.upload-image-empty {
+    display: none !important;
+}
+
 </style>
 
 <style>
@@ -8036,7 +8065,7 @@ input[type="date"]::-webkit-date-and-time-value {
 
 </style>
 
-    <script type="module" src="./admin.js?v=20260621-botoes-editar-produto-mesmo-tamanho-1"></script>
+    <script type="module" src="./admin.js?v=20260621-upload-sem-nome-sem-preview-vazio-1"></script>
 
 </body>
 

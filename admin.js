@@ -507,6 +507,8 @@ window.atualizarPreviewImagemUpload = function(inputId) {
     if (idx < 0) idx = 0;
     window.uploadImagePreviewIndex[inputId] = idx;
 
+    if (wrap) wrap.style.display = list.length ? 'inline-flex' : 'none';
+
     if (preview) {
         if (list.length && list[idx]?.url) {
             preview.src = list[idx].url;
@@ -517,7 +519,7 @@ window.atualizarPreviewImagemUpload = function(inputId) {
         }
     }
 
-    if (none) none.style.display = list.length ? 'none' : 'inline';
+    if (none) none.style.display = 'none';
 
     if (counter) {
         counter.textContent = list.length > 1 ? `${idx + 1}/${list.length}` : '';
@@ -556,6 +558,15 @@ window.mudarPreviewImagemUpload = function(inputId, delta) {
     window.iniciarPreviewImagemUploadAuto?.(inputId);
 };
 
+
+window.limparCamposImagemUploadSeVazio = function(inputId) {
+    const list = window.uploadImageLists?.[inputId] || [];
+    if (list.length) return;
+    const label = window.getUploadImageLabel?.(inputId);
+    if (label) label.textContent = '';
+    window.atualizarPreviewImagemUpload?.(inputId);
+};
+
 window.renderListaImagensUpload = function(inputId) {
     const list = window.uploadImageLists[inputId] || [];
     const el = window.getUploadImageListEl(inputId);
@@ -583,7 +594,7 @@ window.renderListaImagensUpload = function(inputId) {
 
     if (!el) return;
     if (!list.length) {
-        el.innerHTML = '<div class="upload-image-empty">Nenhuma imagem adicionada.</div>';
+        el.innerHTML = '';
         return;
     }
 
