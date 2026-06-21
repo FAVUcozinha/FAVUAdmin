@@ -19,6 +19,10 @@ const storage = getStorage(app);
 let globalCategories = [];
 let allProducts = [];
 let allEstoque = []; 
+let allGastosItens = [];
+let allGastosLancamentos = [];
+let gastosItemAberto = null;
+let gastosMesAberto = new Date().getMonth() + 1; 
 let allAvisos = [];
 let currentAvisosTab = 'ativos';
 let currentCategoryFilter = '';
@@ -392,16 +396,991 @@ window.previewImage = function(input, imgId, btnId, noneId, hiddenFlagId) {
     }
 };
 
+
+
+
+// === IMAGENS 2026-06-21: lista, ordenação e recorte individual antes do salvamento ===
+window.uploadImageLists = window.uploadImageLists || {};
+window.uploadImageDragState = window.uploadImageDragState || null;
+
+window.getUploadImageLabel = function(inputId) {
+    const map = {
+        'a-file': 'a-file-name',
+        'e-file': 'e-file-name',
+        'aa-file': 'aa-file-name',
+        'ea-file': 'ea-file-name'
+    };
+    return document.getElementById(map[inputId] || '');
+};
+
+window.getUploadImageListEl = function(inputId) {
+    const id = `${inputId}-list`;
+    let el = document.getElementById(id);
+    if (!el) {
+        const label = window.getUploadImageLabel(inputId);
+        if (label) {
+            el = document.createElement('div');
+            el.id = id;
+            el.className = 'upload-image-list';
+            label.insertAdjacentElement('afterend', el);
+        }
+    }
+    return el;
+};
+
+window.criarUploadImageEntry = function({ file = null, url = '', name = '', existing = false } = {}) {
+    const objectUrl = file ? URL.createObjectURL(file) : url;
+    return {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file,
+        url: objectUrl || '',
+        savedUrl: existing ? url : '',
+        name: name || file?.name || (existing ? 'Imagem salva' : 'Imagem'),
+        existing: !!existing
+    };
+};
+
+window.limparListaImagensUpload = function(inputId) {
+    const atual = window.uploadImageLists[inputId] || [];
+    atual.forEach(item => {
+        if (item.file && item.url && item.url.startsWith('blob:')) {
+            try { URL.revokeObjectURL(item.url); } catch(e) {}
+        }
+    });
+    window.uploadImageLists[inputId] = [];
+    if (window.uploadImagePreviewIndex) window.uploadImagePreviewIndex[inputId] = 0;
+    window.renderListaImagensUpload(inputId);
+};
+
+window.carregarImagensExistentesUpload = function(inputId, urls = []) {
+    window.limparListaImagensUpload(inputId);
+    window.uploadImagePreviewIndex[inputId] = 0;
+    window.uploadImageLists[inputId] = (urls || []).filter(Boolean).map((url, idx) => window.criarUploadImageEntry({
+        url,
+        name: `Imagem ${idx + 1}`,
+        existing: true
+    }));
+    window.renderListaImagensUpload(inputId);
+};
+
+window.adicionarImagensUpload = function(inputId) {
+    const input = document.getElementById(inputId);
+    const files = input?.files ? Array.from(input.files).filter(f => f && f.type && f.type.startsWith('image/')) : [];
+    if (!window.uploadImageLists[inputId]) window.uploadImageLists[inputId] = [];
+
+    files.forEach(file => {
+        window.uploadImageLists[inputId].push(window.criarUploadImageEntry({ file, name: file.name, existing: false }));
+    });
+
+    if (input) input.value = '';
+    window.uploadImagePreviewIndex[inputId] = Math.max(0, (window.uploadImageLists[inputId] || []).length - files.length);
+    window.renderListaImagensUpload(inputId);
+};
+
+
+// === IMAGENS 2026-06-21: carrossel no preview atual/nova ===
+window.uploadImagePreviewIndex = window.uploadImagePreviewIndex || {};
+
+window.getPreviewIdsUpload = function(inputId) {
+    const map = {
+        'a-file': ['a-img-preview', 'a-img-none', 'a-img-counter'],
+        'e-file': ['e-img-preview', 'e-img-none', 'e-img-counter'],
+        'aa-file': ['aa-img-preview', 'aa-img-none', 'aa-img-counter'],
+        'ea-file': ['ea-img-preview', 'ea-img-none', 'ea-img-counter']
+    };
+    return map[inputId] || [];
+};
+
+window.atualizarPreviewImagemUpload = function(inputId) {
+    const list = window.uploadImageLists?.[inputId] || [];
+    const [previewId, noneId, counterId] = window.getPreviewIdsUpload(inputId);
+
+    const preview = document.getElementById(previewId);
+    const none = document.getElementById(noneId);
+    const counter = document.getElementById(counterId);
+    const wrap = document.querySelector(`.upload-current-carousel[data-input-id="${inputId}"]`);
+    const prev = wrap?.querySelector('.upload-current-btn.prev');
+    const next = wrap?.querySelector('.upload-current-btn.next');
+
+    let idx = Number(window.uploadImagePreviewIndex[inputId] || 0);
+    if (idx >= list.length) idx = Math.max(0, list.length - 1);
+    if (idx < 0) idx = 0;
+    window.uploadImagePreviewIndex[inputId] = idx;
+
+    if (preview) {
+        if (list.length && list[idx]?.url) {
+            preview.src = list[idx].url;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
+    if (none) none.style.display = list.length ? 'none' : 'inline';
+
+    if (counter) {
+        counter.textContent = list.length > 1 ? `${idx + 1}/${list.length}` : '';
+        counter.style.display = list.length > 1 ? 'inline-flex' : 'none';
+    }
+
+    if (prev) prev.style.display = list.length > 1 ? 'inline-flex' : 'none';
+    if (next) next.style.display = list.length > 1 ? 'inline-flex' : 'none';
+};
+
+
+window.uploadPreviewTimers = window.uploadPreviewTimers || {};
+
+window.iniciarPreviewImagemUploadAuto = function(inputId) {
+    const list = window.uploadImageLists?.[inputId] || [];
+    if (window.uploadPreviewTimers[inputId]) {
+        clearInterval(window.uploadPreviewTimers[inputId]);
+        window.uploadPreviewTimers[inputId] = null;
+    }
+    if (list.length <= 1) return;
+
+    window.uploadPreviewTimers[inputId] = setInterval(() => {
+        const atual = Number(window.uploadImagePreviewIndex[inputId] || 0);
+        window.uploadImagePreviewIndex[inputId] = (atual + 1) % list.length;
+        window.atualizarPreviewImagemUpload(inputId);
+    }, 2600);
+};
+
+window.mudarPreviewImagemUpload = function(inputId, delta) {
+    const list = window.uploadImageLists?.[inputId] || [];
+    if (!list.length) return;
+
+    const atual = Number(window.uploadImagePreviewIndex[inputId] || 0);
+    window.uploadImagePreviewIndex[inputId] = (atual + delta + list.length) % list.length;
+    window.atualizarPreviewImagemUpload(inputId);
+    window.iniciarPreviewImagemUploadAuto?.(inputId);
+};
+
+window.renderListaImagensUpload = function(inputId) {
+    const list = window.uploadImageLists[inputId] || [];
+    const el = window.getUploadImageListEl(inputId);
+    const label = window.getUploadImageLabel(inputId);
+    const isEdit = inputId === 'e-file' || inputId === 'ea-file';
+
+    if (label) label.textContent = list.length ? `${list.length} imagem(ns) na ordem de exibição` : '';
+
+    const previewMap = {
+        'a-file': ['a-img-preview', 'a-img-none'],
+        'e-file': ['e-img-preview', 'e-img-none'],
+        'aa-file': ['aa-img-preview', 'aa-img-none'],
+        'ea-file': ['ea-img-preview', 'ea-img-none']
+    };
+
+    const [previewId, noneId] = previewMap[inputId] || [];
+    const preview = document.getElementById(previewId);
+    const none = document.getElementById(noneId);
+    const removeBtn = document.getElementById(inputId === 'e-file' ? 'btn-remove-e-img' : inputId === 'ea-file' ? 'btn-remove-ea-img' : '');
+
+    window.atualizarPreviewImagemUpload?.(inputId);
+    if (removeBtn) removeBtn.style.display = 'none';
+
+    window.iniciarPreviewImagemUploadAuto?.(inputId);
+
+    if (!el) return;
+    if (!list.length) {
+        el.innerHTML = '<div class="upload-image-empty">Nenhuma imagem adicionada.</div>';
+        return;
+    }
+
+    el.innerHTML = list.map((item, idx) => `
+        <div class="upload-image-row" draggable="true" data-input-id="${inputId}" data-index="${idx}"
+            ondragstart="window.dragImagemUploadStart(event)"
+            ondragover="window.dragImagemUploadOver(event)"
+            ondrop="window.dropImagemUpload(event)">
+            <div class="upload-image-order" title="Ordem de exibição"><span>${idx + 1}</span><i>☰</i></div>
+            <div class="upload-image-thumb-wrap">
+                <img src="${item.url}" alt="Imagem ${idx + 1}">
+                <small>${item.existing ? 'Imagem salva' : 'Imagem nova, ainda não salva'}</small>
+            </div>
+            <div class="upload-image-info">
+                <strong>${escapeHTML(item.name || 'Imagem')}</strong>
+            </div>
+            <div class="upload-image-actions">
+                <button type="button" class="btn-action edit" title="Editar recorte" onclick="window.abrirCropImagemUpload('${inputId}', ${idx})"><i class="fas fa-crop-alt"></i></button>
+                <button type="button" class="btn-action del" title="Excluir imagem" onclick="window.excluirImagemUpload('${inputId}', ${idx})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `).join('');
+};
+
+window.dragImagemUploadStart = function(event) {
+    const row = event.currentTarget;
+    window.uploadImageDragState = {
+        inputId: row.dataset.inputId,
+        index: Number(row.dataset.index)
+    };
+    row.classList.add('dragging');
+};
+
+window.dragImagemUploadOver = function(event) {
+    event.preventDefault();
+};
+
+window.dropImagemUpload = function(event) {
+    event.preventDefault();
+    const row = event.currentTarget;
+    const targetInputId = row.dataset.inputId;
+    const targetIndex = Number(row.dataset.index);
+    const drag = window.uploadImageDragState;
+
+    document.querySelectorAll('.upload-image-row.dragging').forEach(el => el.classList.remove('dragging'));
+
+    if (!drag || drag.inputId !== targetInputId || drag.index === targetIndex) return;
+
+    const list = window.uploadImageLists[targetInputId] || [];
+    const [moved] = list.splice(drag.index, 1);
+    list.splice(targetIndex, 0, moved);
+    window.uploadImageDragState = null;
+    window.uploadImagePreviewIndex[targetInputId] = targetIndex;
+    window.renderListaImagensUpload(targetInputId);
+};
+
+window.excluirImagemUpload = function(inputId, index) {
+    const list = window.uploadImageLists[inputId] || [];
+    const item = list[index];
+    if (!item) return;
+
+    customConfirm('Excluir esta imagem da lista?', () => {
+        if (item.file && item.url && item.url.startsWith('blob:')) {
+            try { URL.revokeObjectURL(item.url); } catch(e) {}
+        }
+        list.splice(index, 1);
+        if (window.uploadImagePreviewIndex) window.uploadImagePreviewIndex[inputId] = Math.min(Number(window.uploadImagePreviewIndex[inputId] || 0), Math.max(0, list.length - 1));
+        if (inputId === 'e-file') {
+            const rem = document.getElementById('e-remove-img');
+            if (rem && !list.length) rem.value = 'true';
+        }
+        if (inputId === 'ea-file') {
+            const rem = document.getElementById('ea-remove-img');
+            if (rem && !list.length) rem.value = 'true';
+        }
+        window.renderListaImagensUpload(inputId);
+    });
+};
+
+window.abrirCropImagemUpload = function(inputId, index) {
+    const list = window.uploadImageLists[inputId] || [];
+    const item = list[index];
+    if (!item) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        window.produtoCropState = {
+            inputId,
+            imageIndex: index,
+            files: [],
+            index: 0,
+            output: [],
+            modo: 'square',
+            img,
+            objectUrl: '',
+            zoom: 1,
+            x: 50,
+            y: 50,
+            w: 100,
+            h: 100
+        };
+
+        ['produto-crop-zoom','produto-crop-x','produto-crop-y','produto-crop-w','produto-crop-h'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (id.endsWith('zoom')) el.value = 1;
+            else if (id.endsWith('x') || id.endsWith('y')) el.value = 50;
+            else el.value = 100;
+        });
+
+        const status = document.getElementById('produto-crop-status');
+        if (status) status.textContent = `Editando imagem ${index + 1} de ${list.length}`;
+
+        window.setCropProdutoModo();
+        const modal = document.getElementById('modal-crop-produto');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+        }
+        document.body.style.overflow = 'hidden';
+        window.renderCropProdutoCanvas();
+    };
+    img.onerror = () => window.showToast('Não foi possível carregar esta imagem para recorte.', true);
+    img.src = item.url;
+};
+
+window.aplicarCropProduto = function() {
+    const st = window.produtoCropState;
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!st || !canvas) return;
+
+    canvas.toBlob(blob => {
+        if (!blob) return window.showToast('Não foi possível aplicar o recorte.', true);
+
+        const list = window.uploadImageLists[st.inputId] || [];
+        const item = list[st.imageIndex];
+        if (!item) return;
+
+        if (item.file && item.url && item.url.startsWith('blob:')) {
+            try { URL.revokeObjectURL(item.url); } catch(e) {}
+        }
+
+        const nomeBase = (item.name || 'imagem').replace(/\.[^.]+$/, '');
+        const file = window.blobParaFileProduto(blob, `${nomeBase}-recorte.webp`);
+        item.file = file;
+        item.existing = false;
+        item.savedUrl = '';
+        item.url = URL.createObjectURL(file);
+        item.name = file.name;
+
+        window.fecharCropProdutoModal();
+        window.uploadImagePreviewIndex[st.inputId] = st.imageIndex || 0;
+        window.renderListaImagensUpload(st.inputId);
+    }, 'image/webp', 0.92);
+};
+
+window.usarOriginalCropProduto = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.finalizarCropProdutoUpload = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.cancelarCropProdutoUpload = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.fecharCropProdutoModal = function() {
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    window.produtoCropState = null;
+};
+
+window.uploadProdutoImagens = async function(inputId) {
+    const list = window.uploadImageLists[inputId] || [];
+    const urls = [];
+
+    if (!list.length) return [];
+
+    for (const item of list) {
+        if (item.savedUrl && !item.file) {
+            urls.push(item.savedUrl);
+        } else if (item.file) {
+            const url = await upImg(item.file);
+            if (url) urls.push(url);
+        } else if (item.url && !item.url.startsWith('blob:')) {
+            urls.push(item.url);
+        }
+    }
+
+    return urls;
+};
+
+window.uploadImagensRecortadas = window.uploadProdutoImagens;
+
+
+// === PRODUTOS 2026-06-21: recorte/crop direto no upload ===
+window.produtoCropArquivos = window.produtoCropArquivos || {};
+window.produtoCropState = null;
+
+window.blobParaFileProduto = function(blob, nome) {
+    return new File([blob], nome, { type: blob.type || 'image/webp', lastModified: Date.now() });
+};
+
+window.iniciarCropProdutoUpload = function(inputId) {
+    const input = document.getElementById(inputId);
+    const files = input?.files ? Array.from(input.files).filter(f => f && f.type && f.type.startsWith('image/')) : [];
+    window.produtoCropArquivos[inputId] = [];
+
+    if (!files.length) return;
+
+    window.produtoCropState = {
+        inputId,
+        files,
+        index: 0,
+        output: [],
+        modo: 'square',
+        img: null,
+        objectUrl: '',
+        zoom: 1,
+        x: 50,
+        y: 50,
+        w: 100,
+        h: 100
+    };
+
+    window.carregarImagemAtualCropProduto();
+};
+
+window.carregarImagemAtualCropProduto = function() {
+    const st = window.produtoCropState;
+    if (!st || !st.files[st.index]) return window.finalizarCropProdutoUpload();
+
+    const file = st.files[st.index];
+    if (st.objectUrl) URL.revokeObjectURL(st.objectUrl);
+    st.objectUrl = URL.createObjectURL(file);
+
+    const img = new Image();
+    img.onload = () => {
+        st.img = img;
+        st.zoom = 1;
+        st.x = 50;
+        st.y = 50;
+        st.w = 100;
+        st.h = 100;
+
+        ['produto-crop-zoom','produto-crop-x','produto-crop-y','produto-crop-w','produto-crop-h'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (id.endsWith('zoom')) el.value = 1;
+            else if (id.endsWith('x') || id.endsWith('y')) el.value = 50;
+            else el.value = 100;
+        });
+
+        const status = document.getElementById('produto-crop-status');
+        if (status) status.textContent = `Foto ${st.index + 1} de ${st.files.length}: ${file.name}`;
+
+        window.setCropProdutoModo(st.modo || 'square');
+        const modal = document.getElementById('modal-crop-produto');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+        }
+        document.body.style.overflow = 'hidden';
+        window.renderCropProdutoCanvas();
+    };
+    img.onerror = () => {
+        st.output.push(file);
+        st.index += 1;
+        window.carregarImagemAtualCropProduto();
+    };
+    img.src = st.objectUrl;
+};
+
+window.setCropProdutoModo = function(modo) {
+    const st = window.produtoCropState;
+    if (st) st.modo = modo === 'free' ? 'free' : 'square';
+
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) modal.classList.toggle('square-mode', (st?.modo || modo) !== 'free');
+
+    const btnSquare = document.getElementById('produto-crop-square-btn');
+    const btnFree = document.getElementById('produto-crop-free-btn');
+
+    if (btnSquare && btnFree) {
+        btnSquare.className = (st?.modo || modo) === 'square' ? 'btn btn-primary' : 'btn btn-outline';
+        btnFree.className = (st?.modo || modo) === 'free' ? 'btn btn-primary' : 'btn btn-outline';
+    }
+
+    window.renderCropProdutoCanvas?.();
+};
+
+window.atualizarCropProdutoControle = function() {
+    const st = window.produtoCropState;
+    if (!st) return;
+    st.zoom = Number(document.getElementById('produto-crop-zoom')?.value || 1);
+    st.x = Number(document.getElementById('produto-crop-x')?.value || 50);
+    st.y = Number(document.getElementById('produto-crop-y')?.value || 50);
+    st.w = Number(document.getElementById('produto-crop-w')?.value || 100);
+    st.h = Number(document.getElementById('produto-crop-h')?.value || 100);
+    window.renderCropProdutoCanvas();
+};
+
+window.getCropProdutoRect = function() {
+    const st = window.produtoCropState;
+    const img = st?.img;
+    if (!img) return null;
+
+    const nw = img.naturalWidth || img.width;
+    const nh = img.naturalHeight || img.height;
+    const zoom = Math.max(1, Number(st.zoom || 1));
+
+    let sw, sh;
+    if (st.modo === 'free') {
+        sw = Math.max(1, nw * (Number(st.w || 100) / 100) / zoom);
+        sh = Math.max(1, nh * (Number(st.h || 100) / 100) / zoom);
+    } else {
+        const lado = Math.min(nw, nh) / zoom;
+        sw = lado;
+        sh = lado;
+    }
+
+    sw = Math.min(sw, nw);
+    sh = Math.min(sh, nh);
+
+    const sx = (nw - sw) * (Number(st.x || 50) / 100);
+    const sy = (nh - sh) * (Number(st.y || 50) / 100);
+
+    return { sx, sy, sw, sh };
+};
+
+window.renderCropProdutoCanvas = function() {
+    const st = window.produtoCropState;
+    const img = st?.img;
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!img || !canvas) return;
+
+    const rect = window.getCropProdutoRect();
+    if (!rect) return;
+
+    const maxOut = 900;
+    let outW, outH;
+
+    if (st.modo === 'free') {
+        const ratio = rect.sw / rect.sh;
+        if (ratio >= 1) {
+            outW = maxOut;
+            outH = Math.max(260, Math.round(maxOut / ratio));
+        } else {
+            outH = maxOut;
+            outW = Math.max(260, Math.round(maxOut * ratio));
+        }
+    } else {
+        outW = maxOut;
+        outH = maxOut;
+    }
+
+    canvas.width = outW;
+    canvas.height = outH;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, outW, outH);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, outW, outH);
+    ctx.drawImage(img, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, outW, outH);
+};
+
+window.aplicarCropProduto = function() {
+    const st = window.produtoCropState;
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!st || !canvas) return;
+
+    canvas.toBlob(blob => {
+        if (!blob) {
+            st.output.push(st.files[st.index]);
+        } else {
+            const nomeBase = (st.files[st.index]?.name || 'produto').replace(/\.[^.]+$/, '');
+            st.output.push(window.blobParaFileProduto(blob, `${nomeBase}-recorte.webp`));
+        }
+        st.index += 1;
+        window.carregarImagemAtualCropProduto();
+    }, 'image/webp', 0.92);
+};
+
+window.usarOriginalCropProduto = function() {
+    const st = window.produtoCropState;
+    if (!st) return;
+    st.output.push(st.files[st.index]);
+    st.index += 1;
+    window.carregarImagemAtualCropProduto();
+};
+
+window.finalizarCropProdutoUpload = function() {
+    const st = window.produtoCropState;
+    if (!st) return;
+
+    if (st.objectUrl) URL.revokeObjectURL(st.objectUrl);
+
+    window.produtoCropArquivos[st.inputId] = st.output.length ? st.output : st.files;
+
+    const nameMap = { 'a-file': 'a-file-name', 'e-file': 'e-file-name', 'aa-file': 'aa-file-name', 'ea-file': 'ea-file-name' };
+    const previewMap = { 'a-file': 'a-img-preview', 'e-file': 'e-img-preview', 'aa-file': 'aa-img-preview', 'ea-file': 'ea-img-preview' };
+    const nameEl = document.getElementById(nameMap[st.inputId] || '');
+    if (nameEl) nameEl.textContent = `${window.produtoCropArquivos[st.inputId].length} foto(s) editada(s)`;
+
+    const previewId = previewMap[st.inputId] || (st.inputId === 'a-file' ? 'a-img-preview' : 'e-img-preview');
+    const preview = document.getElementById(previewId);
+    if (preview && window.produtoCropArquivos[st.inputId][0]) {
+        preview.src = URL.createObjectURL(window.produtoCropArquivos[st.inputId][0]);
+        preview.style.display = 'block';
+    }
+
+    if (st.inputId === 'e-file' || st.inputId === 'ea-file') {
+        const rem = document.getElementById(st.inputId === 'e-file' ? 'e-remove-img' : 'ea-remove-img');
+        if (rem) rem.value = 'false';
+        const btn = document.getElementById(st.inputId === 'e-file' ? 'btn-remove-e-img' : 'btn-remove-ea-img');
+        if (btn) btn.style.display = 'inline-flex';
+        const none = document.getElementById(st.inputId === 'e-file' ? 'e-img-none' : 'ea-img-none');
+        if (none) none.style.display = 'none';
+    }
+
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    window.produtoCropState = null;
+};
+
+window.cancelarCropProdutoUpload = function() {
+    const st = window.produtoCropState;
+    if (st) {
+        if (st.objectUrl) URL.revokeObjectURL(st.objectUrl);
+        window.produtoCropArquivos[st.inputId] = st.output.length ? st.output : st.files;
+    }
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    window.produtoCropState = null;
+};
+
+
+
+
+
+// === IMAGENS 2026-06-21: crop 4x4 com arraste e zoom ===
+window.cropProdutoDrag = null;
+
+window.setCropProdutoModo = function() {
+    const st = window.produtoCropState;
+    if (st) st.modo = 'square';
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) modal.classList.add('square-mode');
+    window.renderCropProdutoCanvas?.();
+};
+
+window.atualizarCropProdutoControle = function() {
+    const st = window.produtoCropState;
+    if (!st) return;
+    st.modo = 'square';
+    st.zoom = Number(document.getElementById('produto-crop-zoom')?.value || 1);
+    st.x = Number(document.getElementById('produto-crop-x')?.value || 50);
+    st.y = Number(document.getElementById('produto-crop-y')?.value || 50);
+    window.renderCropProdutoCanvas();
+};
+
+window.getCropProdutoRect = function() {
+    const st = window.produtoCropState;
+    const img = st?.img;
+    if (!img) return null;
+
+    const nw = img.naturalWidth || img.width;
+    const nh = img.naturalHeight || img.height;
+    const zoom = Math.max(1, Number(st.zoom || 1));
+    const lado = Math.min(nw, nh) / zoom;
+    const sw = Math.min(lado, nw);
+    const sh = Math.min(lado, nh);
+    const sx = Math.max(0, Math.min(nw - sw, (nw - sw) * (Number(st.x || 50) / 100)));
+    const sy = Math.max(0, Math.min(nh - sh, (nh - sh) * (Number(st.y || 50) / 100)));
+
+    return { sx, sy, sw, sh };
+};
+
+window.renderCropProdutoCanvas = function() {
+    const st = window.produtoCropState;
+    const img = st?.img;
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!img || !canvas) return;
+
+    const rect = window.getCropProdutoRect();
+    if (!rect) return;
+
+    const out = 900;
+    canvas.width = out;
+    canvas.height = out;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, out, out);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, out, out);
+    ctx.drawImage(img, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, out, out);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.96)';
+    ctx.lineWidth = 10;
+    ctx.setLineDash([28, 18]);
+    ctx.strokeRect(12, 12, out - 24, out - 24);
+
+    ctx.strokeStyle = 'rgba(224,159,65,.95)';
+    ctx.lineWidth = 5;
+    ctx.setLineDash([18, 14]);
+    ctx.strokeRect(18, 18, out - 36, out - 36);
+    ctx.restore();
+};
+
+window.getCropPointerPos = function(event) {
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const point = event.touches?.[0] || event.changedTouches?.[0] || event;
+    return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+};
+
+window.iniciarArrasteCropProduto = function(event) {
+    const st = window.produtoCropState;
+    if (!st) return;
+    event.preventDefault();
+    const p = window.getCropPointerPos(event);
+    window.cropProdutoDrag = { startX: p.x, startY: p.y, originalX: Number(st.x || 50), originalY: Number(st.y || 50) };
+};
+
+window.moverArrasteCropProduto = function(event) {
+    const st = window.produtoCropState;
+    const drag = window.cropProdutoDrag;
+    if (!st || !drag) return;
+    event.preventDefault();
+
+    const p = window.getCropPointerPos(event);
+    const canvas = document.getElementById('produto-crop-canvas');
+    const rect = canvas?.getBoundingClientRect();
+    const w = rect?.width || 1;
+    const h = rect?.height || 1;
+
+    const dx = ((p.x - drag.startX) / w) * 100;
+    const dy = ((p.y - drag.startY) / h) * 100;
+
+    // Arrastar a imagem para direita deve revelar a parte esquerda; por isso inverte.
+    st.x = Math.max(0, Math.min(100, drag.originalX - dx));
+    st.y = Math.max(0, Math.min(100, drag.originalY - dy));
+
+    const inputX = document.getElementById('produto-crop-x');
+    const inputY = document.getElementById('produto-crop-y');
+    if (inputX) inputX.value = st.x;
+    if (inputY) inputY.value = st.y;
+
+    window.renderCropProdutoCanvas();
+};
+
+window.finalizarArrasteCropProduto = function() {
+    window.cropProdutoDrag = null;
+};
+
+
+
+// === IMAGENS 2026-06-21: zoom por pinça sem barras ===
+window.distanciaToqueCropProduto = function(event) {
+    if (!event.touches || event.touches.length < 2) return 0;
+    const a = event.touches[0];
+    const b = event.touches[1];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+};
+
+window.iniciarArrasteCropProduto = function(event) {
+    const st = window.produtoCropState;
+    if (!st) return;
+    event.preventDefault();
+
+    if (event.touches && event.touches.length >= 2) {
+        window.cropProdutoDrag = null;
+        window.cropProdutoPinch = {
+            startDistance: window.distanciaToqueCropProduto(event),
+            originalZoom: Number(st.zoom || 1)
+        };
+        return;
+    }
+
+    const p = window.getCropPointerPos(event);
+    window.cropProdutoPinch = null;
+    window.cropProdutoDrag = {
+        startX: p.x,
+        startY: p.y,
+        originalX: Number(st.x || 50),
+        originalY: Number(st.y || 50)
+    };
+};
+
+window.moverArrasteCropProduto = function(event) {
+    const st = window.produtoCropState;
+    if (!st) return;
+    event.preventDefault();
+
+    if (event.touches && event.touches.length >= 2) {
+        if (!window.cropProdutoPinch) {
+            window.cropProdutoPinch = {
+                startDistance: window.distanciaToqueCropProduto(event),
+                originalZoom: Number(st.zoom || 1)
+            };
+        }
+
+        const dist = window.distanciaToqueCropProduto(event);
+        const start = window.cropProdutoPinch.startDistance || dist || 1;
+        const novoZoom = Math.max(1, Math.min(4, window.cropProdutoPinch.originalZoom * (dist / start)));
+
+        st.zoom = novoZoom;
+        const inputZoom = document.getElementById('produto-crop-zoom');
+        if (inputZoom) inputZoom.value = novoZoom;
+        window.renderCropProdutoCanvas();
+        return;
+    }
+
+    const drag = window.cropProdutoDrag;
+    if (!drag) return;
+
+    const p = window.getCropPointerPos(event);
+    const canvas = document.getElementById('produto-crop-canvas');
+    const rect = canvas?.getBoundingClientRect();
+    const w = rect?.width || 1;
+    const h = rect?.height || 1;
+
+    const dx = ((p.x - drag.startX) / w) * 100;
+    const dy = ((p.y - drag.startY) / h) * 100;
+
+    st.x = Math.max(0, Math.min(100, drag.originalX - dx));
+    st.y = Math.max(0, Math.min(100, drag.originalY - dy));
+
+    const inputX = document.getElementById('produto-crop-x');
+    const inputY = document.getElementById('produto-crop-y');
+    if (inputX) inputX.value = st.x;
+    if (inputY) inputY.value = st.y;
+
+    window.renderCropProdutoCanvas();
+};
+
+window.finalizarArrasteCropProduto = function() {
+    window.cropProdutoDrag = null;
+    window.cropProdutoPinch = null;
+};
+
+window.zoomCropProdutoWheel = function(event) {
+    const st = window.produtoCropState;
+    if (!st) return;
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? 0.12 : -0.12;
+    st.zoom = Math.max(1, Math.min(4, Number(st.zoom || 1) + delta));
+    const inputZoom = document.getElementById('produto-crop-zoom');
+    if (inputZoom) inputZoom.value = st.zoom;
+    window.renderCropProdutoCanvas();
+};
+
+
+// === IMAGENS 2026-06-21: sobrescreve crop em lote por crop individual ===
+window.aplicarCropProduto = function() {
+    const st = window.produtoCropState;
+    const canvas = document.getElementById('produto-crop-canvas');
+    if (!st || !canvas) return;
+
+    canvas.toBlob(blob => {
+        if (!blob) return window.showToast('Não foi possível aplicar o recorte.', true);
+        const list = window.uploadImageLists[st.inputId] || [];
+        const item = list[st.imageIndex];
+        if (!item) return;
+
+        if (item.file && item.url && item.url.startsWith('blob:')) {
+            try { URL.revokeObjectURL(item.url); } catch(e) {}
+        }
+
+        const nomeBase = (item.name || 'imagem').replace(/\.[^.]+$/, '');
+        const file = window.blobParaFileProduto(blob, `${nomeBase}-recorte.webp`);
+        item.file = file;
+        item.existing = false;
+        item.savedUrl = '';
+        item.url = URL.createObjectURL(file);
+        item.name = file.name;
+
+        window.fecharCropProdutoModal();
+        window.renderListaImagensUpload(st.inputId);
+    }, 'image/webp', 0.92);
+};
+
+window.usarOriginalCropProduto = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.finalizarCropProdutoUpload = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.cancelarCropProdutoUpload = function() {
+    window.fecharCropProdutoModal();
+};
+
+window.fecharCropProdutoModal = function() {
+    const modal = document.getElementById('modal-crop-produto');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+    window.produtoCropState = null;
+};
+
+window.uploadProdutoImagens = async function(inputId) {
+    const list = window.uploadImageLists[inputId] || [];
+    const urls = [];
+    if (!list.length) return [];
+    for (const item of list) {
+        if (item.savedUrl && !item.file) urls.push(item.savedUrl);
+        else if (item.file) {
+            const url = await upImg(item.file);
+            if (url) urls.push(url);
+        } else if (item.url && !item.url.startsWith('blob:')) urls.push(item.url);
+    }
+    return urls;
+};
+window.uploadImagensRecortadas = window.uploadProdutoImagens;
+
+
+
+// === IMAGENS 2026-06-21: carrossel automático admin ===
+window.renderAutoCarouselAdmin = function(urls = [], classeExtra = '') {
+    const imagens = (urls || []).filter(Boolean);
+    if (!imagens.length) {
+        return `<div class="img-preview admin-auto-carousel-empty" style="background:#eee; display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="color:#ccc;"></i></div>`;
+    }
+
+    return `<div class="admin-auto-carousel ${classeExtra}" data-count="${imagens.length}">
+        ${imagens.map((url, idx) => `<img src="${url}" alt="Imagem ${idx + 1}" class="${idx === 0 ? 'active' : ''}">`).join('')}
+        ${imagens.length > 1 ? `<span class="admin-auto-carousel-count">1/${imagens.length}</span>` : ''}
+    </div>`;
+};
+
+window.iniciarCarrosseisAutomaticosAdmin = function(scope = document) {
+    const root = scope || document;
+    root.querySelectorAll('.admin-auto-carousel').forEach(carousel => {
+        if (carousel.dataset.carouselStarted === 'true') return;
+        const imgs = Array.from(carousel.querySelectorAll('img'));
+        if (imgs.length <= 1) return;
+
+        carousel.dataset.carouselStarted = 'true';
+        let idx = imgs.findIndex(img => img.classList.contains('active'));
+        if (idx < 0) idx = 0;
+
+        setInterval(() => {
+            imgs[idx]?.classList.remove('active');
+            idx = (idx + 1) % imgs.length;
+            imgs[idx]?.classList.add('active');
+
+            const count = carousel.querySelector('.admin-auto-carousel-count');
+            if (count) count.textContent = `${idx + 1}/${imgs.length}`;
+        }, 2600);
+    });
+};
+
+window.getAvisoImagens = function(a) {
+    const imgs = [];
+    if (Array.isArray(a?.imagensUrls)) a.imagensUrls.forEach(url => { if (url && !imgs.includes(url)) imgs.push(url); });
+    if (a?.imagemUrl && !imgs.includes(a.imagemUrl)) imgs.push(a.imagemUrl);
+    return imgs;
+};
+
+window.getProdutoImagens = function(p) {
+    const imgs = [];
+    if (Array.isArray(p?.imagensUrls)) p.imagensUrls.forEach(url => { if (url && !imgs.includes(url)) imgs.push(url); });
+    if (p?.imagemUrl && !imgs.includes(p.imagemUrl)) imgs.push(p.imagemUrl);
+    return imgs;
+};
+
 window.markImageForRemoval = function(type) {
     if(type === 'prod') {
         document.getElementById('e-img-preview').style.display = 'none'; document.getElementById('e-img-preview').src = '';
         document.getElementById('btn-remove-e-img').style.display = 'none'; document.getElementById('e-img-none').style.display = 'block';
-        document.getElementById('e-file').value = ''; document.getElementById('e-file-name').textContent = '';
+        document.getElementById('e-file').value = ''; document.getElementById('e-file-name').textContent = ''; if (window.produtoCropArquivos) window.produtoCropArquivos['e-file'] = [];
         document.getElementById('e-remove-img').value = 'true';
     } else if (type === 'aviso') {
         document.getElementById('ea-img-preview').style.display = 'none'; document.getElementById('ea-img-preview').src = '';
         document.getElementById('btn-remove-ea-img').style.display = 'none'; document.getElementById('ea-img-none').style.display = 'block';
-        document.getElementById('ea-file').value = ''; document.getElementById('ea-file-name').textContent = '';
+        document.getElementById('ea-file').value = ''; document.getElementById('ea-file-name').textContent = ''; if (window.produtoCropArquivos) window.produtoCropArquivos['ea-file'] = [];
         document.getElementById('ea-remove-img').value = 'true';
     }
 };
@@ -536,6 +1515,49 @@ function isCategoriaVisivelAgora(c) {
 }
 
 
+async function sincronizarCategoriasExpiradas() {
+    const agora = Date.now();
+    const expiradas = globalCategories.filter(c => {
+        const fim = getCategoriaTimestamp(c, 'fim');
+        return c && c.ativo !== false && fim && agora > Number(fim);
+    });
+
+    if (!expiradas.length) return false;
+
+    try {
+        await Promise.all(expiradas.map(c => updateDoc(doc(db, "categorias", c.id), {
+            ativo: false,
+            ocultoAutomaticoFim: true,
+            atualizadoAutomaticamenteEm: Date.now()
+        })));
+
+        expiradas.forEach(c => {
+            c.ativo = false;
+            c.ocultoAutomaticoFim = true;
+            c.atualizadoAutomaticamenteEm = Date.now();
+        });
+
+        return true;
+    } catch (err) {
+        console.error('Erro ao ocultar categorias com fim vencido:', err);
+        return false;
+    }
+}
+
+function getCategoriaStatusVisual(c) {
+    const ativoManual = c?.ativo !== false;
+    const visivelAgora = isCategoriaVisivelAgora(c);
+    return {
+        ativoManual,
+        visivelAgora,
+        statusClasse: visivelAgora ? 'ativo' : 'inativo',
+        statusTexto: visivelAgora ? 'Ativa' : 'Oculta',
+        toggleClasse: visivelAgora ? 'cat-toggle-visible' : 'cat-toggle-hidden',
+        toggleIcone: visivelAgora ? 'eye' : 'eye-slash'
+    };
+}
+
+
 function getCatScheduleFromForm(prefix) {
     const inicioData = document.getElementById(`${prefix}-inid`).value || '';
     const inicioHora = document.getElementById(`${prefix}-inih`).value || '';
@@ -574,6 +1596,7 @@ async function reorderCategoriesAlphabetically() {
 async function syncCats() {
     const snap = await getDocs(collection(db, "categorias"));
     globalCategories = []; snap.forEach(d => { const c = d.data(); c.id = d.id; globalCategories.push(c); });
+    await sincronizarCategoriasExpiradas();
     window.renderCatsTable();
 }
 
@@ -819,7 +1842,8 @@ window.closeAvisoImagePreview = function() {
 
 function buildAvisoMobilePreview(a) {
     const pos = a.posicaoImagem || 'top';
-    const img = a.imagemUrl ? renderClickableAvisoImage(a.imagemUrl, '') : '';
+    const avisoImgsMobile = window.getAvisoImagens(a);
+    const img = avisoImgsMobile.length ? renderClickableAvisoImage(avisoImgsMobile[0], '') : '';
     const texto = sanitizeRichText(a.texto || '') || '-';
     return `<div class="aviso-mobile-preview aviso-img-${pos}">${pos === 'top' ? img : ''}<div class="aviso-mobile-text">${texto}</div>${pos === 'bottom' ? img : ''}</div>`;
 }
@@ -863,9 +1887,14 @@ window.renderCatsTable = function() {
     sorted.forEach(c => { opts += `<option value="${c.nome}">${c.nome}</option>`; });
 
     sorted
-        .filter(c => `${c.nome} ${c.minTotal||0} ${c.tipoColuna} ${c.mensagemObs||''} ${c.ativo?'ativa':'oculta'} ${getScheduleParts(c, 'inicio').data} ${getScheduleParts(c, 'fim').data}`.toLowerCase().includes(searchTerm))
+        .filter(c => {
+            const statusBusca = getCategoriaStatusVisual(c).visivelAgora ? 'ativa' : 'oculta';
+            return `${c.nome} ${c.minTotal||0} ${c.tipoColuna} ${c.mensagemObs||''} ${statusBusca} ${getScheduleParts(c, 'inicio').data} ${getScheduleParts(c, 'fim').data}`.toLowerCase().includes(searchTerm);
+        })
         .forEach(c => {
-            const isAtivo = c.ativo !== false;
+            const catStatusVisual = getCategoriaStatusVisual(c);
+            const isAtivo = catStatusVisual.visivelAgora;
+            const ativoManual = catStatusVisual.ativoManual;
             const ini = getScheduleParts(c, 'inicio');
             const fim = getScheduleParts(c, 'fim');
             const iniData = normalizeDateBR(ini.data);
@@ -892,12 +1921,12 @@ window.renderCatsTable = function() {
                 </td>
                 <td class="cat-mobile-start mobile-schedule-cell" data-label="Início:">${iniResumo}</td>
                 <td class="cat-mobile-end mobile-schedule-cell" data-label="Fim:">${fimResumo}</td>
-                <td class="cat-status-cell" data-label="Status:"><span class="badge ${isAtivo ? 'ativo' : 'inativo'}">${isAtivo ? 'Ativa' : 'Oculta'}</span></td>
+                <td class="cat-status-cell" data-label="Status:"><span class="badge ${catStatusVisual.statusClasse}">${catStatusVisual.statusTexto}</span></td>
                 <td class="cat-actions-cell" data-label="Ações:">
                     <div class="action-btns-wrapper">
                         <button class="btn-action edit" onclick="window.openEditCat('${c.id}')"><i class="fas fa-pencil-alt"></i></button>
                         <button class="btn-action copy" title="Copiar categoria" onclick="window.copyCat('${c.id}')"><i class="fas fa-copy"></i></button>
-                        <button class="btn-action toggle ${isAtivo ? 'cat-toggle-visible' : 'cat-toggle-hidden'}" onclick="window.togC('${c.id}', ${!isAtivo})"><i class="fas fa-${isAtivo?'eye':'eye-slash'}"></i></button>
+                        <button class="btn-action toggle ${catStatusVisual.toggleClasse}" onclick="window.togC('${c.id}', ${!ativoManual})"><i class="fas fa-${catStatusVisual.toggleIcone}"></i></button>
                         <button class="btn-action del" onclick="window.delC('${c.id}')"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
@@ -1097,6 +2126,20 @@ window.catMobilePointerDown = function(event, id) {
     startCategoryPointerSort(event, id, { delay: 280 });
 };
 
+
+// Atualiza a tabela automaticamente quando uma categoria chega na data/hora de fim.
+if (!window.__catFimAutoTimer) {
+    window.__catFimAutoTimer = setInterval(async () => {
+        try {
+            if (!Array.isArray(globalCategories) || !globalCategories.length) return;
+            const mudou = await sincronizarCategoriasExpiradas();
+            if (mudou) window.renderCatsTable();
+        } catch (e) {
+            console.warn('Falha ao verificar fim de categorias:', e);
+        }
+    }, 30000);
+}
+
 document.getElementById('form-add-cat').onsubmit = async(e) => {
     e.preventDefault(); 
     const nm = document.getElementById('ac-nome').value.trim();
@@ -1152,9 +2195,21 @@ document.getElementById('form-edit-cat').onsubmit = async(e) => {
     customAlert("Categoria Atualizada!"); window.closeModal('modal-editar-cat', 'form-edit-cat'); syncCats(); loadProds();
 };
 window.togC = async(id, s) => { 
-    await updateDoc(doc(db, "categorias", id), {ativo: s}); 
+    const payload = { ativo: s };
+    if (s) {
+        payload.ocultoAutomaticoFim = false;
+        payload.atualizadoAutomaticamenteEm = null;
+    }
+    await updateDoc(doc(db, "categorias", id), payload); 
     const index = globalCategories.findIndex(c => c.id === id);
-    if(index > -1) globalCategories[index].ativo = s;
+    if(index > -1) {
+        globalCategories[index].ativo = s;
+        if (s) {
+            globalCategories[index].ocultoAutomaticoFim = false;
+            globalCategories[index].atualizadoAutomaticamenteEm = null;
+        }
+    }
+    await sincronizarCategoriasExpiradas();
     window.renderCatsTable(); 
 };
 
@@ -1381,7 +2436,8 @@ window.renderProdsTable = function() {
     }
     
     filtered.sort(sortProducts).forEach((p) => {
-        const imgTag = p.imagemUrl ? `<img src="${p.imagemUrl}" class="img-preview">` : `<div class="img-preview" style="background:#eee; display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="color:#ccc;"></i></div>`;
+        const imagensProduto = window.getProdutoImagens(p);
+        const imgTag = window.renderAutoCarouselAdmin(imagensProduto, 'prod-table-carousel');
         const isNewGroup = p.nome !== chaveAtual; if(isNewGroup) chaveAtual = p.nome;
 
         tb.innerHTML += `<tr class="${isNewGroup ? 'group-separator-top' : ''}">
@@ -1400,12 +2456,14 @@ window.renderProdsTable = function() {
             </td>
         </tr>`;
     });
+    setTimeout(() => window.iniciarCarrosseisAutomaticosAdmin(document.getElementById('tbl-produtos')), 80);
 }
 
 document.getElementById('form-add-prod').onsubmit = async(e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
     try {
-        let url = ""; const f = document.getElementById('a-file').files[0]; if(f) url = await upImg(f);
+        const urlsProduto = await window.uploadProdutoImagens('a-file');
+        const url = urlsProduto[0] || "";
         const nomeBase = document.getElementById('a-nome').value.trim();
         const categoriaBase = document.getElementById('a-cat').value;
         const descMenuBase = document.getElementById('a-dmenu').value.trim();
@@ -1422,11 +2480,12 @@ document.getElementById('form-add-prod').onsubmit = async(e) => {
             await addDoc(collection(db, "produtos"), {
                 nome: nomeBase, categoria: categoriaBase, min: minVariation, 
                 descricaoItem: descMenuBase, descricaoPopup: descPopupBase, 
-                imagemUrl: url, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
+                imagemUrl: url, imagensUrls: urlsProduto, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
                 preco: parseFloat(v.querySelector('.v-preco').value)||0, descricaoResumo: descResumoBase
             });
         }
-        customAlert("Item(ns) Adicionado(s)!"); window.closeModal('modal-add-prod', 'form-add-prod'); loadProds();
+        customAlert("Item(ns) Adicionado(s)!"); window.limparListaImagensUpload?.('a-file');
+        window.closeModal('modal-add-prod', 'form-add-prod'); loadProds();
     } catch(err) { console.error(err); customAlert("Erro ao salvar.", "Erro"); } finally { btn.innerHTML = 'Salvar Novo Produto'; btn.disabled = false; }
 };
 
@@ -1464,8 +2523,10 @@ window.openEditor = async function(id) {
         document.getElementById('e-file-name').textContent = '';
         document.getElementById('e-remove-img').value = 'false';
 
-        if (p.imagemUrl) {
-            document.getElementById('e-img-preview').src = p.imagemUrl;
+        const imagensProdutoEdit = window.getProdutoImagens(p);
+        window.carregarImagensExistentesUpload('e-file', imagensProdutoEdit);
+        if (imagensProdutoEdit.length) {
+            document.getElementById('e-img-preview').src = imagensProdutoEdit[0];
             document.getElementById('e-img-preview').style.display = 'block';
             document.getElementById('btn-remove-e-img').style.display = 'inline-flex';
             document.getElementById('e-img-none').style.display = 'none';
@@ -1499,8 +2560,16 @@ document.getElementById('form-edit-prod').onsubmit = async(e) => {
     e.preventDefault(); const btn = e.target.querySelector('button[type="submit"]'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true;
     try {
         const data = { nome: document.getElementById('e-nome').value, categoria: document.getElementById('e-cat').value, tamanho: document.getElementById('e-tam').value, preco: parseFloat(document.getElementById('e-preco').value)||0, min: parseInt(document.getElementById('e-min').value)||1, descricaoItem: document.getElementById('e-dmenu').value, descricaoResumo: document.getElementById('e-dres').value, descricaoPopup: document.getElementById('e-dpop').value };
-        const f = document.getElementById('e-file').files[0]; if (f) data.imagemUrl = await upImg(f); else if (document.getElementById('e-remove-img').value === 'true') data.imagemUrl = ""; 
-        await updateDoc(doc(db, "produtos", document.getElementById('e-id').value), data); customAlert("Produto Atualizado!"); window.closeModal('modal-editar-prod', 'form-edit-prod'); loadProds(); 
+        const urlsEditProduto = await window.uploadProdutoImagens('e-file');
+        if (urlsEditProduto.length) {
+            data.imagemUrl = urlsEditProduto[0] || "";
+            data.imagensUrls = urlsEditProduto;
+        } else if (document.getElementById('e-remove-img').value === 'true') {
+            data.imagemUrl = "";
+            data.imagensUrls = [];
+        } 
+        await updateDoc(doc(db, "produtos", document.getElementById('e-id').value), data); customAlert("Produto Atualizado!"); window.limparListaImagensUpload?.('e-file');
+        window.closeModal('modal-editar-prod', 'form-edit-prod'); loadProds(); 
     } catch(err) { console.error('Erro ao salvar produto:', err); customAlert('Erro ao salvar produto. Veja o Console para detalhes.', 'Erro'); } finally { btn.innerHTML = 'Salvar Alterações'; btn.disabled = false; }
 };
 
@@ -1546,6 +2615,7 @@ document.getElementById('form-add-aviso').onsubmit = async(e) => {
             ordem
         });
         customAlert("Comunicado criado!");
+        window.limparListaImagensUpload?.('aa-file');
         window.closeModal('modal-add-aviso', 'form-add-aviso');
         window.setAvisoRichText('aa', '');
         window.setAvisoImagePosition('aa', 'top');
@@ -1585,7 +2655,8 @@ window.renderAvisosTable = function() {
         const textoHtml = sanitizeRichText(a.texto || '');
         const textoPlain = stripCatNotice(a.texto || '') || '-';
         const imgPos = a.posicaoImagem || 'top';
-        const imgHtml = a.imagemUrl ? renderClickableAvisoImage(a.imagemUrl, 'img-preview') : '-';
+        const avisoImgs = window.getAvisoImagens(a);
+        const imgHtml = avisoImgs.length ? renderClickableAvisoImage(avisoImgs[0], 'img-preview') : '-';
 
         tb.innerHTML += `<tr class="aviso-row" data-aviso-id="${a.id}">
             <td class="aviso-select-cell" data-label="Selecionar:" style="text-align:center;"><input type="checkbox" class="bulk-checkbox row-checkbox" value="${a.id}" onchange="window.checkSelection('avisos')"></td>
@@ -1616,8 +2687,10 @@ window.openEditAviso = async(id) => {
     window.setAvisoRichText('ea', a.texto || '');
     window.setAvisoImagePosition('ea', a.posicaoImagem || 'top');
     setAvisoScheduleFields('ea', a.inicio, a.fim);
-    if (a.imagemUrl) {
-        document.getElementById('ea-img-preview').src = a.imagemUrl;
+    const avisoImgsEdit = window.getAvisoImagens(a);
+    window.carregarImagensExistentesUpload('ea-file', avisoImgsEdit);
+    if (avisoImgsEdit.length) {
+        document.getElementById('ea-img-preview').src = avisoImgsEdit[0];
         document.getElementById('ea-img-preview').style.display = 'block';
         document.getElementById('btn-remove-ea-img').style.display = 'inline-block';
         document.getElementById('ea-img-none').style.display = 'none';
@@ -1642,11 +2715,17 @@ document.getElementById('form-edit-aviso').onsubmit = async(e) => {
             ...getAvisoScheduleFromForm('ea'),
             posicaoImagem: document.getElementById('ea-img-pos').value || 'top'
         };
-        const f = document.getElementById('ea-file').files[0];
-        if (f) data.imagemUrl = await upImg(f);
-        else if (document.getElementById('ea-remove-img').value === 'true') data.imagemUrl = "";
+        const avisoUrlsEdit = await window.uploadProdutoImagens('ea-file');
+        if (avisoUrlsEdit.length) {
+            data.imagemUrl = avisoUrlsEdit[0] || "";
+            data.imagensUrls = avisoUrlsEdit;
+        } else if (document.getElementById('ea-remove-img').value === 'true') {
+            data.imagemUrl = "";
+            data.imagensUrls = [];
+        }
         await updateDoc(doc(db, "avisos", document.getElementById('ea-id').value), data);
         customAlert("Comunicado atualizado!");
+        window.limparListaImagensUpload?.('ea-file');
         window.closeModal('modal-editar-aviso', 'form-edit-aviso');
         loadAvisos();
     } catch(e) {
@@ -5421,7 +6500,850 @@ async function init() {
     window.carregarConfigAgendaGeral();
     window.carregarExcecoesLista(); // <-- Carrega a nova lista de exceções
     window.loadCupons?.();
+    window.inicializarGastos?.();
 }
+
+
+
+// ==========================================
+// MÓDULO DE GASTOS - PLANILHA MENSAL
+// ==========================================
+function escapeHTMLGasto(valor) {
+    return String(valor || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function normalizarBuscaGasto(valor) {
+    return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function valorNumeroGasto(valor) {
+    if (typeof converterValorParaNumero === 'function') return converterValorParaNumero(valor);
+    if (typeof valor === 'number') return valor;
+    const texto = String(valor || '0').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    return Number(texto) || 0;
+}
+
+function formatarMoedaGasto(valor) {
+    return (Number(valor) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function parseDataGasto(valor) {
+    return parseDataBR(valor) || parseDataISO(valor);
+}
+
+function getAnoGastosSelecionado() {
+    const select = document.getElementById('gastos-ano');
+    return Number(select?.value || new Date().getFullYear());
+}
+
+function getMesGasto(l) {
+    const d = parseDataGasto(l?.dataCompra || l?.Data_Compra || '');
+    return d ? d.getMonth() + 1 : Number(l?.mes || 0);
+}
+
+function getAnoGasto(l) {
+    const d = parseDataGasto(l?.dataCompra || l?.Data_Compra || '');
+    return d ? d.getFullYear() : Number(l?.ano || 0);
+}
+
+function getItemGasto(id) {
+    return allGastosItens.find(i => i.id === id);
+}
+
+function lancamentosDoItemMes(itemId, mes, ano) {
+    return allGastosLancamentos.filter(l => l.itemId === itemId && getMesGasto(l) === Number(mes) && getAnoGasto(l) === Number(ano));
+}
+
+function totalLancamentos(lista) {
+    return lista.reduce((acc, l) => acc + valorNumeroGasto(l.valorTotal), 0);
+}
+
+function quantidadeLancamentos(lista) {
+    return lista.reduce((acc, l) => acc + (Number(l.quantidade) || 0), 0);
+}
+
+function dataDefaultGasto(mes, ano) {
+    const hoje = new Date();
+    if (hoje.getFullYear() === Number(ano) && hoje.getMonth() + 1 === Number(mes)) {
+        return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    }
+    return `${ano}-${String(mes).padStart(2, '0')}-01`;
+}
+
+function atualizarSelectAnoGastos() {
+    const select = document.getElementById('gastos-ano');
+    if (!select) return;
+    const atual = select.value || String(new Date().getFullYear());
+    const anos = new Set([new Date().getFullYear(), Number(atual)]);
+    allGastosLancamentos.forEach(l => { const a = getAnoGasto(l); if (a) anos.add(a); });
+    select.innerHTML = [...anos].sort((a, b) => b - a).map(a => `<option value="${a}">Ano: ${a}</option>`).join('');
+    select.value = atual;
+}
+
+function calcularResumoGastosItem(item, ano) {
+    const porMes = {};
+    for (let mes = 1; mes <= 12; mes++) {
+        const lista = lancamentosDoItemMes(item.id, mes, ano);
+        porMes[mes] = { total: totalLancamentos(lista), qtd: quantidadeLancamentos(lista), count: lista.length };
+    }
+    return porMes;
+}
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const busca = normalizarBuscaGasto(document.getElementById('gastos-busca')?.value || '');
+    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+    let itens = [...allGastosItens].sort((a, b) => {
+        const ao = Number(a.ordem || a.createdAt || 0);
+        const bo = Number(b.ordem || b.createdAt || 0);
+        if (ao !== bo) return ao - bo;
+        return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+    });
+
+    if (busca) itens = itens.filter(item => normalizarBuscaGasto(item.nome).includes(busca));
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="13" class="gastos-empty">Nenhum item cadastrado. Clique em “Novo Item”.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const totalGeral = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        html += `<tr class="gastos-item-row">`;
+        html += `<td class="gastos-sticky-col">
+            <button class="gastos-item-btn" onclick="window.abrirGastosItem('${item.id}', gastosMesAberto || (new Date().getMonth()+1))"><span>${escapeHTMLGasto(item.nome)}</span><i class="fas ${gastosItemAberto === item.id ? 'fa-chevron-up' : 'fa-chevron-down'}"></i></button>
+            <span class="gastos-item-total-geral">Total no ano: ${formatarMoedaGasto(totalGeral)}</span>
+            <div class="gastos-item-actions"><button class="gastos-mini-btn" onclick="window.renomearItemGasto('${item.id}')">Renomear</button><button class="gastos-mini-btn danger" onclick="window.excluirItemGasto('${item.id}')">Excluir</button></div>
+        </td>`;
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            html += `<td class="gastos-mes-cell" onclick="window.abrirGastosItem('${item.id}', ${mes})"><span class="gastos-mes-total">${r.total ? formatarMoedaGasto(r.total) : '-'}</span><span class="gastos-mes-qtd">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '&nbsp;'}</span></td>`;
+        }
+        html += `</tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    const totalAno = totaisMes.reduce((acc, v) => acc + v, 0);
+    html += `<tr class="gastos-total-row"><td class="gastos-sticky-col">TOTAL DESPESAS<br><small>${formatarMoedaGasto(totalAno)}</small></td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td>${totaisMes[mes] ? formatarMoedaGasto(totaisMes[mes]) : '-'}</td>`;
+    html += `</tr>`;
+
+    body.innerHTML = html;
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => String(a.dataCompra || '').localeCompare(String(b.dataCompra || '')));
+    const totalMes = totalLancamentos(lista);
+    const tabs = meses.map((m, idx) => `<button class="${idx + 1 === Number(mesAtivo) ? 'active' : ''}" onclick="window.abrirGastosItem('${item.id}', ${idx + 1})">${m}</button>`).join('');
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+
+    const linhas = lista.length ? lista.map(l => `
+        <tr>
+            <td>${escapeHTMLGasto(l.nome || item.nome)}</td>
+            <td>${escapeHTMLGasto(l.marca || '-')}</td>
+            <td>${escapeHTMLGasto(l.peso || '-')}</td>
+            <td>${(Number(l.quantidade) || 0).toLocaleString('pt-BR')}</td>
+            <td>${formatarMoedaGasto(l.valorUnidade)}</td>
+            <td><strong style="color:#c0392b;">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+            <td>${escapeHTMLGasto(l.comprador || '-')}</td>
+            <td>${formatarDataInputParaBR(l.dataCompra || '') || '-'}</td>
+            <td style="white-space:nowrap;"><button class="gastos-mini-btn" onclick="window.preencherLancamentoGasto('${l.id}')">Editar</button> <button class="gastos-mini-btn danger" onclick="window.excluirLancamentoGasto('${l.id}')">Excluir</button></td>
+        </tr>`).join('') : `<tr><td colspan="9" style="text-align:center; color:#777; padding:18px !important;">Nenhum lançamento neste mês.</td></tr>`;
+
+    return `<tr class="gastos-drawer-row"><td colspan="13"><div class="gastos-drawer" id="gasto-drawer-${item.id}">
+        <div class="gastos-drawer-header"><div class="gastos-drawer-title">${escapeHTMLGasto(item.nome)} — ${meses[mesAtivo - 1]}/${ano}</div><div><strong>Total do mês: <span style="color:#c0392b;">${formatarMoedaGasto(totalMes)}</span></strong></div></div>
+        <div class="gastos-month-tabs">${tabs}</div>
+        <div class="gastos-lancamento-form" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+            <input type="hidden" class="gasto-lanc-id" value="">
+            <div><label>Nome do item</label><input class="gasto-lanc-nome" type="text" value="${escapeHTMLGasto(item.nome)}"></div>
+            <div><label>Marca</label><input class="gasto-lanc-marca" type="text" placeholder="Ex: Deline"></div>
+            <div><label>Peso/líquido</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 500g"></div>
+            <div><label>Quantidade</label><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="1" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
+            <div><label>Valor unidade</label><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
+            <div><label>Valor total</label><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00"></div>
+            <div><label>Comprador</label><select class="gasto-lanc-comprador"><option value="Caixa">Caixa</option><option value="Arabela">Arabela</option><option value="Flávio">Flávio</option></select></div>
+            <div><label>Data</label><input class="gasto-lanc-data" type="date" value="${dataPadrao}"></div>
+            <button class="btn btn-primary" type="button" onclick="window.salvarLancamentoGasto('${item.id}')">Salvar</button>
+        </div>
+        <table class="gastos-lancamentos-table"><thead><tr><th>Nome</th><th>Marca</th><th>Peso</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead><tbody>${linhas}</tbody></table>
+    </div></td></tr>`;
+};
+
+window.abrirGastosItem = function(itemId, mes = null) {
+    gastosItemAberto = gastosItemAberto === itemId && (!mes || gastosMesAberto === Number(mes)) ? itemId : itemId;
+    gastosMesAberto = Number(mes || gastosMesAberto || (new Date().getMonth() + 1));
+    window.renderGastosPlanilha();
+};
+
+window.adicionarItemGasto = async function() {
+    const nome = prompt('Nome do novo item de gasto:');
+    if (!nome || !nome.trim()) return;
+    try {
+        await addDoc(collection(db, 'gastos_itens'), { nome: nome.trim(), ordem: Date.now(), createdAt: Date.now() });
+        window.showToast('Item criado!');
+    } catch (e) { console.error(e); window.showToast('Erro ao criar item.', true); }
+};
+
+window.renomearItemGasto = async function(itemId) {
+    const item = getItemGasto(itemId);
+    if (!item) return;
+    const novo = prompt('Novo nome do item:', item.nome || '');
+    if (!novo || !novo.trim()) return;
+    try {
+        await updateDoc(doc(db, 'gastos_itens', itemId), { nome: novo.trim(), updatedAt: Date.now() });
+        const vinculados = allGastosLancamentos.filter(l => l.itemId === itemId);
+        await Promise.all(vinculados.map(l => updateDoc(doc(db, 'gastos_lancamentos', l.id), { itemNome: novo.trim() }).catch(() => null)));
+        window.showToast('Item renomeado!');
+    } catch(e) { console.error(e); window.showToast('Erro ao renomear item.', true); }
+};
+
+window.excluirItemGasto = function(itemId) {
+    const item = getItemGasto(itemId);
+    if (!item) return;
+    customConfirm(`Excluir o item "${item.nome}" e todos os lançamentos vinculados?`, async () => {
+        try {
+            await Promise.all(allGastosLancamentos.filter(l => l.itemId === itemId).map(l => deleteDoc(doc(db, 'gastos_lancamentos', l.id))));
+            await deleteDoc(doc(db, 'gastos_itens', itemId));
+            if (gastosItemAberto === itemId) gastosItemAberto = null;
+            window.showToast('Item excluído!');
+        } catch(e) { console.error(e); window.showToast('Erro ao excluir item.', true); }
+    });
+};
+
+window.atualizarTotalLancamentoGasto = function(elemento) {
+    const form = elemento.closest('.gastos-lancamento-form');
+    if (!form) return;
+    const qtd = Number(form.querySelector('.gasto-lanc-qtd')?.value || 0);
+    const unit = Number(form.querySelector('.gasto-lanc-unit')?.value || 0);
+    const total = form.querySelector('.gasto-lanc-total');
+    if (total) total.value = (qtd * unit).toFixed(2);
+};
+
+window.salvarLancamentoGasto = async function(itemId) {
+    const item = getItemGasto(itemId);
+    const form = document.querySelector(`.gastos-lancamento-form[data-item-id="${itemId}"]`);
+    if (!item || !form) return;
+
+    const lancId = form.querySelector('.gasto-lanc-id').value || '';
+    const nome = form.querySelector('.gasto-lanc-nome').value.trim() || item.nome;
+    const marca = form.querySelector('.gasto-lanc-marca').value.trim();
+    const peso = form.querySelector('.gasto-lanc-peso').value.trim();
+    const quantidade = Number(form.querySelector('.gasto-lanc-qtd').value || 0);
+    const valorUnidade = Number(form.querySelector('.gasto-lanc-unit').value || 0);
+    let valorTotal = Number(form.querySelector('.gasto-lanc-total').value || 0);
+    const comprador = form.querySelector('.gasto-lanc-comprador').value;
+    const dataCompra = form.querySelector('.gasto-lanc-data').value || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+    if (!valorTotal && quantidade && valorUnidade) valorTotal = quantidade * valorUnidade;
+    if (!nome || !dataCompra || !comprador) return window.showToast('Preencha nome, data e comprador.', true);
+
+    const dataObj = parseDataISO(dataCompra);
+    const payload = {
+        itemId,
+        itemNome: item.nome,
+        nome,
+        marca,
+        peso,
+        quantidade,
+        valorUnidade,
+        valorTotal,
+        comprador,
+        dataCompra,
+        ano: dataObj ? dataObj.getFullYear() : getAnoGastosSelecionado(),
+        mes: dataObj ? dataObj.getMonth() + 1 : gastosMesAberto,
+        updatedAt: Date.now()
+    };
+
+    try {
+        if (lancId) await updateDoc(doc(db, 'gastos_lancamentos', lancId), payload);
+        else await addDoc(collection(db, 'gastos_lancamentos'), { ...payload, createdAt: Date.now() });
+        window.showToast(lancId ? 'Lançamento atualizado!' : 'Lançamento salvo!');
+        form.querySelector('.gasto-lanc-id').value = '';
+        form.querySelector('.gasto-lanc-nome').value = item.nome;
+        form.querySelector('.gasto-lanc-marca').value = '';
+        form.querySelector('.gasto-lanc-peso').value = '';
+        form.querySelector('.gasto-lanc-qtd').value = '1';
+        form.querySelector('.gasto-lanc-unit').value = '';
+        form.querySelector('.gasto-lanc-total').value = '';
+        form.querySelector('.gasto-lanc-comprador').value = 'Caixa';
+    } catch(e) { console.error(e); window.showToast('Erro ao salvar lançamento.', true); }
+};
+
+window.preencherLancamentoGasto = function(lancId) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return;
+    gastosItemAberto = l.itemId;
+    gastosMesAberto = getMesGasto(l) || gastosMesAberto;
+    window.renderGastosPlanilha();
+    setTimeout(() => {
+        const form = document.querySelector(`.gastos-lancamento-form[data-item-id="${l.itemId}"]`);
+        if (!form) return;
+        form.querySelector('.gasto-lanc-id').value = l.id;
+        form.querySelector('.gasto-lanc-nome').value = l.nome || l.itemNome || '';
+        form.querySelector('.gasto-lanc-marca').value = l.marca || '';
+        form.querySelector('.gasto-lanc-peso').value = l.peso || '';
+        form.querySelector('.gasto-lanc-qtd').value = l.quantidade || 0;
+        form.querySelector('.gasto-lanc-unit').value = l.valorUnidade || 0;
+        form.querySelector('.gasto-lanc-total').value = l.valorTotal || 0;
+        form.querySelector('.gasto-lanc-comprador').value = l.comprador || 'Caixa';
+        form.querySelector('.gasto-lanc-data').value = l.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+};
+
+window.excluirLancamentoGasto = function(lancId) {
+    customConfirm('Excluir este lançamento de gasto?', async () => {
+        try { await deleteDoc(doc(db, 'gastos_lancamentos', lancId)); window.showToast('Lançamento excluído!'); }
+        catch(e) { console.error(e); window.showToast('Erro ao excluir lançamento.', true); }
+    });
+};
+
+function calcularTotaisGastosPorPeriodo(inicio = null, fim = null) {
+    const totais = { caixa: 0, arabela: 0, flavio: 0, total: 0 };
+    allGastosLancamentos.forEach(l => {
+        const data = parseDataGasto(l.dataCompra || '');
+        if (!data) return;
+        if (inicio && data.getTime() < inicio.getTime()) return;
+        if (fim && data.getTime() > fim.getTime()) return;
+        const valor = valorNumeroGasto(l.valorTotal);
+        const comprador = normalizarBuscaGasto(l.comprador || 'Caixa');
+        if (comprador.includes('ara')) totais.arabela += valor;
+        else if (comprador.includes('fla')) totais.flavio += valor;
+        else totais.caixa += valor;
+        totais.total += valor;
+    });
+    return totais;
+}
+
+function calcularTotaisGastosPorPeriodoFechamento() {
+    let inicio = null;
+    let fim = null;
+
+    if (window.dataInicialIntervalo) {
+        inicio = new Date(window.dataInicialIntervalo);
+        fim = new Date(window.dataFinalIntervalo || window.dataInicialIntervalo);
+    } else if (window.pedidosFechamento && window.pedidosFechamento.length) {
+        const datas = window.pedidosFechamento.map(p => parseDataBR(p.Data_Entrega)).filter(Boolean).sort((a, b) => a - b);
+        if (datas.length) {
+            inicio = datas[0];
+            fim = datas[datas.length - 1];
+        }
+    }
+
+    if (inicio) inicio.setHours(0,0,0,0);
+    if (fim) fim.setHours(0,0,0,0);
+
+    const totais = calcularTotaisGastosPorPeriodo(inicio, fim);
+    window.totalGastosLancadosPeriodoAtual = totais.total;
+    return totais;
+}
+
+window.inicializarGastos = function() {
+    const select = document.getElementById('gastos-ano');
+    if (select && !select.innerHTML) {
+        const anoAtual = new Date().getFullYear();
+        select.innerHTML = Array.from({ length: 11 }, (_, i) => anoAtual - 5 + i).reverse().map(a => `<option value="${a}">Ano: ${a}</option>`).join('');
+        select.value = String(anoAtual);
+    }
+
+    onSnapshot(collection(db, 'gastos_itens'), snap => {
+        allGastosItens = [];
+        snap.forEach(d => allGastosItens.push({ id: d.id, ...d.data() }));
+        window.renderGastosPlanilha?.();
+    });
+
+    onSnapshot(collection(db, 'gastos_lancamentos'), snap => {
+        allGastosLancamentos = [];
+        snap.forEach(d => allGastosLancamentos.push({ id: d.id, ...d.data() }));
+        window.renderGastosPlanilha?.();
+        if (document.getElementById('modal-fechamento-financeiro')?.style.display === 'flex') window.calcularDivisaoFechamento?.();
+    });
+};
+
+
+
+
+
+// === GASTOS PLANILHA AJUSTE ITEM TOTAL FILTROS 2026-06-21 ===
+window.allGastosMarcas = window.allGastosMarcas || [];
+
+window.normalizarMarcaGasto = function(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+};
+
+window.marcasGastosDisponiveis = function() {
+    const mapa = new Map();
+
+    (window.allGastosMarcas || []).forEach(m => {
+        const nome = String(m.nome || m.marca || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    allGastosLancamentos.forEach(l => {
+        const nome = String(l.marca || l.nome || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+};
+
+window.renderOptionsMarcaGasto = function(marcaSelecionada = '') {
+    const marcas = window.marcasGastosDisponiveis();
+    const marcaAtual = String(marcaSelecionada || '').trim();
+    const chaveAtual = window.normalizarMarcaGasto(marcaAtual);
+    const existe = marcas.some(m => window.normalizarMarcaGasto(m) === chaveAtual);
+
+    let html = `<option value="">Selecione...</option>`;
+    marcas.forEach(m => {
+        html += `<option value="${escapeHTMLGasto(m)}" ${window.normalizarMarcaGasto(m) === chaveAtual ? 'selected' : ''}>${escapeHTMLGasto(m)}</option>`;
+    });
+    html += `<option value="__outros__" ${marcaAtual && !existe ? 'selected' : ''}>Outros</option>`;
+    return html;
+};
+
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const id = dados.id || '';
+    const marca = String(dados.marca || dados.nome || '').trim();
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutros = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    const qtd = dados.quantidade !== undefined && dados.quantidade !== null ? dados.quantidade : 1;
+    const unit = dados.valorUnidade !== undefined && dados.valorUnidade !== null ? dados.valorUnidade : '';
+    const total = dados.valorTotal !== undefined && dados.valorTotal !== null ? dados.valorTotal : ((Number(qtd) || 0) * (Number(unit) || 0));
+    const comprador = dados.comprador || 'Caixa';
+    const data = dados.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+    return `<div class="gasto-lanc-row">
+        <input type="hidden" class="gasto-lanc-id" value="${escapeHTMLGasto(id)}">
+        <div>
+            <label>Marca</label>
+            <div class="gasto-marca-select-wrap">
+                <select class="gasto-lanc-marca-select" onchange="window.toggleMarcaOutrosGasto(this)">
+                    ${window.renderOptionsMarcaGasto(usarOutros ? '__outros__' : marca)}
+                </select>
+                <button type="button" class="gasto-marca-delete-btn" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button>
+            </div>
+            <input class="gasto-lanc-marca-outros" type="text" placeholder="Nova marca" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" style="${usarOutros ? '' : 'display:none;'}">
+        </div>
+        <div><label>Peso/líquido</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 500g" value="${escapeHTMLGasto(dados.peso || '')}"></div>
+        <div><label>Quantidade</label><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(qtd)}" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
+        <div><label>Valor unidade</label><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" value="${escapeHTMLGasto(unit)}" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
+        <div><label>Valor total</label><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00" value="${Number(total || 0).toFixed(2)}" readonly></div>
+        <div><label>Comprador</label><select class="gasto-lanc-comprador"><option value="Caixa" ${comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></div>
+        <div><label>Data</label><input class="gasto-lanc-data" type="date" value="${escapeHTMLGasto(data)}"></div>
+        <button class="gastos-icon-btn danger gastos-remover-linha" type="button" onclick="window.removerLinhaLancamentoGasto(this)" title="Remover linha"><i class="fas fa-trash"></i></button>
+    </div>`;
+};
+
+window.toggleMarcaOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-marca-outros, .gasto-list-marca-outros');
+    if (!inputOutros) return;
+    inputOutros.style.display = select.value === '__outros__' ? '' : 'none';
+    if (select.value === '__outros__') inputOutros.focus();
+};
+
+window.getMarcaDaLinhaGasto = function(row, seletorSelect = '.gasto-lanc-marca-select', seletorOutros = '.gasto-lanc-marca-outros') {
+    const select = row.querySelector(seletorSelect);
+    if (!select) return '';
+    if (select.value === '__outros__') return String(row.querySelector(seletorOutros)?.value || '').trim();
+    return String(select.value || '').trim();
+};
+
+window.garantirMarcaGasto = async function(marca) {
+    const nome = String(marca || '').trim();
+    if (!nome) return;
+    const chave = window.normalizarMarcaGasto(nome);
+    const existente = (window.allGastosMarcas || []).find(m => window.normalizarMarcaGasto(m.nome || m.marca) === chave);
+    if (existente) return;
+    try { await addDoc(collection(db, 'gastos_marcas'), { nome, createdAt: Date.now() }); }
+    catch(e) { console.warn('Não foi possível salvar marca nova:', e); }
+};
+
+window.excluirMarcaSelecionadaGasto = function(botao) {
+    const wrap = botao.closest('.gasto-marca-select-wrap');
+    const select = wrap?.querySelector('select');
+    const valor = select?.value || '';
+    if (!valor || valor === '__outros__') return window.showToast('Selecione uma marca cadastrada para excluir.', true);
+    window.excluirMarcaGasto(valor);
+};
+
+window.excluirMarcaGasto = function(nomeMarca) {
+    const nome = String(nomeMarca || '').trim();
+    if (!nome) return;
+    customConfirm(`Excluir a marca "${nome}" da lista de opções?`, async () => {
+        try {
+            const chave = window.normalizarMarcaGasto(nome);
+            const marcas = (window.allGastosMarcas || []).filter(m => window.normalizarMarcaGasto(m.nome || m.marca) === chave);
+            await Promise.all(marcas.map(m => deleteDoc(doc(db, 'gastos_marcas', m.id))));
+            window.showToast('Marca removida da lista!');
+        } catch(e) {
+            console.error(e);
+            window.showToast('Erro ao remover marca.', true);
+        }
+    });
+};
+
+window.renderMarcasChipsGasto = function() { return ''; };
+
+window.atualizarFiltroItensGastos = function(valorAtual = '') {
+    const select = document.getElementById('gastos-filtro-item');
+    if (!select) return;
+    const atual = valorAtual || select.value || '';
+    const itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    select.innerHTML = `<option value="">Todos os itens</option>` + itens.map(item => `<option value="${item.id}">${escapeHTMLGasto(item.nome || '')}</option>`).join('');
+    if (atual && itens.some(item => item.id === atual)) select.value = atual;
+};
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+    const ano = getAnoGastosSelecionado();
+    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const busca = normalizarBuscaGasto(document.getElementById('gastos-busca')?.value || '');
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (busca) itens = itens.filter(item => normalizarBuscaGasto(item.nome).includes(busca));
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="13" class="gastos-empty">Nenhum item encontrado.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const totalGeral = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-item-row" data-gasto-item-row="${item.id}">`;
+        html += `<td class="gastos-sticky-col">
+            <div class="gastos-categoria-cell">
+                <div class="gastos-item-nome-wrap">
+                    <input class="gastos-categoria-nome-input" value="${nomeSeguro}" 
+                        onblur="window.renomearCategoriaGastoInline(this, '${item.id}')"
+                        onkeydown="if(event.key==='Enter'){this.blur();}"
+                        title="Clique para renomear">
+                    <button class="gastos-categoria-excluir" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')">×</button>
+                </div>
+                <span class="gastos-item-total-geral">Total no ano: ${formatarMoedaGasto(totalGeral)}</span>
+            </div>
+        </td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-mes-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-mes-total">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-mes-qtd">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+        html += `</tr>`;
+
+        if (gastosItemAberto === item.id) html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+    });
+
+    html += `<tr class="gastos-total-row"><td class="gastos-sticky-col">TOTAL MENSAL</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td>${formatarMoedaGasto(totaisMes[mes] || 0)}</td>`;
+    html += `</tr>`;
+
+    body.innerHTML = html;
+};
+
+window.renderCampoMarcaListaGasto = function(l) {
+    const marca = String(l.marca || l.nome || '').trim();
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutros = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    return `<div class="gasto-marca-select-wrap"><select class="gasto-list-marca-select" onchange="window.toggleMarcaOutrosGasto(this); window.salvarCampoLancamentoGasto('${l.id}', this)">
+        ${window.renderOptionsMarcaGasto(usarOutros ? '__outros__' : marca)}
+    </select><button type="button" class="gasto-marca-delete-btn" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button></div><input class="gasto-list-marca-outros" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" placeholder="Nova marca" style="${usarOutros ? '' : 'display:none;'}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)">`;
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const tabelaLancamentos = lista.length ? `
+        <table class="gastos-lancamentos-table">
+            <thead><tr><th>Marca</th><th>Peso</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead>
+            <tbody>${lista.map(l => `
+                <tr>
+                    <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                    <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                    <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                    <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td class="gastos-lanc-acoes">
+                        <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                        <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>` : '';
+
+    return `<tr class="gastos-drawer-row"><td colspan="13"><div class="gastos-drawer" id="gasto-drawer-${item.id}">
+        <div class="gastos-drawer-header">
+            <div class="gastos-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+            <div class="gastos-drawer-header-actions"><button class="gastos-fechar-drawer" onclick="window.fecharGastosItem()" title="Fechar">×</button></div>
+        </div>
+        <div class="gastos-adicao-envelope">
+            <div class="gastos-adicao-topo">
+                <strong>Lançar itens</strong>
+                <div>
+                    <button class="gastos-icon-btn gastos-add-line-btn" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')"><i class="fas fa-plus"></i></button>
+                    <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                </div>
+            </div>
+            <div class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+            </div>
+        </div>
+        ${tabelaLancamentos}
+    </div></td></tr>`;
+};
+
+window.adicionarLinhaLancamentoGasto = function(itemId, dados = {}) {
+    const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${itemId}"]`);
+    if (!container) return;
+    container.insertAdjacentHTML('beforeend', window.criarLinhaLancamentoGastoHTML(dados));
+};
+
+window.removerLinhaLancamentoGasto = function(btn) {
+    const row = btn.closest('.gasto-lanc-row');
+    const id = row?.querySelector('.gasto-lanc-id')?.value || '';
+    if (id) { row.classList.add('gasto-lanc-row-removida'); row.style.display = 'none'; }
+    else row?.remove();
+};
+
+window.abrirGastosItem = function(itemId, mes = null) {
+    const mesNormalizado = Number(mes || gastosMesAberto || (new Date().getMonth() + 1));
+    if (gastosItemAberto === itemId && Number(gastosMesAberto) === mesNormalizado) {
+        gastosItemAberto = null;
+        gastosMesAberto = mesNormalizado;
+    } else {
+        gastosItemAberto = itemId;
+        gastosMesAberto = mesNormalizado;
+    }
+    window.renderGastosPlanilha();
+};
+
+window.fecharGastosItem = function() {
+    gastosItemAberto = null;
+    window.renderGastosPlanilha();
+};
+
+window.adicionarItemGasto = async function() {
+    const nome = prompt('Nome do novo item:');
+    if (!nome || !nome.trim()) return;
+    try {
+        await addDoc(collection(db, 'gastos_itens'), { nome: nome.trim(), ordem: Date.now(), createdAt: Date.now() });
+        window.showToast('Item criado!');
+    } catch (e) { console.error(e); window.showToast('Erro ao criar item.', true); }
+};
+
+window.renomearCategoriaGastoInline = async function(input, itemId) {
+    const item = getItemGasto(itemId);
+    if (!item || !input) return;
+    const novo = String(input.value || '').trim();
+    if (!novo) { input.value = item.nome || ''; return window.showToast('Informe um nome para o item.', true); }
+    if (novo === (item.nome || '')) return;
+    try {
+        await updateDoc(doc(db, 'gastos_itens', itemId), { nome: novo, updatedAt: Date.now() });
+        const vinculados = allGastosLancamentos.filter(l => l.itemId === itemId);
+        await Promise.all(vinculados.map(l => updateDoc(doc(db, 'gastos_lancamentos', l.id), { itemNome: novo }).catch(() => null)));
+        window.showToast('Item renomeado!');
+    } catch(e) {
+        console.error(e);
+        input.value = item.nome || '';
+        window.showToast('Erro ao renomear item.', true);
+    }
+};
+
+window.atualizarTotalLancamentoGasto = function(elemento) {
+    const row = elemento.closest('.gasto-lanc-row');
+    if (!row) return;
+    const qtd = Number(row.querySelector('.gasto-lanc-qtd')?.value || 0);
+    const unit = Number(row.querySelector('.gasto-lanc-unit')?.value || 0);
+    const total = row.querySelector('.gasto-lanc-total');
+    if (total) total.value = (qtd * unit).toFixed(2);
+};
+
+window.salvarLancamentosGasto = async function(itemId) {
+    const item = getItemGasto(itemId);
+    const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${itemId}"]`);
+    if (!item || !container) return;
+    const rows = Array.from(container.querySelectorAll('.gasto-lanc-row'));
+    let salvou = 0;
+    try {
+        for (const row of rows) {
+            if (row.classList.contains('gasto-lanc-row-removida')) continue;
+            const lancId = row.querySelector('.gasto-lanc-id')?.value || '';
+            const marca = window.getMarcaDaLinhaGasto(row);
+            const peso = row.querySelector('.gasto-lanc-peso')?.value.trim() || '';
+            const quantidade = Number(row.querySelector('.gasto-lanc-qtd')?.value || 0);
+            const valorUnidade = Number(row.querySelector('.gasto-lanc-unit')?.value || 0);
+            const valorTotal = quantidade * valorUnidade;
+            const comprador = row.querySelector('.gasto-lanc-comprador')?.value || 'Caixa';
+            const dataCompra = row.querySelector('.gasto-lanc-data')?.value || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+            const linhaVazia = !marca && !peso && !quantidade && !valorUnidade;
+            if (linhaVazia) continue;
+            if (!marca) return window.showToast('Preencha a marca.', true);
+            if (!quantidade || !valorUnidade) return window.showToast('Preencha quantidade e valor unidade.', true);
+            if (!dataCompra || !comprador) return window.showToast('Preencha data e comprador.', true);
+            await window.garantirMarcaGasto(marca);
+            const dataObj = parseDataISO(dataCompra);
+            const payload = { itemId, itemNome: item.nome, nome: marca, marca, peso, quantidade, valorUnidade, valorTotal, comprador, dataCompra, ano: dataObj ? dataObj.getFullYear() : getAnoGastosSelecionado(), mes: dataObj ? dataObj.getMonth() + 1 : gastosMesAberto, updatedAt: Date.now() };
+            if (lancId) await updateDoc(doc(db, 'gastos_lancamentos', lancId), payload);
+            else await addDoc(collection(db, 'gastos_lancamentos'), { ...payload, createdAt: Date.now() });
+            salvou++;
+        }
+        window.showToast(salvou ? 'Lançamentos salvos!' : 'Nenhum lançamento novo para salvar.');
+        window.renderGastosPlanilha();
+    } catch(e) {
+        console.error(e);
+        window.showToast('Erro ao salvar lançamentos.', true);
+    }
+};
+
+window.salvarLancamentoGasto = async function(itemId) { return window.salvarLancamentosGasto(itemId); };
+
+window.salvarCampoLancamentoGasto = async function(lancId, elemento) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return;
+    const tr = elemento.closest('tr');
+    if (!tr) return;
+    const marca = window.getMarcaDaLinhaGasto(tr, '.gasto-list-marca-select', '.gasto-list-marca-outros') || l.marca || l.nome || '';
+    const peso = tr.querySelector('.gasto-list-peso')?.value.trim() || '';
+    const quantidade = Number(tr.querySelector('.gasto-list-qtd')?.value || 0);
+    const valorUnidade = Number(tr.querySelector('.gasto-list-unit')?.value || 0);
+    const valorTotal = quantidade * valorUnidade;
+    const comprador = tr.querySelector('.gasto-list-comprador')?.value || 'Caixa';
+    const dataCompra = tr.querySelector('.gasto-list-data')?.value || l.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+    const dataObj = parseDataISO(dataCompra);
+    if (marca) await window.garantirMarcaGasto(marca);
+    try {
+        await updateDoc(doc(db, 'gastos_lancamentos', lancId), { nome: marca, marca, peso, quantidade, valorUnidade, valorTotal, comprador, dataCompra, ano: dataObj ? dataObj.getFullYear() : l.ano, mes: dataObj ? dataObj.getMonth() + 1 : l.mes, updatedAt: Date.now() });
+    } catch(e) {
+        console.error(e);
+        window.showToast('Erro ao atualizar lançamento.', true);
+    }
+};
+
+window.preencherLancamentoGasto = function(lancId) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return;
+    gastosItemAberto = l.itemId;
+    gastosMesAberto = getMesGasto(l) || gastosMesAberto;
+    window.renderGastosPlanilha();
+    setTimeout(() => {
+        const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${l.itemId}"]`);
+        if (!container) return;
+        container.innerHTML = window.criarLinhaLancamentoGastoHTML(l);
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+};
+
+window.copiarLancamentoGasto = function(lancId) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return;
+    gastosItemAberto = l.itemId;
+    gastosMesAberto = getMesGasto(l) || gastosMesAberto;
+    window.renderGastosPlanilha();
+    setTimeout(() => {
+        const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${l.itemId}"]`);
+        if (!container) return;
+        const copia = { ...l, id: '' };
+        container.insertAdjacentHTML('beforeend', window.criarLinhaLancamentoGastoHTML(copia));
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.showToast('Lançamento copiado para novo cadastro.');
+    }, 80);
+};
+
+
+window.recalcularTodosLancamentosVisiveisGasto = function() {
+    document.querySelectorAll('#t-gastos .gasto-lanc-row').forEach(row => {
+        const qtd = Number(row.querySelector('.gasto-lanc-qtd')?.value || 0);
+        const unit = Number(row.querySelector('.gasto-lanc-unit')?.value || 0);
+        const total = row.querySelector('.gasto-lanc-total');
+        if (total) total.value = (qtd * unit).toFixed(2);
+    });
+};
+
+window.limparFiltrosGastos = function() {
+    const filtroItem = document.getElementById('gastos-filtro-item');
+    if (filtroItem) filtroItem.value = '';
+    const busca = document.getElementById('gastos-busca');
+    if (busca) busca.value = '';
+    const ano = document.getElementById('gastos-ano');
+    if (ano) ano.value = String(new Date().getFullYear());
+    window.renderGastosPlanilha();
+};
+
+window.inicializarGastos = function() {
+    const select = document.getElementById('gastos-ano');
+    if (select && !select.innerHTML) {
+        const anoAtual = new Date().getFullYear();
+        select.innerHTML = Array.from({ length: 11 }, (_, i) => anoAtual - 5 + i).reverse().map(a => `<option value="${a}">Ano: ${a}</option>`).join('');
+        select.value = String(anoAtual);
+    }
+
+    onSnapshot(collection(db, 'gastos_itens'), snap => {
+        allGastosItens = [];
+        snap.forEach(d => allGastosItens.push({ id: d.id, ...d.data() }));
+        window.atualizarFiltroItensGastos?.();
+        window.renderGastosPlanilha?.();
+    });
+
+    onSnapshot(collection(db, 'gastos_lancamentos'), snap => {
+        allGastosLancamentos = [];
+        snap.forEach(d => allGastosLancamentos.push({ id: d.id, ...d.data() }));
+        window.renderGastosPlanilha?.();
+        if (document.getElementById('modal-fechamento-financeiro')?.style.display === 'flex') window.calcularDivisaoFechamento?.();
+    });
+
+    onSnapshot(collection(db, 'gastos_marcas'), snap => {
+        window.allGastosMarcas = [];
+        snap.forEach(d => window.allGastosMarcas.push({ id: d.id, ...d.data() }));
+        window.renderGastosPlanilha?.();
+    });
+};
+
 
 // ==========================================
 // EXPORTAR PEDIDOS PARA EXCEL/CSV
@@ -5488,8 +7410,7 @@ window.abrirModalFechamento = function() {
     // Pega os pedidos da tela atual (idêntico ao cálculo do Dashboard)
     let pedidos = window.ticketsSelecionados.size > 0 
         ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
-        : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) 
-            ? window.obterPedidosFiltrados() : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p)) );
+        : window.obterPedidosFiltrados();
     
     // Ignora pedidos cancelados para não somar faturamento fantasma
     pedidos = pedidos.filter(p => !(p.Status_do_Pedido || '').toLowerCase().includes('cancelado'));
@@ -5550,9 +7471,18 @@ window.calcularDivisaoFechamento = function() {
     const percAra = parseFloat(document.getElementById('perc-ara').value) || 0;
     const percFla = parseFloat(document.getElementById('perc-fla').value) || 0;
 
-    const gCaixa = parseFloat(document.getElementById('gasto-manual-caixa').value) || 0;
-    const gAra = parseFloat(document.getElementById('gasto-manual-ara').value) || 0;
-    const gFla = parseFloat(document.getElementById('gasto-manual-fla').value) || 0;
+    const gastosLancados = calcularTotaisGastosPorPeriodoFechamento();
+    const campoGastoCaixa = document.getElementById('gasto-manual-caixa');
+    const campoGastoAra = document.getElementById('gasto-manual-ara');
+    const campoGastoFla = document.getElementById('gasto-manual-fla');
+
+    if (campoGastoCaixa && document.activeElement !== campoGastoCaixa) campoGastoCaixa.value = (gastosLancados.caixa || 0).toFixed(2);
+    if (campoGastoAra && document.activeElement !== campoGastoAra) campoGastoAra.value = (gastosLancados.arabela || 0).toFixed(2);
+    if (campoGastoFla && document.activeElement !== campoGastoFla) campoGastoFla.value = (gastosLancados.flavio || 0).toFixed(2);
+
+    const gCaixa = parseFloat(campoGastoCaixa?.value || 0) || 0;
+    const gAra = parseFloat(campoGastoAra?.value || 0) || 0;
+    const gFla = parseFloat(campoGastoFla?.value || 0) || 0;
 
     const totalGasto = gCaixa + gAra + gFla;
 
@@ -5618,6 +7548,10 @@ window.calcularDivisaoFechamento = function() {
         gCaixa: gCaixa,
         gAra: gAra,
         gFla: gFla,
+        gastosLancados: gastosLancados.total,
+        gastosLancadosCaixa: gastosLancados.caixa,
+        gastosLancadosAra: gastosLancados.arabela,
+        gastosLancadosFla: gastosLancados.flavio,
         lucroAra: lucroAra,
         lucroFla: lucroFla,
         finalCaixa: finalCaixa,
@@ -5630,6 +7564,13 @@ window.calcularDivisaoFechamento = function() {
 };
 
 window.enviarFechamentoWA = function(destinatario) {
+    const numerosFechamentoWA = {
+        Arabela: '558199502865',
+        Flavio: '558199591775',
+        'Flávio': '558199591775'
+    };
+    const numeroDestinoWA = numerosFechamentoWA[destinatario] || numerosFechamentoWA[String(destinatario || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')] || '';
+
     // Puxa o período e remove os parênteses limpinho
     const periodo = document.getElementById('fechamento-periodo').textContent.replace(/[()]/g, '').trim();
     
@@ -5685,5 +7626,5 @@ window.enviarFechamentoWA = function(destinatario) {
     txt += `   ⤷ Lucro = ${dados.lucroFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
 
     const fone = (destinatario === 'Arabela') ? '5581992147363' : '5581996914595';
-    window.open(`https://api.whatsapp.com/send?phone=${fone}&text=${encodeURIComponent(txt)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${numeroDestinoWA}&text=${encodeURIComponent(txt)}`, '_blank');
 };

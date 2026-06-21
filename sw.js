@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v71-orcamento-todas-categorias';
+const CACHE_NAME = 'favu-app-v99-botoes-editar-produto-mesmo-tamanho';
 const urlsToCache = [
   './',
   './index.html',
