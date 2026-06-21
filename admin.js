@@ -1970,7 +1970,8 @@ window.gerarOrcamentoWA = async function() {
         dt = document.getElementById('orc-data').value,
         hrInput = document.getElementById('orc-hora'),
         hr = normalizarHoraPedidoManual(hrInput?.value || ''),
-        pag = document.getElementById('orc-pag').value,
+        pag = normalizarFormaPagamentoPedido(document.getElementById('orc-pag').value),
+        modalidadeCreditoOrcamento = getModalidadeCreditoPedido({ Forma_de_Pagamento: pag }),
         obs = document.getElementById('orc-obs').value.trim();
 
     if (hrInput && hr) hrInput.value = hr;
@@ -2009,7 +2010,7 @@ window.gerarOrcamentoWA = async function() {
     const dateFormatted = `${dt.split('-')[2]}/${dt.split('-')[1]}/${dt.split('-')[0]}`;
     txt += `Valor Final: R$ ${formatarMoedaOrc(liq)}\n\n`;
     txt += `*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*\n\n`;
-    txt += `_*- Informações do pedido:*_\n\n*Nome*: ${nm}\n*Data*: ${dateFormatted}\n*Horário*: ${hr}\n*Forma de Pagamento*: ${pag}`;
+    txt += `_*- Informações do pedido:*_\n\n*Nome*: ${nm}\n*Data*: ${dateFormatted}\n*Horário*: ${hr}\n*Forma de Pagamento*: ${formatarPagamentoPedidoTexto(pag, modalidadeCreditoOrcamento)}`;
 
     if (obs) txt += `\n*Observações*: ${obs}`;
 
@@ -2029,6 +2030,8 @@ window.gerarOrcamentoWA = async function() {
         Horario_Entrega: hr,
         Total_Final: formatarMoedaOrc(liq),
         Forma_de_Pagamento: pag,
+        Modalidade_Credito: modalidadeCreditoOrcamento,
+        ...montarDadosTaxaPagamento({ Forma_de_Pagamento: pag, Modalidade_Credito: modalidadeCreditoOrcamento, Total_Final: formatarMoedaOrc(liq) }),
         Status_Pagamento: 'Pendente',
         Cupom: cupomFirestore,
         Observacoes: obs,
@@ -2637,6 +2640,86 @@ function calcularValorPedido(p) {
     return converterValorParaNumero(p.Total_Final);
 }
 
+function normalizarFormaPagamentoPedido(valor) {
+    const v = String(valor || '').trim().toLowerCase();
+
+    if ((v.includes('credito') || v.includes('crédito') || v.includes('cart')) && v.includes('link')) return 'Crédito Link';
+    if ((v.includes('credito') || v.includes('crédito') || v.includes('cart')) && v.includes('retirada')) return 'Crédito Retirada';
+    if (v === 'credito' || v === 'crédito' || v.includes('cart')) return 'Crédito';
+    if (v.includes('debito') || v.includes('débito')) return 'Débito';
+    if (v.includes('dinheiro')) return 'Dinheiro';
+    if (v.includes('pix')) return 'Pix';
+    if (v.includes('confirmar')) return 'A confirmar';
+    return String(valor || '').trim();
+}
+
+function getModalidadeCreditoPedido(p) {
+    const forma = normalizarFormaPagamentoPedido(p?.Forma_de_Pagamento || '');
+    if (forma === 'Crédito Link') return 'Pagamento via Link';
+    if (forma === 'Crédito Retirada') return 'Pagamento na retirada';
+    return String(p?.Modalidade_Credito || p?.Modalidade_Pagamento || '').trim();
+}
+
+function formatarPagamentoPedidoTexto(forma, modalidadeCredito = '') {
+    const formaNormalizada = normalizarFormaPagamentoPedido(forma);
+    if (formaNormalizada === 'Crédito') {
+        if (String(modalidadeCredito || '').toLowerCase().includes('link')) return 'Crédito Link';
+        if (String(modalidadeCredito || '').toLowerCase().includes('retirada')) return 'Crédito Retirada';
+    }
+    return formaNormalizada || '';
+}
+
+function getTaxaPagamentoInfo(p) {
+    const forma = normalizarFormaPagamentoPedido(p?.Forma_de_Pagamento || '');
+    const modalidade = getModalidadeCreditoPedido(p).toLowerCase();
+
+    if (forma === 'Débito') {
+        return { percentual: 1.99, label: 'Taxa Débito' };
+    }
+
+    if (forma === 'Crédito Link' || (forma === 'Crédito' && modalidade.includes('link'))) {
+        return { percentual: 4.98, label: 'Taxa Crédito' };
+    }
+
+    if (forma === 'Crédito Retirada' || (forma === 'Crédito' && modalidade.includes('retirada'))) {
+        return { percentual: 3.09, label: 'Taxa Crédito' };
+    }
+
+    return { percentual: 0, label: '' };
+}
+
+function calcularTaxaPagamentoPedido(p) {
+    const info = getTaxaPagamentoInfo(p);
+    const total = calcularValorPedido(p);
+    return Math.max(0, total * ((Number(info.percentual) || 0) / 100));
+}
+
+function calcularValorFaturamentoPedido(p) {
+    return Math.max(0, calcularValorPedido(p) - calcularTaxaPagamentoPedido(p));
+}
+
+function montarDadosTaxaPagamento(p) {
+    const info = getTaxaPagamentoInfo(p);
+    const taxa = calcularTaxaPagamentoPedido(p);
+    const recebido = calcularValorFaturamentoPedido(p);
+
+    return {
+        Taxa_Pagamento: info.label || '',
+        Percentual_Taxa_Pagamento: info.percentual || 0,
+        Valor_Taxa_Pagamento: taxa > 0 ? formatarNumeroMoedaPedido(taxa) : '',
+        Valor_Recebido: taxa > 0 ? formatarNumeroMoedaPedido(recebido) : ''
+    };
+}
+
+function formatarTaxaPagamentoHTML(p) {
+    return '';
+}
+
+window.toggleCreditoPedidoAdmin = function() {
+    // Mantido apenas por compatibilidade com versões antigas. Não há mais campo separado de tipo de crédito.
+};
+
+
 function listenPedidos() {
     onSnapshot(collection(db, "pedidos"), (snap) => {
         window.todosPedidos = []; snap.forEach(docSnap => { let d = docSnap.data(); if (!d.ID_do_Pedido) d.ID_do_Pedido = docSnap.id; d._docId = docSnap.id; window.todosPedidos.push(d); });
@@ -2672,7 +2755,7 @@ window.obterPedidosFiltrados = function() {
         if (s && !((p.Nome_Cliente || '').toLowerCase().includes(s) || (p.ID_do_Pedido || '').toLowerCase().includes(s) || (p.Numero || '').includes(s))) return false;
         if (df) { const dp = parseDataBR(p.Data_Entrega); if (!dp) return false; if (df.includes(',')) { const [di, dF] = df.split(','); const dtI = parseDataISO(di.trim()), dtF = parseDataISO(dF.trim()); if (!dtI || !dtF || !(dp.getTime() >= dtI.getTime() && dp.getTime() <= dtF.getTime())) return false; } else { const dt = parseDataISO(df.trim()); if (!dt || dp.getTime() !== dt.getTime()) return false; } }
         if (sp && normalizarStatusPagamentoPedido(p.Status_Pagamento) !== normalizarStatusPagamentoPedido(sp)) return false;
-        if (fp && (p.Forma_de_Pagamento || '').trim() !== fp) return false;
+        if (fp && normalizarFormaPagamentoPedido(p.Forma_de_Pagamento || '') !== fp) return false;
         if (ob) { const tO = p.Observacoes && p.Observacoes.trim() !== ''; if (ob === 'com' && !tO) return false; if (ob === 'sem' && tO) return false; }
         return true;
     });
@@ -2724,7 +2807,7 @@ window.atualizarDashboardPedidos = function() {
     pedCalc.filter(p => !isPedidoExcluidoPainel(p)).forEach(p => { 
         if (!(p.Status_do_Pedido || '').toLowerCase().includes('cancelado')) {
             tp++; 
-            tv += calcularValorPedido(p); 
+            tv += calcularValorFaturamentoPedido(p); 
         }
     });
     if(document.querySelector('#dashboard-totals strong')) document.querySelector('#dashboard-totals strong').textContent = tv.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -2745,10 +2828,29 @@ window.criarCardHTML = function(p) {
     const pg = pgStatus.toLowerCase(); let pC = pg.includes('50%') ? 'pg-parcial' : (pg.includes('100%') || pg === 'pago' ? 'pg-pago' : 'pg-pendente');
     const totalExibicaoPedido = calcularValorPedido(p);
     const cupomDescontoHTML = formatarCupomDescontoPedido(p.Cupom || '');
-    const fP = (p.Forma_de_Pagamento || '').trim().toLowerCase(); let tt = '', tc = '';
-    if (fP.includes('pix')) { tt = 'PIX'; tc = 'pix'; } else if (fP.includes('dinheiro')) { tt = 'DINHEIRO'; tc = 'dinheiro'; } else if (fP.includes('cartão') || fP.includes('cartao')) { tt = 'CARTÃO'; tc = 'cartao'; } else if (fP.includes('confirmar')) { tt = 'A CONFIRMAR'; tc = 'a-confirmar'; } else if (fP) { tt = fP.toUpperCase(); tc = fP.replace(/[^a-z0-9]/g, ''); }
+    const formaPagamentoNormalizada = normalizarFormaPagamentoPedido(p.Forma_de_Pagamento || '');
+    const modalidadeCredito = getModalidadeCreditoPedido(p);
+    const taxaPagamentoHTML = formatarTaxaPagamentoHTML(p);
+    let tt = '', tc = '';
+    const taxaPagamentoValorTag = calcularTaxaPagamentoPedido(p);
+    const taxaPagamentoTextoTag = taxaPagamentoValorTag > 0 ? `<span class="payment-tag-taxa">-R$: ${formatarNumeroMoedaPedido(taxaPagamentoValorTag)}</span>` : '';
+    const montarTagPagamentoComTaxa = (nome) => taxaPagamentoTextoTag ? `<span class="payment-tag-nome">${nome}</span>${taxaPagamentoTextoTag}` : nome;
 
-    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${cupomDescontoHTML ? `<div class="card-cupom">${cupomDescontoHTML}</div>` : ''}<div class="card-price"><span>R$ ${formatarNumeroMoedaPedido(totalExibicaoPedido)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
+    if (formaPagamentoNormalizada === 'Crédito Link') { tt = montarTagPagamentoComTaxa('Crédito Link'); tc = 'credito-link'; }
+    else if (formaPagamentoNormalizada === 'Crédito Retirada') { tt = montarTagPagamentoComTaxa('Crédito Retirada'); tc = 'credito-retirada'; }
+    else if (formaPagamentoNormalizada === 'Crédito') {
+        const modalidadeLower = modalidadeCredito.toLowerCase();
+        if (modalidadeLower.includes('link')) { tt = montarTagPagamentoComTaxa('Crédito Link'); tc = 'credito-link'; }
+        else if (modalidadeLower.includes('retirada')) { tt = montarTagPagamentoComTaxa('Crédito Retirada'); tc = 'credito-retirada'; }
+        else { tt = montarTagPagamentoComTaxa('Crédito'); tc = 'credito'; }
+    }
+    else if (formaPagamentoNormalizada === 'Débito') { tt = montarTagPagamentoComTaxa('Débito'); tc = 'debito'; }
+    else if (formaPagamentoNormalizada === 'Dinheiro') { tt = 'DINHEIRO'; tc = 'dinheiro'; }
+    else if (formaPagamentoNormalizada === 'Pix') { tt = 'PIX'; tc = 'pix'; }
+    else if (formaPagamentoNormalizada === 'A confirmar') { tt = 'A CONFIRMAR'; tc = 'a-confirmar'; }
+    else if (formaPagamentoNormalizada) { tt = formaPagamentoNormalizada.toUpperCase(); tc = formaPagamentoNormalizada.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+    c.innerHTML = `<div class="card-header"><input type="checkbox" class="card-checkbox" ${window.ticketsSelecionados.has(p.ID_do_Pedido) ? 'checked' : ''} onclick="window.toggleSelecao('${p.ID_do_Pedido}', this); event.stopPropagation();"><div style="text-align: right;"><div><span class="card-id">${p.ID_do_Pedido}</span></div>${tO ? '<div><span class="observacao-tag">OBSERVAÇÃO</span></div>' : ''}</div></div><br><div class="card-title">${p.Nome_Cliente}</div><div class="card-info-box"><div class="card-info-row"><span class="card-icon">🗓️</span> ${p.Data_Entrega || '--/--/----'}</div><div class="card-info-row"><span class="card-icon">⏰</span> ${p.Horario_Entrega || '--:--'}</div><div class="card-info-row"><span class="card-icon">📱</span> <span class="card-numero-text">${p.Numero || 'N/A'}</span></div></div>${cupomDescontoHTML ? `<div class="card-cupom">${cupomDescontoHTML}</div>` : ''}${taxaPagamentoHTML}<div class="card-price"><span>R$ ${formatarNumeroMoedaPedido(totalExibicaoPedido)}</span>${tt ? `<span class="payment-type-tag ${tc}">${tt}</span>` : ''}</div><div class="card-status-pagamento"><select class="${pC}" onchange="window.atualizarStatusPagamentoDireto('${p.ID_do_Pedido}', this)"><option value="Pendente" ${pg === 'pendente' || pg === 'pagamento pendente' ? 'selected' : ''}>Pendente</option><option value="Pago 50%" ${pg.includes('50') ? 'selected' : ''}>Pago 50%</option><option value="Pago 100%" ${pg.includes('100') || pg === 'pago' ? 'selected' : ''}>Pago 100%</option></select></div><div class="card-pedido-actions"><button type="button" class="btn-card-mini btn-card-whatsapp" title="Contato" aria-label="Contato" onclick="window.abrirModalWhatsApp('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fab fa-whatsapp"></i></button><button type="button" class="btn-card-mini btn-card-copy" title="Copiar" aria-label="Copiar" onclick="window.copiarPedido('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-copy"></i></button><button type="button" class="btn-card-mini btn-card-delete" title="Excluir" aria-label="Excluir" onclick="window.excluirPedidoLogico('${p.ID_do_Pedido}'); event.stopPropagation();"><i class="fas fa-trash"></i></button></div>`;
     return c;
 }
 
@@ -2782,7 +2884,12 @@ window.copiarPedido = function(id) {
     const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '');
     const cupomSemDescontoManual = extrairCodigoCupomPedido(p.Cupom || '');
 
-    document.getElementById('edit-forma-pedido').value = p.Forma_de_Pagamento || 'Pix';
+    document.getElementById('edit-forma-pedido').value = normalizarFormaPagamentoPedido(p.Forma_de_Pagamento || 'Pix');
+    if (document.getElementById('edit-forma-pedido').value === 'Crédito') {
+        const modalidadeLegada = getModalidadeCreditoPedido(p).toLowerCase();
+        if (modalidadeLegada.includes('link')) document.getElementById('edit-forma-pedido').value = 'Crédito Link';
+        else if (modalidadeLegada.includes('retirada')) document.getElementById('edit-forma-pedido').value = 'Crédito Retirada';
+    }
     document.getElementById('edit-status-pgto-pedido').value = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente');
     document.getElementById('edit-cupom-pedido').value = cupomSemDescontoManual;
     document.getElementById('edit-total-pedido').value = p.Total_Final || '';
@@ -2905,7 +3012,12 @@ window.abrirModalEdicao = function(id) {
 
     const descontoManualExistente = extrairDescontoManualPedido(p.Cupom || '');
     const cupomSemDescontoManual = extrairCodigoCupomPedido(p.Cupom || '');
-    document.getElementById('edit-forma-pedido').value = p.Forma_de_Pagamento || 'Pix'; document.getElementById('edit-status-pgto-pedido').value = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente'); document.getElementById('edit-cupom-pedido').value = cupomSemDescontoManual; document.getElementById('edit-total-pedido').value = p.Total_Final || ''; document.getElementById('edit-obs-pedido').value = p.Observacoes || ''; document.getElementById('edit-resumo-pedido').value = p.Resumo_dos_Itens || '';
+    document.getElementById('edit-forma-pedido').value = normalizarFormaPagamentoPedido(p.Forma_de_Pagamento || 'Pix');
+    if (document.getElementById('edit-forma-pedido').value === 'Crédito') {
+        const modalidadeLegada = getModalidadeCreditoPedido(p).toLowerCase();
+        if (modalidadeLegada.includes('link')) document.getElementById('edit-forma-pedido').value = 'Crédito Link';
+        else if (modalidadeLegada.includes('retirada')) document.getElementById('edit-forma-pedido').value = 'Crédito Retirada';
+    } document.getElementById('edit-status-pgto-pedido').value = normalizarStatusPagamentoPedido(p.Status_Pagamento || 'Pendente'); document.getElementById('edit-cupom-pedido').value = cupomSemDescontoManual; document.getElementById('edit-total-pedido').value = p.Total_Final || ''; document.getElementById('edit-obs-pedido').value = p.Observacoes || ''; document.getElementById('edit-resumo-pedido').value = p.Resumo_dos_Itens || '';
     const cupomStatusEdit = document.getElementById('edit-cupom-status');
     if (cupomStatusEdit) { cupomStatusEdit.textContent = ''; cupomStatusEdit.className = 'edit-cupom-status'; }
     window.editCupomPedidoOriginal = cupomSemDescontoManual;
@@ -3527,10 +3639,19 @@ window.submitEditForm = async function(e) {
 
     const descontoTotal = descontoCupom + descontoManual;
     const cupomFinal = montarCupomDescontoPedido(codigoCupomAplicado, descontoTotal);
+    const formaPagamentoEdit = normalizarFormaPagamentoPedido(document.getElementById('edit-forma-pedido').value);
+    const modalidadeCreditoEdit = getModalidadeCreditoPedido({ Forma_de_Pagamento: formaPagamentoEdit });
 
     const totalFinalCalculado = formatarNumeroMoedaPedido(
         Math.max(0, getSubtotalEditPedido() - descontoCupom - descontoManual)
     );
+    const dadosTaxaPagamentoEdit = montarDadosTaxaPagamento({
+        Forma_de_Pagamento: formaPagamentoEdit,
+        Modalidade_Credito: modalidadeCreditoEdit,
+        Total_Final: totalFinalCalculado,
+        Resumo_dos_Itens: document.getElementById('edit-resumo-pedido')?.value || '',
+        Cupom: cupomFinal
+    });
     const totalPedidoInput = document.getElementById('edit-total-pedido');
     if (totalPedidoInput) totalPedidoInput.value = totalFinalCalculado;
 
@@ -3541,7 +3662,9 @@ window.submitEditForm = async function(e) {
             Data_Entrega: dataEntregaFormatada,
             Horario_Entrega: horaEntregaFormatada,
             Total_Final: totalFinalCalculado,
-            Forma_de_Pagamento: document.getElementById('edit-forma-pedido').value,
+            Forma_de_Pagamento: formaPagamentoEdit,
+            Modalidade_Credito: modalidadeCreditoEdit,
+            ...dadosTaxaPagamentoEdit,
             Status_Pagamento: document.getElementById('edit-status-pgto-pedido').value,
             Cupom: cupomFinal,
             Observacoes: document.getElementById('edit-obs-pedido').value,
@@ -5144,7 +5267,7 @@ window.exportarPedidosCSV = function() {
     }
 
     // Cabeçalho das colunas do Excel
-    let csv = "ID_do_Pedido,Cliente,Telefone,Data_Entrega,Horario_Entrega,Status_do_Pedido,Status_Pagamento,Forma_de_Pagamento,Total\n";
+    let csv = "ID_do_Pedido,Cliente,Telefone,Data_Entrega,Horario_Entrega,Status_do_Pedido,Status_Pagamento,Forma_de_Pagamento,Modalidade_Credito,Total,Taxa_Pagamento,Valor_Taxa_Pagamento,Valor_Recebido\n";
     
     // Varre os pedidos e monta as linhas
     pedidos.forEach(p => {
@@ -5207,10 +5330,16 @@ window.abrirModalFechamento = function() {
 
     window.pedidosFechamento = pedidos;
     
+    let totalVendas = 0;
+    let totalTaxasPagamento = 0;
     let total = 0;
     let datas = [];
     pedidos.forEach(p => {
-        total += calcularValorPedido(p);
+        const valorPedido = calcularValorPedido(p);
+        const taxaPedido = calcularTaxaPagamentoPedido(p);
+        totalVendas += valorPedido;
+        totalTaxasPagamento += taxaPedido;
+        total += Math.max(0, valorPedido - taxaPedido);
         if(p.Data_Entrega) datas.push(p.Data_Entrega);
     });
 
@@ -5236,6 +5365,8 @@ window.abrirModalFechamento = function() {
 
     document.getElementById('fechamento-periodo').textContent = periodoStr ? `(${periodoStr})` : '';
     
+    window.totalFechamentoVendasAtual = totalVendas;
+    window.totalTaxasPagamentoAtual = totalTaxasPagamento;
     window.totalFechamentoAtual = total;
     window.calcularDivisaoFechamento();
 
@@ -5244,6 +5375,8 @@ window.abrirModalFechamento = function() {
 
 window.calcularDivisaoFechamento = function() {
     const totalBase = window.totalFechamentoAtual || 0;
+    const totalVendasBruto = window.totalFechamentoVendasAtual ?? totalBase;
+    const totalTaxasPagamento = window.totalTaxasPagamentoAtual || 0;
     
     const percCaixa = parseFloat(document.getElementById('perc-caixa').value) || 0;
     const percAra = parseFloat(document.getElementById('perc-ara').value) || 0;
@@ -5267,7 +5400,9 @@ window.calcularDivisaoFechamento = function() {
     const finalFla = lucroFla + gFla;
 
     // Define as cores dinamicamente baseado nos valores reais calculados
-    const corVendas = totalBase > 0 ? 'color: #27ae60;' : totalBase < 0 ? 'color: #c0392b;' : '';
+    const corVendas = totalVendasBruto > 0 ? 'color: #27ae60;' : totalVendasBruto < 0 ? 'color: #c0392b;' : '';
+    const corTaxas = totalTaxasPagamento > 0 ? 'color: #c0392b;' : '';
+    const corFaturamento = totalBase > 0 ? 'color: #27ae60;' : totalBase < 0 ? 'color: #c0392b;' : '';
     const corGastos = totalGasto > 0 ? 'color: #c0392b;' : '';
     const corLucro = lucroLiquido > 0 ? 'color: #27ae60;' : lucroLiquido < 0 ? 'color: #c0392b;' : '';
 
@@ -5282,8 +5417,9 @@ window.calcularDivisaoFechamento = function() {
     const detalheHTML = `
         <div style="font-family: var(--font-numbers) !important; font-size: 1.05rem; line-height: 1.6; color: #333;">
             
-            Total de Vendas: <strong style="${corVendas}">${totalBase.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
-            Total de Gastos: <strong style="${corGastos}">- ${totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            Total de Vendas: <strong style="${corVendas}">${totalVendasBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            Total Taxas: <strong style="${corTaxas}">- ${totalTaxasPagamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
+            Total de Gastos: <strong style="${corGastos}">- ${totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br><br>
             Lucro: <strong style="${corLucro}">${lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
             
             <div style="margin: 15px 0; border-top: 1px dashed rgba(0, 0, 0, 0.15);"></div>
@@ -5306,7 +5442,9 @@ window.calcularDivisaoFechamento = function() {
 
     // Salvar dados globais para envio no WhatsApp (adicionado os Lucros separados)
     window.dadosFechamentoWA = {
-        totalVendido: totalBase,
+        totalVendido: totalVendasBruto,
+        totalTaxas: totalTaxasPagamento,
+        totalFaturamento: totalBase,
         totalGasto: totalGasto,
         lucroLiquido: lucroLiquido,
         gCaixa: gCaixa,
@@ -5327,13 +5465,15 @@ window.enviarFechamentoWA = function(destinatario) {
     // Puxa o período e remove os parênteses limpinho
     const periodo = document.getElementById('fechamento-periodo').textContent.replace(/[()]/g, '').trim();
     
-    const totalVendido = window.totalFechamentoAtual || 0;
+    const totalVendido = window.totalFechamentoVendasAtual ?? (window.totalFechamentoAtual || 0);
+    const totalTaxas = window.totalTaxasPagamentoAtual || 0;
+    const totalFaturamento = window.totalFechamentoAtual || 0;
     
     const gCaixa = parseFloat(document.getElementById('gasto-manual-caixa').value || 0);
     const gAra = parseFloat(document.getElementById('gasto-manual-ara').value || 0);
     const gFla = parseFloat(document.getElementById('gasto-manual-fla').value || 0);
     const totalGasto = gCaixa + gAra + gFla;
-    const lucroLiquido = totalVendido - totalGasto;
+    const lucroLiquido = totalFaturamento - totalGasto;
 
     const pCaixa = parseFloat(document.getElementById('perc-caixa').value || 30) / 100;
     const pAra = parseFloat(document.getElementById('perc-ara').value || 35) / 100;
@@ -5348,7 +5488,7 @@ window.enviarFechamentoWA = function(destinatario) {
     const finalFla = lucroFla + gFla;
 
     const dados = {
-        periodo, totalVendido, totalGasto, lucroLiquido,
+        periodo, totalVendido, totalTaxas, totalFaturamento, totalGasto, lucroLiquido,
         gCaixa, gAra, gFla,
         finalCaixa, finalAra, finalFla,
         lucroAra, lucroFla
@@ -5358,6 +5498,8 @@ window.enviarFechamentoWA = function(destinatario) {
     txt += `*Período:* ${dados.periodo}\n\n`;
     
     txt += `*Total de Vendas:* ${dados.totalVendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    txt += `*Total Taxas:* - ${dados.totalTaxas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+    txt += `*Faturamento:* ${dados.totalFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Total de Gastos:* - ${dados.totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     // Adicionado o espaço extra (\n\n) abaixo do Lucro
     txt += `*Lucro:* ${dados.lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;

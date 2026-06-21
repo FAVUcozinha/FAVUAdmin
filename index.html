@@ -272,7 +272,7 @@
         .card-cupom { font-size: 0.85em; font-family: var(--font-numbers); color: var(--favu-rust); margin-top: 5px; margin-bottom: 3px; }
         .card-price { font-weight: bold; font-family: var(--font-numbers); color: var(--favu-green); font-size: 0.9em; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .payment-type-tag { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 0.7em; font-weight: bold; font-family: var(--font-numbers); }
-        .payment-type-tag.pix { background-color: #32CD32; color: white; } .payment-type-tag.dinheiro { background-color: #f1c40f; color: #333; } .payment-type-tag.cartao { background-color: #4169E1; color: white; } .payment-type-tag.a-confirmar { background-color: #999; color: white; }
+        .payment-type-tag.pix { background-color: #32CD32; color: white; } .payment-type-tag.dinheiro { background-color: #f1c40f; color: #333; } .payment-type-tag.credito { background-color: #4169E1; color: white; } .payment-type-tag.a-confirmar { background-color: #999; color: white; }
         .card-status-pagamento select { width: 100%; padding: 6px 10px; border-radius: 6px; border: none; font-size: 0.85em; font-weight: bold; font-family: var(--font-numbers); cursor: pointer; text-align: center; color: white; }
         .card-status-pagamento select.pg-pendente { background-color: #ffb3b3; color: #8b0000; } .card-status-pagamento select.pg-pago { background-color: #a8e6a8; color: #006400; } .card-status-pagamento select.pg-parcial { background-color: #ffeb9c; color: #8b6914; }
 
@@ -1994,7 +1994,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <div class="filter-item">
                             <label>Forma Pagamento</label>
                             <select id="filter-forma-pagamento" onchange="window.filtrarPedidos()">
-                                <option value="">Todas</option><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option>
+                                <option value="">Todas</option><option value="A confirmar">A confirmar</option><option value="Crédito Link">Crédito Link</option><option value="Crédito Retirada">Crédito Retirada</option><option value="Débito">Débito</option><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option>
                             </select>
                         </div>
                         <div class="filter-item">
@@ -2485,9 +2485,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
                 <div class="input-group">
                     <label>PAGAMENTO:</label>
-                    <select id="orc-pag"><option value="">Selecione...</option><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select>
+                    <select id="orc-pag"><option value="">Selecione...</option><option value="A confirmar">A confirmar</option><option value="Crédito Link">Crédito Link</option><option value="Crédito Retirada">Crédito Retirada</option><option value="Débito">Débito</option><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option></select>
                 </div>
-                <div class="input-group">
+<div class="input-group">
                     <label>OBSERVAÇÕES:</label>
                     <textarea id="orc-obs" placeholder="Ex: Retirar Itens, Alergias, ETC." rows="2"></textarea>
                 </div>
@@ -2761,11 +2761,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                         <div><label>Horário:</label> <input type="text" id="edit-hora-pedido" class="time-free-input" placeholder="" inputmode="numeric" autocomplete="off" maxlength="5" oninput="window.formatarCampoHoraPedido(this)" onblur="window.normalizarCampoHoraPedido(this)" required></div>
                     </div>
                     <div class="edit-pedido-pair-grid">
-                        <div><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="A confirmar">A confirmar</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão">Cartão</option></select></div>
+                        <div><label>Forma Pagamento:</label><select id="edit-forma-pedido"><option value="A confirmar">A confirmar</option><option value="Crédito Link">Crédito Link</option><option value="Crédito Retirada">Crédito Retirada</option><option value="Débito">Débito</option><option value="Dinheiro">Dinheiro</option><option value="Pix">Pix</option></select></div>
                         <div><label>Status Pagamento:</label><select id="edit-status-pgto-pedido"><option value="Pendente">Pendente</option><option value="Pago 50%">Pago 50%</option><option value="Pago 100%">Pago 100%</option></select></div>
                     </div>
-                    
-                    <div class="edit-pedido-grid edit-pedido-grid-financeiro">
+<div class="edit-pedido-grid edit-pedido-grid-financeiro">
                         <div class="edit-field-group">
                             <label>Cupom:</label>
                             <div class="edit-inline-action">
@@ -5169,9 +5168,155 @@ input[type="date"]::-webkit-date-and-time-value {
     }
 }
 
+
+/* === PAGAMENTO 2026-06-20: taxas débito/crédito sem alterar total do pedido === */
+.credito-modalidade-container {
+    margin-bottom: 10px !important;
+}
+#edit-modal-pedido #edit-credito-container select,
+#modal-orcamento-cliente #orc-credito-container select,
+#popup-pedido #credito-tipo {
+    width: 100% !important;
+    height: 44px !important;
+    border: 1px solid rgba(29,40,20,0.18) !important;
+    border-radius: 10px !important;
+    padding: 0 12px !important;
+    background: #fff !important;
+    font-family: var(--font-numbers) !important;
+}
+.card-taxa-pagamento {
+    margin-top: 8px !important;
+    padding: 7px 9px !important;
+    border-radius: 8px !important;
+    background: rgba(224,159,65,0.10) !important;
+    border: 1px dashed rgba(224,159,65,0.40) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.78rem !important;
+    line-height: 1.35 !important;
+    color: var(--favu-green) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+.card-taxa-pagamento .taxa-linha {
+    color: #b00000 !important;
+    font-weight: 700 !important;
+}
+.card-taxa-pagamento .faturamento-linha {
+    color: var(--favu-green) !important;
+    font-weight: 800 !important;
+}
+.payment-type-tag.credito,
+.payment-type-tag.debito {
+    background: rgba(224,159,65,0.18) !important;
+    color: var(--favu-green) !important;
+}
+
+
+/* === PAGAMENTO 2026-06-20: correção final taxas e tags === */
+.payment-type-tag.credito-link,
+.payment-type-tag.credito-retirada,
+.payment-type-tag.credito,
+.payment-type-tag.debito {
+    background-color: rgba(224,159,65,0.18) !important;
+    color: var(--favu-green) !important;
+}
+.card-taxa-pagamento .taxa-linha {
+    display: block !important;
+}
+
+
+/* === PAGAMENTO 2026-06-20: forma direta e tags distintas === */
+.credito-modalidade-container,
+#edit-credito-container,
+#orc-credito-container,
+#credito-container {
+    display: none !important;
+}
+
+.card-taxa-pagamento {
+    margin: 6px 0 2px 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.76rem !important;
+    line-height: 1.15 !important;
+    color: #9c5d00 !important;
+    text-align: right !important;
+}
+
+.card-taxa-pagamento .taxa-linha {
+    color: #9c5d00 !important;
+    font-weight: 700 !important;
+    display: block !important;
+}
+
+.payment-type-tag.credito-link {
+    background: #6f42c1 !important;
+    color: #fff !important;
+}
+
+.payment-type-tag.credito-retirada {
+    background: #0d6efd !important;
+    color: #fff !important;
+}
+
+.payment-type-tag.debito {
+    background: #198754 !important;
+    color: #fff !important;
+}
+
+.payment-type-tag.credito {
+    background: #6c757d !important;
+    color: #fff !important;
+}
+
+
+/* === PAGAMENTO 2026-06-20: valor da taxa dentro da tag === */
+.card-taxa-pagamento {
+    display: none !important;
+}
+.payment-type-tag.credito-link,
+.payment-type-tag.credito-retirada,
+.payment-type-tag.debito {
+    white-space: normal !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+}
+
+
+/* === PAGAMENTO 2026-06-20: taxa abaixo do nome na tag === */
+.payment-type-tag.credito-link,
+.payment-type-tag.credito-retirada,
+.payment-type-tag.debito,
+.payment-type-tag.credito {
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    text-align: center !important;
+    min-width: 92px !important;
+}
+
+.payment-type-tag .payment-tag-nome {
+    display: block !important;
+    font-weight: 800 !important;
+}
+
+.payment-type-tag .payment-tag-taxa {
+    display: block !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    opacity: 0.95 !important;
+}
+
 </style>
 
-    <script type="module" src="./admin.js?v=20260620-cupom-popup-categoria-2"></script>
+    <script type="module" src="./admin.js?v=20260620-cliente-credito-faturamento-sem-linha-1"></script>
 
 </body>
 

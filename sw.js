@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v60-cupom-popup-categoria';
+const CACHE_NAME = 'favu-app-v67-cliente-credito-faturamento-sem-linha';
 const urlsToCache = [
   './',
   './index.html',
