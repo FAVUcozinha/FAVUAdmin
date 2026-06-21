@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v67-cliente-credito-faturamento-sem-linha';
+const CACHE_NAME = 'favu-client-v71-orcamento-todas-categorias';
 const urlsToCache = [
   './',
   './index.html',
