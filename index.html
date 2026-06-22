@@ -2439,6 +2439,2617 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
 }
 
+
+/* === GASTOS 2026-06-21: fontes iguais às Categorias === */
+#t-gastos {
+    font-family: 'Cocogoose', sans-serif !important;
+}
+
+#t-gastos .gastos-toolbar-title,
+#t-gastos h2,
+#t-gastos h3,
+#t-gastos h4,
+#t-gastos label,
+#t-gastos button,
+#t-gastos .btn,
+#t-gastos .gastos-planilha-table th,
+#t-gastos .gastos-drawer-title,
+#t-gastos .gastos-adicao-topo strong {
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-planilha-table td,
+#t-gastos .gastos-categoria-nome-input,
+#t-gastos .gastos-item-total-geral,
+#t-gastos .gastos-mes-total,
+#t-gastos .gastos-mes-qtd,
+#t-gastos .gastos-total-row td,
+#t-gastos .gasto-list-total {
+    font-family: 'Cocogoose', sans-serif !important;
+}
+
+#t-gastos input,
+#t-gastos select,
+#t-gastos textarea,
+#t-gastos .gastos-lancamentos-table input,
+#t-gastos .gastos-lancamentos-table select,
+#t-gastos #gastos-busca,
+#t-gastos #gastos-ano,
+#t-gastos #gastos-filtro-item {
+    font-family: var(--font-numbers) !important;
+}
+
+#t-gastos .gastos-toolbar-title {
+    font-size: 1.8rem !important;
+    color: var(--favu-green) !important;
+}
+
+#t-gastos .gastos-categoria-nome-input {
+    font-weight: normal !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.1rem !important;
+}
+
+#t-gastos .gastos-planilha-table th {
+    font-size: 1rem !important;
+}
+
+#t-gastos .gastos-item-total-geral,
+#t-gastos .gastos-mes-total,
+#t-gastos .gasto-list-total {
+    font-weight: normal !important;
+}
+
+
+/* === GASTOS 2026-06-21: visual igual à aba Categorias === */
+
+/* Botão superior de Gastos igual ao botão de Categorias */
+#t-gastos .gastos-top-action {
+    display: flex !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+#t-gastos .gastos-novo-item-btn {
+    min-width: 0 !important;
+    height: auto !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    background: var(--favu-rust) !important;
+    border: none !important;
+    color: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+/* Cabeçalho de Gastos igual ao cabeçalho de Categorias */
+#t-gastos .gastos-planilha-toolbar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
+    padding: 15px 20px !important;
+    border-radius: 15px !important;
+    background: white !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid #eee !important;
+    margin-bottom: 20px !important;
+}
+
+#t-gastos .gastos-toolbar-title {
+    margin: 0 !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.8rem !important;
+    line-height: 1.1 !important;
+    color: var(--favu-green) !important;
+    font-weight: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+#t-gastos .gastos-planilha-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-left: auto !important;
+    width: 100% !important;
+    max-width: 720px !important;
+    flex-wrap: nowrap !important;
+}
+
+/* Filtros de Gastos no padrão dos filtros de Pedidos */
+#t-gastos #gastos-filtro-item,
+#t-gastos #gastos-ano,
+#t-gastos #gastos-busca {
+    height: 40px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.95rem !important;
+    font-weight: normal !important;
+    box-shadow: none !important;
+    text-transform: none !important;
+    cursor: pointer !important;
+}
+
+#t-gastos #gastos-filtro-item {
+    min-width: 170px !important;
+    flex: 0 1 190px !important;
+}
+
+#t-gastos #gastos-ano {
+    min-width: 120px !important;
+    flex: 0 1 130px !important;
+}
+
+#t-gastos #gastos-busca {
+    min-width: 180px !important;
+    max-width: none !important;
+    flex: 1 1 220px !important;
+    cursor: text !important;
+}
+
+/* Limpar filtros de Gastos igual ao de Categorias */
+#t-gastos .gastos-limpar-btn {
+    height: auto !important;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    border: 2px solid #ddd !important;
+    background: transparent !important;
+    color: var(--favu-moss) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    letter-spacing: normal !important;
+}
+
+/* Moldura da tabela igual ao painel de Categorias */
+#t-gastos .gastos-planilha-wrap {
+    background: #fff !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid #eee !important;
+    padding: 0 !important;
+    max-height: calc(100vh - 290px) !important;
+    overflow: auto !important;
+}
+
+/* Tabela de Gastos seguindo linhas, cores e fontes da tabela de Categorias */
+#t-gastos .gastos-planilha-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    text-align: left !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-planilha-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 80 !important;
+    background: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    line-height: 1.15 !important;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+}
+
+@media (min-width: 1025px) {
+    #t-gastos .gastos-planilha-table thead th {
+        font-size: 1.2rem !important;
+    }
+}
+
+#t-gastos .gastos-planilha-table thead th.gastos-sticky-col {
+    left: 0 !important;
+    z-index: 95 !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-planilha-table tbody tr {
+    transition: 0.2s ease !important;
+    border-bottom: 1px solid #ddd !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-planilha-table tbody tr:hover {
+    background-color: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-planilha-table tbody td {
+    padding: 15px 10px !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    color: var(--favu-green) !important;
+    vertical-align: middle !important;
+    background: #fff !important;
+    border-left: 1px solid rgba(29, 40, 20, 0.055) !important;
+}
+
+#t-gastos .gastos-planilha-table tbody td:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-planilha-table tbody td.gastos-sticky-col {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 15 !important;
+    background: #fff !important;
+}
+
+/* Nome do item e valores no padrão dos valores da tabela de Categorias */
+#t-gastos .gastos-categoria-cell {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+#t-gastos .gastos-categoria-nome-input {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+    min-width: 0 !important;
+    max-width: 150px !important;
+    outline: none !important;
+}
+
+#t-gastos .gastos-categoria-nome-input:hover,
+#t-gastos .gastos-categoria-nome-input:focus {
+    background: #fff !important;
+    border-color: rgba(224, 159, 65, 0.35) !important;
+}
+
+#t-gastos .gastos-item-total-geral,
+#t-gastos .gastos-mes-total,
+#t-gastos .gastos-mes-qtd,
+#t-gastos .gastos-total-row td,
+#t-gastos .gasto-list-total {
+    font-family: var(--font-numbers) !important;
+    font-weight: normal !important;
+    color: var(--favu-green) !important;
+}
+
+#t-gastos .gastos-item-total-geral {
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    color: #666 !important;
+}
+
+#t-gastos .gastos-mes-total {
+    display: block !important;
+    font-size: 0.9rem !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-mes-qtd {
+    display: block !important;
+    font-size: 0.78rem !important;
+    color: #777 !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-mes-cell.active {
+    background: rgba(224, 159, 65, 0.05) !important;
+    box-shadow: inset 0 -3px 0 var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-total-row td {
+    background: #fff !important;
+    border-top: 2px solid var(--favu-rust) !important;
+    color: var(--favu-green) !important;
+    font-size: 0.9rem !important;
+}
+
+/* Botões de ações de Gastos iguais aos de Categorias */
+#t-gastos .gastos-lanc-acoes,
+#t-gastos .gastos-drawer-header-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+}
+
+#t-gastos .gastos-icon-btn,
+#t-gastos .gastos-categoria-excluir,
+#t-gastos .gastos-mini-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    text-indent: 0 !important;
+    overflow: hidden !important;
+}
+
+#t-gastos .gastos-icon-btn.copy,
+#t-gastos .gastos-mini-btn.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-icon-btn.edit,
+#t-gastos .gastos-mini-btn.edit {
+    background: var(--favu-moss) !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-icon-btn.danger,
+#t-gastos .gastos-mini-btn.danger,
+#t-gastos .gastos-categoria-excluir {
+    background: #E60000 !important;
+    color: #fff !important;
+    opacity: 1 !important;
+}
+
+#t-gastos .gastos-icon-btn i,
+#t-gastos .gastos-mini-btn i {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    color: inherit !important;
+}
+
+#t-gastos .gastos-icon-btn:hover,
+#t-gastos .gastos-mini-btn:hover,
+#t-gastos .gastos-categoria-excluir:hover {
+    filter: brightness(1.2) !important;
+    transform: scale(1.05) !important;
+}
+
+/* X de exclusão do item usando o mesmo formato de excluir das Categorias */
+#t-gastos .gastos-categoria-excluir {
+    font-size: 0 !important;
+}
+
+#t-gastos .gastos-categoria-excluir::before {
+    content: "\f1f8";
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-size: 1rem !important;
+}
+
+/* Drawer/linhas internas respeitando o mesmo padrão visual */
+#t-gastos .gastos-drawer {
+    border: 1px dashed rgba(224, 159, 65, 0.35) !important;
+    background: rgba(224, 159, 65, 0.04) !important;
+    border-radius: 12px !important;
+}
+
+#t-gastos .gastos-drawer-title,
+#t-gastos .gastos-adicao-topo strong,
+#t-gastos .gastos-lancamentos-table th {
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.05rem !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+}
+
+#t-gastos .gastos-lancamentos-table td,
+#t-gastos .gastos-lancamentos-table input,
+#t-gastos .gastos-lancamentos-table select,
+#t-gastos .gastos-lancamento-lista input,
+#t-gastos .gastos-lancamento-lista select {
+    font-family: var(--font-numbers) !important;
+    color: var(--favu-green) !important;
+}
+
+/* Responsivo seguindo a lógica da área de busca de Categorias */
+@media (max-width: 900px) {
+    #t-gastos .gastos-planilha-actions {
+        max-width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    #t-gastos #gastos-filtro-item,
+    #t-gastos #gastos-ano,
+    #t-gastos #gastos-busca,
+    #t-gastos .gastos-limpar-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: none !important;
+    }
+
+    #t-gastos .gastos-novo-item-btn {
+        width: 100% !important;
+    }
+}
+
+
+/* === GASTOS 2026-06-21: aba recriada do zero no padrão das demais abas === */
+#gastos-planilha-body .gastos-empty {
+    text-align: center !important;
+    padding: 50px 20px !important;
+    color: #999 !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+}
+
+#t-gastos.gastos-rebuild-pane {
+    background: var(--favu-card) !important;
+    border-radius: 24px !important;
+    padding: 25px !important;
+    box-shadow: var(--shadow-soft) !important;
+    margin-top: 15px !important;
+}
+
+#t-gastos .gastos-rebuild-buttons {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+#t-gastos .gastos-rebuild-new-btn {
+    min-width: 190px !important;
+    height: auto !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    background: var(--favu-rust) !important;
+    border: none !important;
+    color: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+}
+
+#t-gastos .gastos-rebuild-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
+    padding: 15px 20px !important;
+    margin-bottom: 20px !important;
+    border-radius: 15px !important;
+    background: #fff !important;
+    border: 1px solid #eee !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+#t-gastos .gastos-rebuild-title {
+    margin: 0 !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.8rem !important;
+    color: var(--favu-green) !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    text-transform: uppercase !important;
+    letter-spacing: normal !important;
+}
+
+#t-gastos .gastos-rebuild-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    margin-left: auto !important;
+    flex: 1 1 760px !important;
+    max-width: none !important;
+}
+
+#t-gastos .gastos-rebuild-filter,
+#t-gastos .gastos-rebuild-search {
+    height: 52px !important;
+    padding: 10px 16px !important;
+    border-radius: 30px !important;
+    border: 2px solid var(--favu-rust) !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.95rem !important;
+    font-weight: normal !important;
+    box-shadow: none !important;
+    outline: none !important;
+    margin: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-filter {
+    flex: 0 0 185px !important;
+    min-width: 185px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+
+#t-gastos .gastos-rebuild-year {
+    flex-basis: 150px !important;
+    min-width: 150px !important;
+}
+
+#t-gastos .gastos-rebuild-search {
+    flex: 1 1 310px !important;
+    min-width: 240px !important;
+}
+
+#t-gastos .gastos-rebuild-clear-btn {
+    height: 52px !important;
+    min-width: 165px !important;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    border: 2px solid #ddd !important;
+    background: transparent !important;
+    color: var(--favu-moss) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-rebuild-table-card {
+    background: #fff !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid #eee !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    overflow: auto !important;
+    max-height: calc(100vh - 330px) !important;
+}
+
+#t-gastos .gastos-rebuild-table {
+    width: 100% !important;
+    min-width: 1320px !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    text-align: left !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table thead th {
+    background: #fff !important;
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    line-height: 1.2 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    border-left: 1px solid rgba(29,40,20,.05) !important;
+    text-align: center !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important;
+}
+
+#t-gastos .gastos-rebuild-table thead th:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody tr {
+    background: #fff !important;
+    border-bottom: 1px solid #ddd !important;
+    transition: 0.2s ease !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody tr:hover:not(.gastos-rebuild-drawer-row):not(.gastos-rebuild-total-row) {
+    background: rgba(224,159,65,.05) !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody tr:hover:not(.gastos-rebuild-drawer-row):not(.gastos-rebuild-total-row) td {
+    background: rgba(224,159,65,.05) !important;
+}
+
+#t-gastos .gastos-rebuild-table td {
+    background: #fff !important;
+    padding: 15px 10px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    border-left: 1px solid rgba(29,40,20,.06) !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-rebuild-table td:first-child {
+    border-left: none !important;
+    text-align: left !important;
+}
+
+#t-gastos .gastos-rebuild-item-th {
+    width: 260px !important;
+}
+
+#t-gastos .gastos-rebuild-total-th {
+    width: 125px !important;
+}
+
+#t-gastos .gastos-rebuild-actions-th {
+    width: 150px !important;
+}
+
+#t-gastos .gastos-rebuild-item-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
+#t-gastos .gastos-rebuild-item-name {
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-rebuild-item-hint {
+    color: #777 !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.78rem !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-rebuild-money,
+#t-gastos .gastos-rebuild-qty,
+#t-gastos .gastos-rebuild-total-cell,
+#t-gastos .gastos-rebuild-drawer-total {
+    font-family: var(--font-numbers) !important;
+    color: var(--favu-green) !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-rebuild-money {
+    display: block !important;
+    font-size: 0.9rem !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-rebuild-qty {
+    display: block !important;
+    font-size: 0.8rem !important;
+    color: #777 !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-rebuild-month-cell {
+    cursor: pointer !important;
+}
+
+#t-gastos .gastos-rebuild-month-cell.active {
+    background: rgba(224,159,65,.08) !important;
+    box-shadow: inset 0 -3px 0 var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-rebuild-row-actions,
+#t-gastos .gastos-rebuild-lanc-actions,
+#t-gastos .gastos-rebuild-drawer-actions {
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+}
+
+#t-gastos .gastos-rebuild-row-actions .btn-action {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#t-gastos .gastos-rebuild-total-row td {
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    border-top: 2px solid var(--favu-rust) !important;
+    border-left-color: rgba(255,255,255,.08) !important;
+    font-weight: 700 !important;
+}
+
+#t-gastos .gastos-rebuild-total-row td span,
+#t-gastos .gastos-rebuild-total-row td small {
+    color: #fff !important;
+    font-family: var(--font-numbers) !important;
+}
+
+#t-gastos .gastos-rebuild-drawer-row td {
+    background: rgba(224,159,65,.04) !important;
+    padding: 16px !important;
+    text-align: left !important;
+}
+
+#t-gastos .gastos-rebuild-drawer {
+    background: rgba(224,159,65,.04) !important;
+    border: 1px dashed rgba(224,159,65,.35) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+
+#t-gastos .gastos-rebuild-drawer-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 12px !important;
+}
+
+#t-gastos .gastos-rebuild-drawer-title,
+#t-gastos .gastos-rebuild-subtitle,
+#t-gastos .gastos-rebuild-lanc-table th,
+#t-gastos .gastos-rebuild-form label {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+    letter-spacing: normal !important;
+}
+
+#t-gastos .gastos-rebuild-drawer-title {
+    font-size: 1.25rem !important;
+}
+
+#t-gastos .gastos-rebuild-month-tabs {
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    margin: 8px 0 14px !important;
+}
+
+#t-gastos .gastos-rebuild-month-tabs button {
+    border: 1px solid rgba(224,159,65,.5) !important;
+    background: #fff !important;
+    color: var(--favu-moss) !important;
+    border-radius: 999px !important;
+    padding: 7px 12px !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: .95rem !important;
+    cursor: pointer !important;
+}
+
+#t-gastos .gastos-rebuild-month-tabs button.active {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+    border-color: var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-rebuild-add-box {
+    background: #fff !important;
+    border: 1px solid rgba(224,159,65,.25) !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    margin-bottom: 14px !important;
+}
+
+#t-gastos .gastos-rebuild-add-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+}
+
+#t-gastos .gastos-rebuild-form-list {
+    display: grid !important;
+    gap: 10px !important;
+}
+
+#t-gastos .gasto-lanc-row {
+    display: grid !important;
+    grid-template-columns: minmax(150px,1.2fr) minmax(110px,.8fr) minmax(90px,.6fr) minmax(115px,.8fr) minmax(115px,.8fr) minmax(120px,.8fr) minmax(120px,.8fr) 38px !important;
+    gap: 8px !important;
+    align-items: end !important;
+    background: rgba(244,230,203,.35) !important;
+    border: 1px dashed rgba(224,159,65,.25) !important;
+    border-radius: 10px !important;
+    padding: 10px !important;
+}
+
+#t-gastos .gasto-lanc-row label,
+#t-gastos .gastos-rebuild-form label {
+    display: block !important;
+    margin-bottom: 4px !important;
+    font-size: .9rem !important;
+}
+
+#t-gastos .gasto-lanc-row input,
+#t-gastos .gasto-lanc-row select,
+#t-gastos .gastos-rebuild-lanc-table input,
+#t-gastos .gastos-rebuild-lanc-table select {
+    width: 100% !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(224,159,65,.45) !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .9rem !important;
+    padding: 8px !important;
+}
+
+#t-gastos .gastos-icon-btn,
+#t-gastos .gastos-mini-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    font-size: 1rem !important;
+}
+
+#t-gastos .gastos-icon-btn.copy,
+#t-gastos .gastos-mini-btn.copy {
+    background: var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-icon-btn.save {
+    background: var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-icon-btn.edit,
+#t-gastos .gastos-mini-btn.edit {
+    background: var(--favu-moss) !important;
+}
+
+#t-gastos .gastos-icon-btn.danger,
+#t-gastos .gastos-mini-btn.danger {
+    background: #E60000 !important;
+}
+
+#t-gastos .gastos-rebuild-lanc-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: #fff !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+#t-gastos .gastos-rebuild-lanc-table th {
+    background: #fff !important;
+    color: var(--favu-rust) !important;
+    padding: 10px 8px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    text-align: left !important;
+    font-size: .95rem !important;
+}
+
+#t-gastos .gastos-rebuild-lanc-table td {
+    padding: 10px 8px !important;
+    border-bottom: 1px solid #eee !important;
+    border-left: 0 !important;
+    background: #fff !important;
+    text-align: left !important;
+    vertical-align: middle !important;
+}
+
+@media (max-width: 1050px) {
+    #t-gastos .gastos-rebuild-actions {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    #t-gastos .gastos-rebuild-filter,
+    #t-gastos .gastos-rebuild-search,
+    #t-gastos .gastos-rebuild-clear-btn,
+    #t-gastos .gastos-rebuild-new-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+
+    #t-gastos .gasto-lanc-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* === GASTOS 2026-06-21: ajustes finais solicitados === */
+#t-gastos #gastos-busca,
+#t-gastos .gastos-rebuild-search {
+    display: none !important;
+}
+
+#t-gastos .gastos-rebuild-actions {
+    flex: 1 1 auto !important;
+    max-width: 560px !important;
+}
+
+#t-gastos .gastos-rebuild-table-card {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: auto !important;
+}
+
+#t-gastos .gastos-rebuild-table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 220 !important;
+    background: #fff !important;
+    box-shadow: 0 2px 0 var(--favu-rust), 0 8px 14px rgba(255,255,255,.96) !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+#t-gastos .gastos-rebuild-item-hint {
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.86rem !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-rebuild-add-box {
+    background: #fffdf9 !important;
+    border: 2px dashed rgba(224,159,65,.45) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.7) !important;
+}
+
+#t-gastos .gastos-rebuild-lancados-box {
+    background: #fff !important;
+    border: 1px solid rgba(29,40,20,.12) !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+    margin-top: 14px !important;
+}
+
+#t-gastos .gastos-rebuild-lancados-box .gastos-rebuild-subtitle {
+    display: block !important;
+    margin-bottom: 10px !important;
+}
+
+#t-gastos .gastos-rebuild-form-list .gasto-lanc-row {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) 38px !important;
+    align-items: end !important;
+}
+
+#t-gastos .gasto-lanc-row > div,
+#t-gastos .gasto-lanc-row input,
+#t-gastos .gasto-lanc-row select,
+#t-gastos .gasto-marca-select-wrap {
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+#t-gastos .gastos-rebuild-lanc-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+#t-gastos .gastos-rebuild-lanc-table th,
+#t-gastos .gastos-rebuild-lanc-table td {
+    width: calc(100% / 8) !important;
+}
+
+#t-gastos .gastos-icon-btn.copy,
+#t-gastos .gastos-mini-btn.copy,
+#t-gastos .btn-action.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-total-cell {
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: normal !important;
+}
+
+#modal-gasto-item #gasto-item-nome {
+    font-family: var(--font-numbers) !important;
+}
+
+
+/* === GASTOS 2026-06-21: corrigir itens aparecendo atrás do cabeçalho === */
+/* Remove o cabeçalho fixo da tabela de Gastos para impedir qualquer sobreposição visual durante a rolagem. */
+#t-gastos .gastos-rebuild-table thead,
+#t-gastos .gastos-rebuild-table thead tr,
+#t-gastos .gastos-rebuild-table thead th,
+#t-gastos .gastos-planilha-table thead,
+#t-gastos .gastos-planilha-table thead tr,
+#t-gastos .gastos-planilha-table thead th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+    background: #fff !important;
+}
+
+/* Garante que o conteúdo da tabela fique sempre recortado dentro do card e nunca atravesse visualmente o cabeçalho. */
+#t-gastos .gastos-rebuild-table-card,
+#t-gastos .gastos-planilha-wrap {
+    overflow: auto !important;
+    background: #fff !important;
+    isolation: isolate !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody,
+#t-gastos .gastos-planilha-table tbody {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+#t-gastos .gastos-rebuild-table tbody tr,
+#t-gastos .gastos-planilha-table tbody tr,
+#t-gastos .gastos-rebuild-table tbody td,
+#t-gastos .gastos-planilha-table tbody td {
+    background-clip: padding-box !important;
+}
+
+
+/* === GASTOS 2026-06-21: rolagem da página inteira === */
+/* Remove a rolagem vertical interna da tabela de Gastos.
+   A tela inteira passa a rolar normalmente, como nas demais abas. */
+#t-gastos .gastos-rebuild-table-card,
+#t-gastos .gastos-planilha-wrap,
+#t-gastos .table-responsive.gastos-rebuild-table-card,
+#t-gastos .panel-card.gastos-rebuild-table-card {
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    overflow-x: auto !important;
+}
+
+/* Garante que a aba não crie um container vertical próprio. */
+#t-gastos,
+#t-gastos.gastos-rebuild-pane {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+/* Mantém apenas a rolagem horizontal quando a tabela for mais larga que a tela. */
+#t-gastos .gastos-rebuild-table {
+    min-width: 1320px !important;
+}
+
+
+/* === GASTOS 2026-06-21: lançar/lançados em tabela limpa === */
+#t-gastos .gastos-rebuild-add-box,
+#t-gastos .gastos-rebuild-lancados-box {
+    padding: 14px !important;
+    border-radius: 14px !important;
+    margin-top: 14px !important;
+}
+
+#t-gastos .gastos-rebuild-add-box {
+    background: rgba(224, 159, 65, 0.05) !important;
+    border: 1px dashed rgba(224, 159, 65, 0.45) !important;
+}
+
+#t-gastos .gastos-rebuild-lancados-box {
+    background: #fff !important;
+    border: 1px solid rgba(29, 40, 20, 0.12) !important;
+}
+
+#t-gastos .gastos-rebuild-add-head,
+#t-gastos .gastos-rebuild-lancados-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+#t-gastos .gastos-rebuild-add-head .gastos-rebuild-subtitle,
+#t-gastos .gastos-rebuild-lancados-head .gastos-rebuild-subtitle {
+    margin: 0 !important;
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    background: #fff !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid #eee !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table th {
+    background: #fff !important;
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+    font-size: .92rem !important;
+    padding: 10px 8px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table td {
+    background: #fff !important;
+    border-bottom: 1px solid #ddd !important;
+    border-left: 1px solid rgba(29, 40, 20, 0.06) !important;
+    padding: 8px !important;
+    vertical-align: middle !important;
+    text-align: left !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table tr:hover td {
+    background: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table th:first-child,
+#t-gastos .gastos-rebuild-inner-table td:first-child {
+    border-left: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table input,
+#t-gastos .gastos-rebuild-inner-table select {
+    width: 100% !important;
+    height: 38px !important;
+    min-width: 0 !important;
+    padding: 7px 8px !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .88rem !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table input:focus,
+#t-gastos .gastos-rebuild-inner-table select:focus {
+    background: #fff !important;
+    border-color: rgba(224, 159, 65, 0.55) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gasto-lanc-total,
+#t-gastos .gastos-rebuild-inner-table .gasto-list-total {
+    background: transparent !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: 700 !important;
+}
+
+#t-gastos .gasto-marca-select-wrap {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 28px !important;
+    gap: 5px !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+#t-gastos .gasto-marca-delete-btn {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    border: 1px solid #E60000 !important;
+    background: transparent !important;
+    color: #E60000 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+}
+
+#t-gastos .gasto-lanc-marca-outros,
+#t-gastos .gasto-list-marca-outros {
+    margin-top: 6px !important;
+    border: 1px dashed rgba(224,159,65,.45) !important;
+    background: rgba(224,159,65,.04) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gastos-acoes-cell {
+    text-align: center !important;
+    width: 88px !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gastos-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table-wrap,
+#t-gastos .gastos-rebuild-lancados-table-wrap {
+    width: 100% !important;
+    overflow-x: auto !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table,
+#t-gastos .gastos-rebuild-lancados-table {
+    min-width: 980px !important;
+}
+
+@media (max-width: 1050px) {
+    #t-gastos .gastos-rebuild-inner-table {
+        min-width: 980px !important;
+    }
+}
+
+
+/* === GASTOS 2026-06-21: linha dos títulos fixa na rolagem da página === */
+/* Mantém a rolagem da página inteira, mas deixa o cabeçalho/linha inferior da tabela visível sem o conteúdo passar por trás. */
+#t-gastos .gastos-rebuild-table,
+#t-gastos .gastos-planilha-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-table thead,
+#t-gastos .gastos-planilha-table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 900 !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table thead tr,
+#t-gastos .gastos-planilha-table thead tr {
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table thead th,
+#t-gastos .gastos-planilha-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 901 !important;
+    background: #fff !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    box-shadow:
+        0 2px 0 var(--favu-rust),
+        0 8px 14px rgba(255,255,255,.98) !important;
+    background-clip: padding-box !important;
+}
+
+/* Evita que qualquer linha do corpo fique visualmente acima dos títulos. */
+#t-gastos .gastos-rebuild-table tbody,
+#t-gastos .gastos-planilha-table tbody,
+#t-gastos .gastos-rebuild-table tbody tr,
+#t-gastos .gastos-planilha-table tbody tr,
+#t-gastos .gastos-rebuild-table tbody td,
+#t-gastos .gastos-planilha-table tbody td {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+
+/* === GASTOS 2026-06-21: lançar e lançados como tabela real === */
+#t-gastos .gastos-rebuild-add-box,
+#t-gastos .gastos-rebuild-lancados-box {
+    background: #fff !important;
+    border: 1px solid #eee !important;
+    border-radius: 15px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+#t-gastos .gastos-rebuild-add-box {
+    margin-bottom: 16px !important;
+}
+
+#t-gastos .gastos-rebuild-lancados-box {
+    margin-top: 16px !important;
+}
+
+#t-gastos .gastos-rebuild-add-head,
+#t-gastos .gastos-rebuild-lancados-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+#t-gastos .gastos-rebuild-add-head .gastos-rebuild-subtitle,
+#t-gastos .gastos-rebuild-lancados-head .gastos-rebuild-subtitle {
+    color: var(--favu-green) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.35rem !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table-wrap,
+#t-gastos .gastos-rebuild-lancados-table-wrap {
+    width: 100% !important;
+    overflow-x: auto !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table,
+#t-gastos table.gastos-rebuild-inner-table,
+#t-gastos .gastos-rebuild-lancar-table,
+#t-gastos .gastos-rebuild-lancados-table {
+    width: 100% !important;
+    min-width: 1040px !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    table-layout: fixed !important;
+    background: #fff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table thead,
+#t-gastos .gastos-rebuild-inner-table thead tr,
+#t-gastos .gastos-rebuild-inner-table thead th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table th {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    font-size: 1rem !important;
+    line-height: 1.15 !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    border-left: 1px solid rgba(29,40,20,.05) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table th:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table tbody tr,
+#t-gastos .gastos-rebuild-inner-table .gasto-lanc-row {
+    display: table-row !important;
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table tbody tr:hover td {
+    background: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table td {
+    display: table-cell !important;
+    background: #fff !important;
+    padding: 13px 10px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    border-bottom: 1px solid #ddd !important;
+    border-left: 1px solid rgba(29,40,20,.06) !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .9rem !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table td:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table input,
+#t-gastos .gastos-rebuild-inner-table select {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 30px !important;
+    padding: 4px 2px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .9rem !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    cursor: pointer !important;
+    text-align-last: center !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table input:focus,
+#t-gastos .gastos-rebuild-inner-table select:focus {
+    background: rgba(224,159,65,.08) !important;
+    box-shadow: inset 0 -2px 0 var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gasto-lanc-total,
+#t-gastos .gastos-rebuild-inner-table .gasto-list-total {
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+#t-gastos .gasto-marca-select-wrap {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 24px !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: 100% !important;
+}
+
+#t-gastos .gasto-marca-delete-btn {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    border: 1px solid #E60000 !important;
+    background: transparent !important;
+    color: #E60000 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .95rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+}
+
+#t-gastos .gasto-lanc-marca-outros,
+#t-gastos .gasto-list-marca-outros {
+    margin-top: 4px !important;
+    border: none !important;
+    border-bottom: 1px dashed var(--favu-rust) !important;
+    background: transparent !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gastos-acoes-cell {
+    width: 86px !important;
+    text-align: center !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gastos-rebuild-lanc-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+}
+
+#t-gastos .gastos-rebuild-inner-table .gastos-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px !important;
+}
+
+
+/* === GASTOS 2026-06-21: Lançar itens igual Itens lançados === */
+#t-gastos .gastos-rebuild-add-box,
+#t-gastos .gastos-rebuild-lancados-box,
+#t-gastos .gastos-section-box {
+    background: #fff !important;
+    border: 1px solid #eee !important;
+    border-radius: 15px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-soft) !important;
+    margin-top: 16px !important;
+    margin-bottom: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-add-head,
+#t-gastos .gastos-rebuild-lancados-head,
+#t-gastos .gastos-section-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+#t-gastos .gastos-rebuild-add-head .gastos-rebuild-subtitle,
+#t-gastos .gastos-rebuild-lancados-head .gastos-rebuild-subtitle,
+#t-gastos .gastos-section-head .gastos-rebuild-subtitle {
+    color: var(--favu-green) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.35rem !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table-wrap,
+#t-gastos .gastos-rebuild-lancados-table-wrap,
+#t-gastos .gastos-section-table-wrap {
+    width: 100% !important;
+    overflow-x: auto !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table,
+#t-gastos .gastos-rebuild-lancados-table,
+#t-gastos .gastos-section-table {
+    width: 100% !important;
+    min-width: 1040px !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    table-layout: fixed !important;
+    background: #fff !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+#t-gastos .gastos-section-table thead,
+#t-gastos .gastos-section-table thead tr,
+#t-gastos .gastos-section-table thead th,
+#t-gastos .gastos-rebuild-lancar-table thead,
+#t-gastos .gastos-rebuild-lancar-table thead tr,
+#t-gastos .gastos-rebuild-lancar-table thead th,
+#t-gastos .gastos-rebuild-lancados-table thead,
+#t-gastos .gastos-rebuild-lancados-table thead tr,
+#t-gastos .gastos-rebuild-lancados-table thead th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-section-table th,
+#t-gastos .gastos-rebuild-lancar-table th,
+#t-gastos .gastos-rebuild-lancados-table th {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    font-size: 1rem !important;
+    line-height: 1.15 !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    border-left: 1px solid rgba(29,40,20,.05) !important;
+}
+
+#t-gastos .gastos-section-table th:first-child,
+#t-gastos .gastos-rebuild-lancar-table th:first-child,
+#t-gastos .gastos-rebuild-lancados-table th:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-section-table tbody tr,
+#t-gastos .gastos-rebuild-lancar-table tbody tr,
+#t-gastos .gastos-rebuild-lancados-table tbody tr,
+#t-gastos .gastos-section-table .gasto-lanc-row,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-row {
+    display: table-row !important;
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-section-table td,
+#t-gastos .gastos-rebuild-lancar-table td,
+#t-gastos .gastos-rebuild-lancados-table td {
+    display: table-cell !important;
+    background: #fff !important;
+    padding: 13px 10px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    border-bottom: 1px solid #ddd !important;
+    border-left: 1px solid rgba(29,40,20,.06) !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .9rem !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-section-table td:first-child,
+#t-gastos .gastos-rebuild-lancar-table td:first-child,
+#t-gastos .gastos-rebuild-lancados-table td:first-child {
+    border-left: none !important;
+}
+
+#t-gastos .gastos-section-table tbody tr:hover td,
+#t-gastos .gastos-rebuild-lancar-table tbody tr:hover td,
+#t-gastos .gastos-rebuild-lancados-table tbody tr:hover td {
+    background: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-section-table input,
+#t-gastos .gastos-section-table select,
+#t-gastos .gastos-rebuild-lancar-table input,
+#t-gastos .gastos-rebuild-lancar-table select,
+#t-gastos .gastos-rebuild-lancados-table input,
+#t-gastos .gastos-rebuild-lancados-table select {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 30px !important;
+    padding: 4px 2px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: .9rem !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+#t-gastos .gastos-section-table input:focus,
+#t-gastos .gastos-section-table select:focus,
+#t-gastos .gastos-rebuild-lancar-table input:focus,
+#t-gastos .gastos-rebuild-lancar-table select:focus,
+#t-gastos .gastos-rebuild-lancados-table input:focus,
+#t-gastos .gastos-rebuild-lancados-table select:focus {
+    background: rgba(224,159,65,.08) !important;
+    box-shadow: inset 0 -2px 0 var(--favu-rust) !important;
+}
+
+#t-gastos .gastos-section-table .gasto-lanc-total,
+#t-gastos .gastos-section-table .gasto-list-total,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-total,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-total {
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+
+/* === GASTOS 2026-06-21: sem coluna Total no ano + total de unidades no item === */
+#t-gastos .gastos-rebuild-total-th,
+#t-gastos .gastos-rebuild-total-cell {
+    display: none !important;
+}
+
+#t-gastos .gastos-rebuild-item-total-line {
+    display: block !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.88rem !important;
+    font-weight: normal !important;
+    line-height: 1.35 !important;
+    margin-top: 2px !important;
+}
+
+#t-gastos .gastos-rebuild-item-units-line {
+    display: block !important;
+    color: #777 !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.82rem !important;
+    font-weight: normal !important;
+    line-height: 1.35 !important;
+}
+
+#t-gastos .gastos-rebuild-table {
+    min-width: 1220px !important;
+}
+
+
+/* === GASTOS 2026-06-21: Lançar itens em tabela real igual itens lançados === */
+#t-gastos .gastos-rebuild-lancar-table,
+#t-gastos .gastos-rebuild-lancados-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+#t-gastos .gastos-rebuild-lancar-table thead,
+#t-gastos .gastos-rebuild-lancados-table thead {
+    display: table-header-group !important;
+}
+#t-gastos .gastos-rebuild-lancar-table tbody.gastos-lancamento-lista,
+#t-gastos .gastos-rebuild-lancados-table tbody {
+    display: table-row-group !important;
+}
+#t-gastos .gastos-rebuild-lancar-table tbody.gastos-lancamento-lista tr.gasto-lanc-row,
+#t-gastos .gastos-rebuild-lancados-table tbody tr {
+    display: table-row !important;
+}
+#t-gastos .gastos-rebuild-lancar-table tbody.gastos-lancamento-lista tr.gasto-lanc-row td,
+#t-gastos .gastos-rebuild-lancados-table tbody tr td {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    padding: 14px 12px !important;
+    border-right: 1px solid #e3dfd7 !important;
+    border-bottom: 1px solid #e3dfd7 !important;
+    background: #f6f6f6 !important;
+}
+#t-gastos .gastos-rebuild-lancar-table th,
+#t-gastos .gastos-rebuild-lancar-table td,
+#t-gastos .gastos-rebuild-lancados-table th,
+#t-gastos .gastos-rebuild-lancados-table td {
+    width: auto !important;
+}
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(1),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(1),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(1),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(1) { width: 14% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(2),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(2),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(2),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(2) { width: 11% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(3),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(3),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(3),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(3) { width: 11% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(4),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(4),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(4),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(4) { width: 13% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(5),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(5),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(5),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(5) { width: 12% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(6),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(6),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(6),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(6) { width: 13% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(7),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(7),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(7),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(7) { width: 13% !important; }
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(8),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(8),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(8),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(8) { width: 13% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-id { display:none !important; }
+#t-gastos .gastos-rebuild-lancar-table .gasto-marca-select-wrap,
+#t-gastos .gastos-rebuild-lancados-table .gasto-marca-select-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-marca-select,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-marca-select,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-peso,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-qtd,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-unit,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-total,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-comprador,
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-data,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-peso,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-qtd,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-unit,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-comprador,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-data,
+#t-gastos .gastos-rebuild-lancados-table .gasto-list-total {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-marca-outros {
+    margin-top: 8px !important;
+    width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+}
+#t-gastos .gastos-rebuild-lancar-table .gastos-acoes-cell,
+#t-gastos .gastos-rebuild-lancados-table .gastos-acoes-cell {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+#t-gastos .gastos-rebuild-lancar-table .gastos-remover-linha,
+#t-gastos .gastos-rebuild-lancados-table .gastos-icon-btn {
+    margin: 0 auto !important;
+    align-self: center !important;
+    vertical-align: middle !important;
+}
+
+
+/* === GASTOS 2026-06-21: nome do item editável direto, sem botão editar === */
+#t-gastos .gastos-rebuild-row-actions .btn-action.edit {
+    display: none !important;
+}
+
+#t-gastos .gastos-item-nome-inline {
+    width: 100% !important;
+    max-width: 260px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    cursor: text !important;
+}
+
+#t-gastos .gastos-item-nome-inline:hover,
+#t-gastos .gastos-item-nome-inline:focus {
+    background: rgba(224, 159, 65, 0.08) !important;
+    box-shadow: inset 0 -2px 0 var(--favu-rust) !important;
+    border-radius: 4px !important;
+    padding: 2px 4px !important;
+}
+
+
+/* === GASTOS 2026-06-21: total anual na coluna Ações do total mensal === */
+#t-gastos .gastos-total-anual-geral {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    color: #fff !important;
+    font-family: var(--font-numbers) !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-total-anual-geral small {
+    color: rgba(255,255,255,.82) !important;
+    font-size: .72rem !important;
+    font-weight: normal !important;
+    text-transform: none !important;
+}
+
+#t-gastos .gastos-total-anual-geral strong {
+    color: #fff !important;
+    font-size: .9rem !important;
+    font-weight: 700 !important;
+}
+
+
+/* === GASTOS 2026-06-21: cadastro/exclusão de marcas + cor copiar lançamento === */
+#t-gastos .gasto-marca-delete-btn {
+    display: none !important;
+}
+
+#t-gastos .gasto-marca-delete-btn.visible {
+    display: inline-flex !important;
+}
+
+#t-gastos .gasto-marca-select-wrap {
+    grid-template-columns: minmax(0, 1fr) 28px !important;
+}
+
+#t-gastos .gasto-marca-select-wrap:not(.has-registered-brand) {
+    grid-template-columns: minmax(0, 1fr) 0 !important;
+}
+
+#t-gastos .gasto-marca-select-wrap:not(.has-registered-brand) .gasto-marca-delete-btn {
+    width: 0 !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#t-gastos .gastos-icon-btn.copy,
+#t-gastos .gastos-mini-btn.copy,
+#t-gastos .btn-action.copy,
+#t-gastos .gastos-rebuild-lanc-actions .gastos-icon-btn.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+
+
+/* === GASTOS 2026-06-21: marcas, copiar lançamento e cancelar Novo Item === */
+#t-gastos .gasto-marca-delete-btn {
+    display: none !important;
+}
+
+#t-gastos .gasto-marca-delete-btn.visible {
+    display: inline-flex !important;
+}
+
+#t-gastos .gasto-marca-select-wrap {
+    grid-template-columns: minmax(0, 1fr) 28px !important;
+}
+
+#t-gastos .gasto-marca-select-wrap:not(.has-registered-brand) {
+    grid-template-columns: minmax(0, 1fr) 0 !important;
+}
+
+#t-gastos .gasto-marca-select-wrap:not(.has-registered-brand) .gasto-marca-delete-btn {
+    width: 0 !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#t-gastos .gastos-icon-btn.copy,
+#t-gastos .gastos-mini-btn.copy,
+#t-gastos .btn-action.copy,
+#t-gastos .gastos-rebuild-lanc-actions .gastos-icon-btn.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+
+/* Cancelar do Novo Item de Gastos igual ao Cancelar da edição de Categoria */
+#modal-gasto-item .gasto-item-cancel-btn,
+#modal-gasto-item button[onclick="window.closeModal('modal-gasto-item', 'form-gasto-item')"] {
+    background: transparent !important;
+    border: 2px solid var(--favu-rust) !important;
+    color: var(--favu-rust) !important;
+}
+
+
+/* === GASTOS 2026-06-21: colunas dos meses com largura padrão === */
+#t-gastos .gastos-rebuild-table,
+#t-gastos .gastos-planilha-table {
+    table-layout: fixed !important;
+    min-width: 1280px !important;
+    width: 100% !important;
+}
+
+/* Item */
+#t-gastos .gastos-rebuild-table th:nth-child(1),
+#t-gastos .gastos-rebuild-table td:nth-child(1),
+#t-gastos .gastos-planilha-table th:nth-child(1),
+#t-gastos .gastos-planilha-table td:nth-child(1) {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+}
+
+/* Meses: Jan a Dez */
+#t-gastos .gastos-rebuild-table th:nth-child(n+2):nth-child(-n+13),
+#t-gastos .gastos-rebuild-table td:nth-child(n+2):nth-child(-n+13),
+#t-gastos .gastos-planilha-table th:nth-child(n+2):nth-child(-n+13),
+#t-gastos .gastos-planilha-table td:nth-child(n+2):nth-child(-n+13) {
+    width: 78px !important;
+    min-width: 78px !important;
+    max-width: 78px !important;
+    overflow: hidden !important;
+    text-align: center !important;
+}
+
+/* Ações */
+#t-gastos .gastos-rebuild-table th:nth-child(14),
+#t-gastos .gastos-rebuild-table td:nth-child(14),
+#t-gastos .gastos-planilha-table th:nth-child(14),
+#t-gastos .gastos-planilha-table td:nth-child(14) {
+    width: 115px !important;
+    min-width: 115px !important;
+    max-width: 115px !important;
+}
+
+/* O valor dentro do mês não deve aumentar a largura da coluna. */
+#t-gastos .gastos-rebuild-month-cell,
+#t-gastos .gastos-rebuild-month-cell span,
+#t-gastos .gastos-rebuild-money,
+#t-gastos .gastos-rebuild-qty {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+}
+
+#t-gastos .gastos-rebuild-money {
+    font-size: 0.82rem !important;
+}
+
+#t-gastos .gastos-rebuild-qty {
+    font-size: 0.72rem !important;
+}
+
+
+/* === GASTOS 2026-06-21: Local nos lançamentos === */
+#t-gastos .gasto-local-delete-btn {
+    display: none !important;
+}
+
+#t-gastos .gasto-local-delete-btn.visible {
+    display: inline-flex !important;
+}
+
+#t-gastos .gasto-local-select-wrap {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 28px !important;
+    gap: 5px !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+#t-gastos .gasto-local-select-wrap:not(.has-registered-local) {
+    grid-template-columns: minmax(0, 1fr) 0 !important;
+}
+
+#t-gastos .gasto-local-select-wrap:not(.has-registered-local) .gasto-local-delete-btn {
+    width: 0 !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#t-gastos .gasto-local-delete-btn {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+    border: 1px solid #E60000 !important;
+    background: transparent !important;
+    color: #E60000 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+}
+
+#t-gastos .gasto-lanc-local-outros,
+#t-gastos .gasto-list-local-outros {
+    margin-top: 6px !important;
+    border: 1px dashed rgba(224,159,65,.45) !important;
+    background: rgba(224,159,65,.04) !important;
+}
+
+/* Tabelas internas com a nova coluna Local */
+#t-gastos .gastos-rebuild-lancar-table,
+#t-gastos .gastos-rebuild-lancados-table,
+#t-gastos .gastos-section-table {
+    min-width: 1180px !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(1),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(1),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(1),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(1) { width: 13% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(2),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(2),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(2),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(2) { width: 13% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(3),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(3),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(3),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(3) { width: 10% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(4),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(4),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(4),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(4) { width: 10% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(5),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(5),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(5),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(5) { width: 12% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(6),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(6),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(6),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(6) { width: 10% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(7),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(7),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(7),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(7) { width: 11% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(8),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(8),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(8),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(8) { width: 11% !important; }
+
+#t-gastos .gastos-rebuild-lancar-table th:nth-child(9),
+#t-gastos .gastos-rebuild-lancar-table td:nth-child(9),
+#t-gastos .gastos-rebuild-lancados-table th:nth-child(9),
+#t-gastos .gastos-rebuild-lancados-table td:nth-child(9) { width: 10% !important; }
+
+#t-gastos .gasto-local-select-wrap select,
+#t-gastos .gasto-local-select-wrap input {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+
+/* === GASTOS 2026-06-21: título/cabeçalho da tabela fixo na rolagem === */
+/* Mantém a rolagem da página inteira e fixa somente o cabeçalho principal da tabela de itens. */
+#t-gastos .gastos-rebuild-table-card,
+#t-gastos .gastos-planilha-wrap,
+#t-gastos .table-responsive.gastos-rebuild-table-card,
+#t-gastos .panel-card.gastos-rebuild-table-card {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+#t-gastos .gastos-rebuild-table,
+#t-gastos .gastos-planilha-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead,
+#t-gastos .gastos-planilha-table > thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1200 !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead > tr,
+#t-gastos .gastos-planilha-table > thead > tr {
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead > tr > th,
+#t-gastos .gastos-planilha-table > thead > tr > th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1201 !important;
+    background: #fff !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    box-shadow: 0 2px 0 var(--favu-rust), 0 8px 14px rgba(255,255,255,.98) !important;
+    background-clip: padding-box !important;
+}
+
+/* Garante que as linhas dos itens passem por baixo do cabeçalho fixo. */
+#t-gastos .gastos-rebuild-table > tbody,
+#t-gastos .gastos-planilha-table > tbody,
+#t-gastos .gastos-rebuild-table > tbody > tr,
+#t-gastos .gastos-planilha-table > tbody > tr,
+#t-gastos .gastos-rebuild-table > tbody > tr > td,
+#t-gastos .gastos-planilha-table > tbody > tr > td {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* As tabelas internas de Lançar itens / Itens lançados não ficam fixas. */
+#t-gastos .gastos-rebuild-inner-table > thead,
+#t-gastos .gastos-rebuild-inner-table > thead > tr,
+#t-gastos .gastos-rebuild-inner-table > thead > tr > th,
+#t-gastos .gastos-section-table > thead,
+#t-gastos .gastos-section-table > thead > tr,
+#t-gastos .gastos-section-table > thead > tr > th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+}
+
+
+/* === GASTOS 2026-06-21: cabeçalho fixo real + linhas entre itens === */
+#gastos-fixed-header-clone {
+    position: fixed !important;
+    top: 0 !important;
+    z-index: 99999 !important;
+    display: none;
+    overflow: hidden !important;
+    background: #fff !important;
+    box-shadow: 0 2px 0 var(--favu-rust), 0 8px 18px rgba(0,0,0,.08) !important;
+    pointer-events: none !important;
+}
+
+#gastos-fixed-header-clone table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    table-layout: fixed !important;
+    background: #fff !important;
+    margin: 0 !important;
+}
+
+#gastos-fixed-header-clone thead,
+#gastos-fixed-header-clone tr,
+#gastos-fixed-header-clone th {
+    background: #fff !important;
+}
+
+#gastos-fixed-header-clone th {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    border-left: 1px solid rgba(224, 159, 65, .45) !important;
+    padding: 12px 10px !important;
+    white-space: nowrap !important;
+}
+
+#gastos-fixed-header-clone th:first-child {
+    border-left: 0 !important;
+}
+
+/* Linhas visíveis entre os itens da tabela principal */
+#t-gastos .gastos-rebuild-table > tbody > tr.gastos-rebuild-row > td,
+#t-gastos .gastos-planilha-table > tbody > tr.gastos-rebuild-row > td {
+    border-bottom: 1px solid rgba(29, 40, 20, 0.16) !important;
+}
+
+#t-gastos .gastos-rebuild-table > tbody > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td,
+#t-gastos .gastos-planilha-table > tbody > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td {
+    border-top: 1px solid rgba(224, 159, 65, 0.18) !important;
+}
+
+#t-gastos .gastos-rebuild-table > tbody > tr.gastos-rebuild-drawer-row > td,
+#t-gastos .gastos-planilha-table > tbody > tr.gastos-rebuild-drawer-row > td {
+    border-bottom: 1px solid rgba(29, 40, 20, 0.16) !important;
+}
+
+
+/* === GASTOS 2026-06-21: rolar apenas os itens, mantendo títulos fixos === */
+/* Desativa o clone fixo anterior. Agora a própria área dos itens rola internamente. */
+#gastos-fixed-header-clone {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* A página não cria rolagem para a lista inteira; somente o bloco da tabela rola. */
+#t-gastos .gastos-rebuild-table-card,
+#t-gastos .gastos-planilha-wrap,
+#t-gastos .table-responsive.gastos-rebuild-table-card,
+#t-gastos .panel-card.gastos-rebuild-table-card {
+    height: calc(100vh - 300px) !important;
+    max-height: calc(100vh - 300px) !important;
+    min-height: 360px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    background: #fff !important;
+    position: relative !important;
+    overscroll-behavior: contain !important;
+}
+
+/* Cabeçalho/títulos fixos dentro da rolagem dos itens. */
+#t-gastos .gastos-rebuild-table,
+#t-gastos .gastos-planilha-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    table-layout: fixed !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead,
+#t-gastos .gastos-planilha-table > thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 80 !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead > tr,
+#t-gastos .gastos-planilha-table > thead > tr {
+    background: #fff !important;
+}
+
+#t-gastos .gastos-rebuild-table > thead > tr > th,
+#t-gastos .gastos-planilha-table > thead > tr > th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 81 !important;
+    background: #fff !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    box-shadow: 0 2px 0 var(--favu-rust), 0 8px 14px rgba(255,255,255,.98) !important;
+    background-clip: padding-box !important;
+}
+
+/* Linhas entre itens. */
+#t-gastos .gastos-rebuild-table > tbody > tr.gastos-rebuild-row > td,
+#t-gastos .gastos-planilha-table > tbody > tr.gastos-rebuild-row > td {
+    border-bottom: 1px solid rgba(29, 40, 20, 0.16) !important;
+}
+
+#t-gastos .gastos-rebuild-table > tbody > tr.gastos-rebuild-drawer-row > td,
+#t-gastos .gastos-planilha-table > tbody > tr.gastos-rebuild-drawer-row > td {
+    border-bottom: 1px solid rgba(29, 40, 20, 0.16) !important;
+}
+
+/* As tabelas internas não prendem cabeçalho. */
+#t-gastos .gastos-rebuild-inner-table > thead,
+#t-gastos .gastos-rebuild-inner-table > thead > tr,
+#t-gastos .gastos-rebuild-inner-table > thead > tr > th,
+#t-gastos .gastos-section-table > thead,
+#t-gastos .gastos-section-table > thead > tr,
+#t-gastos .gastos-section-table > thead > tr > th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+}
+
+@media (max-height: 760px) {
+    #t-gastos .gastos-rebuild-table-card,
+    #t-gastos .gastos-planilha-wrap,
+    #t-gastos .table-responsive.gastos-rebuild-table-card,
+    #t-gastos .panel-card.gastos-rebuild-table-card {
+        height: calc(100vh - 245px) !important;
+        max-height: calc(100vh - 245px) !important;
+        min-height: 300px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #t-gastos .gastos-rebuild-table-card,
+    #t-gastos .gastos-planilha-wrap,
+    #t-gastos .table-responsive.gastos-rebuild-table-card,
+    #t-gastos .panel-card.gastos-rebuild-table-card {
+        height: calc(100vh - 260px) !important;
+        max-height: calc(100vh - 260px) !important;
+        min-height: 320px !important;
+    }
+}
+
+
+/* === GASTOS 2026-06-21: somente os itens rolam, cabeçalho fora da rolagem === */
+/* O cabeçalho Item/Jan/Fev/... fica fora da área rolável para nenhum item passar por trás dele. */
+#gastos-fixed-header-clone {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#t-gastos .gastos-rebuild-table-card,
+#t-gastos .gastos-planilha-wrap,
+#t-gastos .table-responsive.gastos-rebuild-table-card,
+#t-gastos .panel-card.gastos-rebuild-table-card {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: #fff !important;
+    position: relative !important;
+}
+
+/* Transforma a tabela principal em cabeçalho fixo + corpo rolável. */
+#t-gastos table.gastos-rebuild-table,
+#t-gastos table.gastos-planilha-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 1280px !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #fff !important;
+}
+
+#t-gastos table.gastos-rebuild-table > thead,
+#t-gastos table.gastos-planilha-table > thead {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    position: relative !important;
+    top: auto !important;
+    z-index: 50 !important;
+    background: #fff !important;
+}
+
+#t-gastos table.gastos-rebuild-table > thead > tr,
+#t-gastos table.gastos-planilha-table > thead > tr {
+    display: table-row !important;
+    background: #fff !important;
+}
+
+#t-gastos table.gastos-rebuild-table > thead > tr > th,
+#t-gastos table.gastos-planilha-table > thead > tr > th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    background: #fff !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    box-shadow: 0 2px 0 var(--favu-rust) !important;
+    background-clip: padding-box !important;
+}
+
+#t-gastos table.gastos-rebuild-table > tbody,
+#t-gastos table.gastos-planilha-table > tbody,
+#t-gastos #gastos-planilha-body {
+    display: block !important;
+    width: 100% !important;
+    max-height: calc(100vh - 360px) !important;
+    min-height: 320px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #fff !important;
+    overscroll-behavior: contain !important;
+}
+
+#t-gastos table.gastos-rebuild-table > tbody > tr,
+#t-gastos table.gastos-planilha-table > tbody > tr,
+#t-gastos #gastos-planilha-body > tr {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    background: #fff !important;
+}
+
+/* Mantém a área expandida ocupando a largura completa. */
+#t-gastos table.gastos-rebuild-table > tbody > tr.gastos-rebuild-drawer-row,
+#t-gastos table.gastos-planilha-table > tbody > tr.gastos-rebuild-drawer-row,
+#t-gastos #gastos-planilha-body > tr.gastos-rebuild-drawer-row {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+#t-gastos table.gastos-rebuild-table > tbody > tr.gastos-rebuild-drawer-row > td,
+#t-gastos table.gastos-planilha-table > tbody > tr.gastos-rebuild-drawer-row > td,
+#t-gastos #gastos-planilha-body > tr.gastos-rebuild-drawer-row > td {
+    display: table-cell !important;
+    width: 100% !important;
+}
+
+/* Linhas entre itens. */
+#t-gastos table.gastos-rebuild-table > tbody > tr.gastos-rebuild-row > td,
+#t-gastos table.gastos-planilha-table > tbody > tr.gastos-rebuild-row > td,
+#t-gastos #gastos-planilha-body > tr.gastos-rebuild-row > td {
+    border-bottom: 1px solid rgba(29, 40, 20, 0.16) !important;
+}
+
+#t-gastos table.gastos-rebuild-table > tbody > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td,
+#t-gastos table.gastos-planilha-table > tbody > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td,
+#t-gastos #gastos-planilha-body > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td {
+    border-top: 1px solid rgba(224, 159, 65, 0.18) !important;
+}
+
+/* Larguras padronizadas para alinhar cabeçalho e corpo. */
+#t-gastos table.gastos-rebuild-table > thead > tr > th:nth-child(1),
+#t-gastos table.gastos-rebuild-table > tbody > tr > td:nth-child(1),
+#t-gastos table.gastos-planilha-table > thead > tr > th:nth-child(1),
+#t-gastos table.gastos-planilha-table > tbody > tr > td:nth-child(1) {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+}
+
+#t-gastos table.gastos-rebuild-table > thead > tr > th:nth-child(n+2):nth-child(-n+13),
+#t-gastos table.gastos-rebuild-table > tbody > tr > td:nth-child(n+2):nth-child(-n+13),
+#t-gastos table.gastos-planilha-table > thead > tr > th:nth-child(n+2):nth-child(-n+13),
+#t-gastos table.gastos-planilha-table > tbody > tr > td:nth-child(n+2):nth-child(-n+13) {
+    width: 78px !important;
+    min-width: 78px !important;
+    max-width: 78px !important;
+    text-align: center !important;
+    overflow: hidden !important;
+}
+
+#t-gastos table.gastos-rebuild-table > thead > tr > th:nth-child(14),
+#t-gastos table.gastos-rebuild-table > tbody > tr > td:nth-child(14),
+#t-gastos table.gastos-planilha-table > thead > tr > th:nth-child(14),
+#t-gastos table.gastos-planilha-table > tbody > tr > td:nth-child(14) {
+    width: 115px !important;
+    min-width: 115px !important;
+    max-width: 115px !important;
+}
+
+/* Não aplica o scroll de corpo nas tabelas internas. */
+#t-gastos table.gastos-rebuild-inner-table,
+#t-gastos table.gastos-section-table,
+#t-gastos table.gastos-rebuild-lancar-table,
+#t-gastos table.gastos-rebuild-lancados-table {
+    display: table !important;
+}
+
+#t-gastos table.gastos-rebuild-inner-table > thead,
+#t-gastos table.gastos-section-table > thead,
+#t-gastos table.gastos-rebuild-lancar-table > thead,
+#t-gastos table.gastos-rebuild-lancados-table > thead {
+    display: table-header-group !important;
+    width: auto !important;
+}
+
+#t-gastos table.gastos-rebuild-inner-table > tbody,
+#t-gastos table.gastos-section-table > tbody,
+#t-gastos table.gastos-rebuild-lancar-table > tbody,
+#t-gastos table.gastos-rebuild-lancados-table > tbody {
+    display: table-row-group !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+
+@media (max-height: 760px) {
+    #t-gastos table.gastos-rebuild-table > tbody,
+    #t-gastos table.gastos-planilha-table > tbody,
+    #t-gastos #gastos-planilha-body {
+        max-height: calc(100vh - 300px) !important;
+        min-height: 280px !important;
+    }
+}
+
+
+/* === GASTOS 2026-06-21: campo nova marca/local somente quando Outros === */
+#t-gastos .gasto-lanc-marca-outros[style*="display:none"],
+#t-gastos .gasto-lanc-marca-outros[style*="display: none"],
+#t-gastos .gasto-list-marca-outros[style*="display:none"],
+#t-gastos .gasto-list-marca-outros[style*="display: none"],
+#t-gastos .gasto-lanc-local-outros[style*="display:none"],
+#t-gastos .gasto-lanc-local-outros[style*="display: none"],
+#t-gastos .gasto-list-local-outros[style*="display:none"],
+#t-gastos .gasto-list-local-outros[style*="display: none"] {
+    display: none !important;
+}
+
+
+/* === GASTOS 2026-06-21: Nova marca só aparece ao selecionar Outros === */
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-marca-outros,
+#t-gastos .gastos-lancamento-lista .gasto-lanc-marca-outros {
+    display: none !important;
+}
+
+#t-gastos .gastos-rebuild-lancar-table .gasto-lanc-marca-outros.show-outros,
+#t-gastos .gastos-lancamento-lista .gasto-lanc-marca-outros.show-outros {
+    display: block !important;
+}
+
 </style>
 
 <style>
@@ -2495,6 +5106,383 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .categoria-drag-hint { display:none; }
 }
 
+</style>
+
+
+<style>
+/* === GASTOS 2026-06-21: equalização final com Categorias === */
+#t-gastos.tab-pane {
+    background: var(--favu-card) !important;
+    padding: 25px !important;
+    border-radius: 24px !important;
+    box-shadow: var(--shadow-soft) !important;
+    margin-top: 15px !important;
+}
+
+#t-gastos .gastos-top-action {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+#t-gastos .gastos-novo-item-btn {
+    height: auto !important;
+    min-width: 190px !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-planilha-toolbar {
+    background: #fff !important;
+    border: 1px solid #eee !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-soft) !important;
+    padding: 15px 20px !important;
+    margin-bottom: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 15px !important;
+    flex-wrap: wrap !important;
+}
+
+#t-gastos .gastos-toolbar-title {
+    margin: 0 !important;
+    color: var(--favu-green) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.8rem !important;
+    font-weight: normal !important;
+    line-height: 1.1 !important;
+    text-transform: uppercase !important;
+    letter-spacing: normal !important;
+}
+
+#t-gastos .gastos-planilha-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin-left: auto !important;
+    flex: 1 1 620px !important;
+    max-width: none !important;
+    width: auto !important;
+    flex-wrap: nowrap !important;
+}
+
+#t-gastos #gastos-busca {
+    flex: 1 1 340px !important;
+    min-width: 240px !important;
+}
+
+#t-gastos #gastos-filtro-item,
+#t-gastos #gastos-ano,
+#t-gastos #gastos-busca {
+    height: 52px !important;
+    border: 2px solid var(--favu-rust) !important;
+    border-radius: 30px !important;
+    background: #fff !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.95rem !important;
+    font-weight: normal !important;
+    padding: 10px 16px !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#t-gastos #gastos-filtro-item,
+#t-gastos #gastos-ano {
+    flex: 0 0 175px !important;
+    min-width: 175px !important;
+    font-weight: 600 !important;
+}
+
+#t-gastos .gastos-limpar-btn {
+    height: 52px !important;
+    min-width: 165px !important;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    border: 2px solid #ddd !important;
+    background: transparent !important;
+    color: var(--favu-moss) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+}
+
+/* Wrapper da tabela igual ao card da tabela de Categorias */
+#t-gastos .gastos-planilha-wrap.panel-card {
+    background: #fff !important;
+    border-radius: 15px !important;
+    box-shadow: var(--shadow-soft) !important;
+    border: 1px solid #eee !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    max-height: calc(100vh - 330px) !important;
+    overflow: auto !important;
+}
+
+/* Tabela de Gastos com a mesma linguagem da favu-table/Categorias */
+#t-gastos .gastos-planilha-table,
+#t-gastos table.gastos-planilha-table.favu-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    text-align: left !important;
+    background: #fff !important;
+}
+
+#t-gastos .gastos-planilha-table thead th {
+    background: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-rust) !important;
+    font-size: 1.1rem !important;
+    font-weight: normal !important;
+    line-height: 1.2 !important;
+    padding: 12px 10px !important;
+    border-bottom: 2px solid var(--favu-rust) !important;
+    border-left: 1px solid rgba(29, 40, 20, 0.05) !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-planilha-table thead th:first-child {
+    border-left: none !important;
+    text-align: center !important;
+}
+
+#t-gastos .gastos-planilha-table tbody tr {
+    background: #fff !important;
+    border-bottom: 1px solid #ddd !important;
+    transition: 0.2s ease !important;
+}
+
+#t-gastos .gastos-planilha-table tbody tr:hover {
+    background-color: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-planilha-table tbody tr:hover td {
+    background-color: rgba(224, 159, 65, 0.05) !important;
+}
+
+#t-gastos .gastos-planilha-table tbody td {
+    background: #fff !important;
+    padding: 15px 10px !important;
+    border-left: 1px solid rgba(29, 40, 20, 0.06) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    color: var(--favu-green) !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+}
+
+#t-gastos .gastos-planilha-table tbody td:first-child {
+    border-left: none !important;
+    text-align: left !important;
+}
+
+/* primeira coluna sem sombra/faixa diferente, para se parecer com Categorias */
+#t-gastos .gastos-sticky-col {
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+#t-gastos .gastos-item-btn {
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 0 6px 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    text-align: left !important;
+}
+
+#t-gastos .gastos-item-btn span {
+    color: var(--favu-rust) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+}
+
+#t-gastos .gastos-item-btn i {
+    color: var(--favu-rust) !important;
+    font-size: 0.78rem !important;
+}
+
+#t-gastos .gastos-item-total-geral {
+    display: block !important;
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-size: 0.9rem !important;
+    font-weight: normal !important;
+    margin-top: 2px !important;
+}
+
+#t-gastos .gastos-mes-total,
+#t-gastos .gastos-mes-qtd,
+#t-gastos .gastos-total-row td,
+#t-gastos .gasto-list-total {
+    color: var(--favu-green) !important;
+    font-family: var(--font-numbers) !important;
+    font-weight: normal !important;
+}
+
+#t-gastos .gastos-mes-total {
+    display: block !important;
+    font-size: 0.9rem !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-mes-qtd {
+    display: block !important;
+    color: #777 !important;
+    font-size: 0.8rem !important;
+    line-height: 1.25 !important;
+}
+
+#t-gastos .gastos-total-row td {
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    border-top: 2px solid var(--favu-rust) !important;
+    border-left-color: rgba(255,255,255,.08) !important;
+    font-weight: 700 !important;
+}
+
+#t-gastos .gastos-total-row td small {
+    color: #fff !important;
+    font-family: var(--font-numbers) !important;
+}
+
+/* Botões de ação em Gastos no mesmo formato/tamanho/cores das Categorias */
+#t-gastos .gastos-item-actions,
+#t-gastos .gastos-lanc-acoes {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    margin-top: 8px !important;
+}
+
+#t-gastos .gastos-mini-btn,
+#t-gastos .gastos-icon-btn,
+#t-gastos .gastos-categoria-excluir {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    overflow: hidden !important;
+    text-indent: 0 !important;
+    white-space: nowrap !important;
+}
+
+#t-gastos .gastos-mini-btn.edit,
+#t-gastos .gastos-icon-btn.edit {
+    background: var(--favu-moss) !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-mini-btn.copy,
+#t-gastos .gastos-icon-btn.copy {
+    background: var(--favu-rust) !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-mini-btn.danger,
+#t-gastos .gastos-icon-btn.danger,
+#t-gastos .gastos-categoria-excluir {
+    background: #E60000 !important;
+    color: #fff !important;
+}
+
+#t-gastos .gastos-mini-btn i,
+#t-gastos .gastos-icon-btn i {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    color: inherit !important;
+}
+
+#t-gastos .gastos-mini-btn:hover,
+#t-gastos .gastos-icon-btn:hover,
+#t-gastos .gastos-categoria-excluir:hover {
+    filter: brightness(1.2) !important;
+    transform: scale(1.05) !important;
+}
+
+/* Área aberta do item */
+#t-gastos .gastos-drawer-row td {
+    padding: 16px !important;
+    background: rgba(224, 159, 65, 0.04) !important;
+}
+
+#t-gastos .gastos-drawer {
+    border: 1px dashed rgba(224, 159, 65, 0.35) !important;
+    background: rgba(224, 159, 65, 0.04) !important;
+    border-radius: 12px !important;
+}
+
+#t-gastos .gastos-drawer-title,
+#t-gastos .gastos-lancamentos-table th {
+    color: var(--favu-rust) !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-weight: normal !important;
+    text-transform: uppercase !important;
+}
+
+@media (max-width: 900px) {
+    #t-gastos .gastos-planilha-actions {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    #t-gastos #gastos-filtro-item,
+    #t-gastos #gastos-ano,
+    #t-gastos #gastos-busca,
+    #t-gastos .gastos-limpar-btn,
+    #t-gastos .gastos-novo-item-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+}
 </style>
 
 </head>
@@ -2724,7 +5712,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             </div>
 
             <div id="t-cats" class="tab-pane">
-                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-cat')"><i class="fas fa-plus"></i> Novo Item</button></div>
+                <div class="buttons-area"><button class="btn btn-primary" onclick="window.openModal('modal-add-cat')"><i class="fas fa-plus"></i> Nova Categoria</button></div>
                 <div class="panel-card cat-list-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 20px;">
                     <h2 class="font-display" style="margin: 0; font-size: 1.8rem; color: var(--favu-green);">Categorias Cadastradas</h2>
                     <div class="search-filter-actions">
@@ -2971,30 +5959,48 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
             </div>
 
-
-
-            <div id="t-gastos" class="tab-pane">
-                <div class="gastos-top-action">
-                    <button class="btn btn-primary gastos-novo-item-btn" onclick="window.adicionarItemGasto()"><i class="fas fa-plus"></i> Novo Item</button>
+            <div id="t-gastos" class="tab-pane gastos-rebuild-pane">
+                <div class="buttons-area gastos-rebuild-buttons">
+                    <button class="btn btn-primary gastos-rebuild-new-btn" onclick="window.adicionarItemGasto()"><i class="fas fa-plus"></i> Novo Item</button>
                 </div>
 
-                <div class="panel-card gastos-planilha-toolbar">
-                    <h2 class="font-display gastos-toolbar-title">Gastos</h2>
-                    <div class="gastos-planilha-actions">
-                        <select id="gastos-filtro-item" onchange="window.renderGastosPlanilha()"><option value="">Todos os itens</option></select>
-                        <select id="gastos-ano" onchange="window.renderGastosPlanilha()"></select>
-                        <input type="text" id="gastos-busca" placeholder="Buscar item..." oninput="window.renderGastosPlanilha()">
-                        <button class="btn btn-outline gastos-limpar-btn" onclick="window.limparFiltrosGastos()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                <div class="panel-card gastos-rebuild-header">
+                    <h2 class="font-display gastos-rebuild-title">Gastos Cadastrados</h2>
+                    <div class="search-filter-actions gastos-rebuild-actions">
+                        <select id="gastos-filtro-item" class="search-bar gastos-rebuild-filter" onchange="window.fecharGastosItem(); window.renderGastosPlanilha()"><option value="">Todos os itens</option></select>
+                        <select id="gastos-ano" class="search-bar gastos-rebuild-filter gastos-rebuild-year" onchange="window.fecharGastosItem(); window.renderGastosPlanilha()"></select>
+                        <button type="button" class="btn btn-outline btn-clear-filter gastos-rebuild-clear-btn" onclick="window.limparFiltrosGastos()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
                     </div>
                 </div>
 
-                <div class="gastos-planilha-wrap">
-                    <table class="gastos-planilha-table">
-                        <thead><tr><th class="gastos-sticky-col">Itens</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th></tr></thead>
-                        <tbody id="gastos-planilha-body"><tr><td colspan="13" class="gastos-empty">Carregando gastos...</td></tr></tbody>
+                <div class="panel-card table-responsive gastos-rebuild-table-card">
+                    <table class="favu-table gastos-rebuild-table">
+                        <thead>
+                            <tr>
+                                <th class="gastos-rebuild-item-th">Item</th>
+                                <th>Jan</th>
+                                <th>Fev</th>
+                                <th>Mar</th>
+                                <th>Abr</th>
+                                <th>Mai</th>
+                                <th>Jun</th>
+                                <th>Jul</th>
+                                <th>Ago</th>
+                                <th>Set</th>
+                                <th>Out</th>
+                                <th>Nov</th>
+                                <th>Dez</th>
+                                <th class="gastos-rebuild-actions-th">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gastos-planilha-body">
+                            <tr><td colspan="15" class="gastos-empty">Carregando gastos...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
+
+
 
             <div id="t-horarios" class="tab-pane">
                 <div class="buttons-area">
@@ -8065,7 +11071,30 @@ input[type="date"]::-webkit-date-and-time-value {
 
 </style>
 
-    <script type="module" src="./admin.js?v=20260621-upload-sem-nome-sem-preview-vazio-1"></script>
+    <script type="module" src="./admin.js?v=20260621-gastos-nova-marca-so-outros-1"></script>
+
+
+    <div id="modal-gasto-item" class="modal">
+        <div class="modal-content" style="border: 2px solid var(--favu-rust); max-width: 520px;">
+            <div class="modal-header">
+                <h3 id="modal-gasto-item-title" style="color: var(--favu-rust);">Novo Item</h3>
+                <button class="close-modal" onclick="window.closeModal('modal-gasto-item', 'form-gasto-item')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-gasto-item" onsubmit="window.salvarItemGastoModal(event)">
+                    <input type="hidden" id="gasto-item-id">
+                    <div>
+                        <label>Nome do item</label>
+                        <input type="text" id="gasto-item-nome" required placeholder="Ex: Margarina">
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:25px;">
+                        <button type="button" class="btn btn-outline gasto-item-cancel-btn" onclick="window.closeModal('modal-gasto-item', 'form-gasto-item')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 </body>
 

@@ -6637,12 +6637,12 @@ window.renderGastosPlanilha = function() {
         html += `<td class="gastos-sticky-col">
             <button class="gastos-item-btn" onclick="window.abrirGastosItem('${item.id}', gastosMesAberto || (new Date().getMonth()+1))"><span>${escapeHTMLGasto(item.nome)}</span><i class="fas ${gastosItemAberto === item.id ? 'fa-chevron-up' : 'fa-chevron-down'}"></i></button>
             <span class="gastos-item-total-geral">Total no ano: ${formatarMoedaGasto(totalGeral)}</span>
-            <div class="gastos-item-actions"><button class="gastos-mini-btn" onclick="window.renomearItemGasto('${item.id}')">Renomear</button><button class="gastos-mini-btn danger" onclick="window.excluirItemGasto('${item.id}')">Excluir</button></div>
+            <div class="gastos-item-actions"><button class="gastos-mini-btn edit" title="Editar item" onclick="window.renomearItemGasto('${item.id}')"><i class="fas fa-pencil-alt"></i></button><button class="gastos-mini-btn danger" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button></div>
         </td>`;
         for (let mes = 1; mes <= 12; mes++) {
             const r = resumo[mes];
             totaisMes[mes] += r.total;
-            html += `<td class="gastos-mes-cell" onclick="window.abrirGastosItem('${item.id}', ${mes})"><span class="gastos-mes-total">${r.total ? formatarMoedaGasto(r.total) : '-'}</span><span class="gastos-mes-qtd">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '&nbsp;'}</span></td>`;
+            html += `<td class="gastos-mes-cell" onclick="window.abrirGastosItem('${item.id}', ${mes})"><span class="gastos-mes-total">${formatarMoedaGasto(r.total || 0)}</span><span class="gastos-mes-qtd">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span></td>`;
         }
         html += `</tr>`;
 
@@ -6653,7 +6653,7 @@ window.renderGastosPlanilha = function() {
 
     const totalAno = totaisMes.reduce((acc, v) => acc + v, 0);
     html += `<tr class="gastos-total-row"><td class="gastos-sticky-col">TOTAL DESPESAS<br><small>${formatarMoedaGasto(totalAno)}</small></td>`;
-    for (let mes = 1; mes <= 12; mes++) html += `<td>${totaisMes[mes] ? formatarMoedaGasto(totaisMes[mes]) : '-'}</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td>${formatarMoedaGasto(totaisMes[mes] || 0)}</td>`;
     html += `</tr>`;
 
     body.innerHTML = html;
@@ -6675,7 +6675,7 @@ window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
             <td><strong style="color:#c0392b;">${formatarMoedaGasto(l.valorTotal)}</strong></td>
             <td>${escapeHTMLGasto(l.comprador || '-')}</td>
             <td>${formatarDataInputParaBR(l.dataCompra || '') || '-'}</td>
-            <td style="white-space:nowrap;"><button class="gastos-mini-btn" onclick="window.preencherLancamentoGasto('${l.id}')">Editar</button> <button class="gastos-mini-btn danger" onclick="window.excluirLancamentoGasto('${l.id}')">Excluir</button></td>
+            <td style="white-space:nowrap;"><div class="gastos-lanc-acoes"><button class="gastos-mini-btn edit" title="Editar lançamento" onclick="window.preencherLancamentoGasto('${l.id}')"><i class="fas fa-pencil-alt"></i></button><button class="gastos-mini-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button></div></td>
         </tr>`).join('') : `<tr><td colspan="9" style="text-align:center; color:#777; padding:18px !important;">Nenhum lançamento neste mês.</td></tr>`;
 
     return `<tr class="gastos-drawer-row"><td colspan="13"><div class="gastos-drawer" id="gasto-drawer-${item.id}">
@@ -6685,7 +6685,7 @@ window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
             <input type="hidden" class="gasto-lanc-id" value="">
             <div><label>Nome do item</label><input class="gasto-lanc-nome" type="text" value="${escapeHTMLGasto(item.nome)}"></div>
             <div><label>Marca</label><input class="gasto-lanc-marca" type="text" placeholder="Ex: Deline"></div>
-            <div><label>Peso/líquido</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 500g"></div>
+            <div><label>Kg/L</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 1kg ou 1L"></div>
             <div><label>Quantidade</label><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="1" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
             <div><label>Valor unidade</label><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
             <div><label>Valor total</label><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00"></div>
@@ -6693,7 +6693,7 @@ window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
             <div><label>Data</label><input class="gasto-lanc-data" type="date" value="${dataPadrao}"></div>
             <button class="btn btn-primary" type="button" onclick="window.salvarLancamentoGasto('${item.id}')">Salvar</button>
         </div>
-        <table class="gastos-lancamentos-table"><thead><tr><th>Nome</th><th>Marca</th><th>Peso</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead><tbody>${linhas}</tbody></table>
+        <table class="gastos-lancamentos-table"><thead><tr><th>Nome</th><th>Marca</th><th>Kg/L</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead><tbody>${linhas}</tbody></table>
     </div></td></tr>`;
 };
 
@@ -6958,7 +6958,7 @@ window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
             </div>
             <input class="gasto-lanc-marca-outros" type="text" placeholder="Nova marca" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" style="${usarOutros ? '' : 'display:none;'}">
         </div>
-        <div><label>Peso/líquido</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 500g" value="${escapeHTMLGasto(dados.peso || '')}"></div>
+        <div><label>Kg/L</label><input class="gasto-lanc-peso" type="text" placeholder="Ex: 1kg ou 1L" value="${escapeHTMLGasto(dados.peso || '')}"></div>
         <div><label>Quantidade</label><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(qtd)}" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
         <div><label>Valor unidade</label><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" value="${escapeHTMLGasto(unit)}" oninput="window.atualizarTotalLancamentoGasto(this)"></div>
         <div><label>Valor total</label><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00" value="${Number(total || 0).toFixed(2)}" readonly></div>
@@ -7110,7 +7110,7 @@ window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
 
     const tabelaLancamentos = lista.length ? `
         <table class="gastos-lancamentos-table">
-            <thead><tr><th>Marca</th><th>Peso</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead>
+            <thead><tr><th>Marca</th><th>Kg/L</th><th>Quantidade</th><th>Valor da unidade</th><th>Total</th><th>Comprador</th><th>Data</th><th>Ações</th></tr></thead>
             <tbody>${lista.map(l => `
                 <tr>
                     <td>${window.renderCampoMarcaListaGasto(l)}</td>
@@ -7575,20 +7575,36 @@ window.calcularDivisaoFechamento = function() {
 };
 
 window.enviarFechamentoWA = function(destinatario) {
+    const normalizarDestinoWA = (valor) => String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+    const destinoNormalizado = normalizarDestinoWA(destinatario);
+
     const numerosFechamentoWA = {
-        Arabela: '558199502865',
-        Flavio: '558199591775',
-        'Flávio': '558199591775'
+        arabela: '558199502865',
+        ara: '558199502865',
+        flavio: '558199591775',
+        fla: '558199591775',
+        flávio: '558199591775'
     };
-    const numeroDestinoWA = numerosFechamentoWA[destinatario] || numerosFechamentoWA[String(destinatario || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')] || '';
+
+    const numeroDestinoWA = numerosFechamentoWA[destinoNormalizado];
+
+    if (!numeroDestinoWA) {
+        customAlert('Não foi possível identificar o número do destinatário do faturamento.', 'Atenção');
+        return;
+    }
 
     // Puxa o período e remove os parênteses limpinho
     const periodo = document.getElementById('fechamento-periodo').textContent.replace(/[()]/g, '').trim();
-    
+
     const totalVendido = window.totalFechamentoVendasAtual ?? (window.totalFechamentoAtual || 0);
     const totalTaxas = window.totalTaxasPagamentoAtual || 0;
     const totalFaturamento = window.totalFechamentoAtual || 0;
-    
+
     const gCaixa = parseFloat(document.getElementById('gasto-manual-caixa').value || 0);
     const gAra = parseFloat(document.getElementById('gasto-manual-ara').value || 0);
     const gFla = parseFloat(document.getElementById('gasto-manual-fla').value || 0);
@@ -7616,26 +7632,2262 @@ window.enviarFechamentoWA = function(destinatario) {
 
     let txt = `*FAVU - Fechamento Financeiro*\n`;
     txt += `*Período:* ${dados.periodo}\n\n`;
-    
+
     txt += `*Total de Vendas:* ${dados.totalVendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Total Taxas:* - ${dados.totalTaxas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Faturamento:* ${dados.totalFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Total de Gastos:* - ${dados.totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
-    // Adicionado o espaço extra (\n\n) abaixo do Lucro
     txt += `*Lucro:* ${dados.lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
     txt += `*-------------------------------------*\n\n`;
 
     txt += `*Divisão Detalhada:*\n\n`;
     txt += `• Caixa: *${dados.finalCaixa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n\n`;
-    
+
     txt += `• Arabela: = *${dados.finalAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n`;
     txt += `   ⤷ Reembolso = ${dados.gAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `   ⤷ Lucro = ${dados.lucroAra.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
-    
+
     txt += `• Flávio: = *${dados.finalFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}*\n`;
     txt += `   ⤷ Reembolso = ${dados.gFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `   ⤷ Lucro = ${dados.lucroFla.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
 
-    const fone = (destinatario === 'Arabela') ? '5581992147363' : '5581996914595';
     window.open(`https://api.whatsapp.com/send?phone=${numeroDestinoWA}&text=${encodeURIComponent(txt)}`, '_blank');
 };
+
+
+// === GASTOS 2026-06-21: aba recriada no padrão visual das demais abas ===
+window.gastosMesesPadrao = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+window.atualizarFiltroItensGastos = function(valorAtual = '') {
+    const select = document.getElementById('gastos-filtro-item');
+    if (!select) return;
+    const atual = valorAtual || select.value || '';
+    const itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    select.innerHTML = `<option value="">Todos os itens</option>` + itens.map(item => `<option value="${item.id}">${escapeHTMLGasto(item.nome || '')}</option>`).join('');
+    if (atual && itens.some(item => item.id === atual)) select.value = atual;
+};
+
+window.copiarItemGasto = async function(itemId) {
+    const item = getItemGasto(itemId);
+    if (!item) return;
+
+    const nomesUsados = new Set(allGastosItens.map(i => String(i.nome || '').trim().toLowerCase()));
+    const baseNome = `${item.nome || 'Item'} (cópia)`;
+    let novoNome = baseNome;
+    let contador = 2;
+
+    while (nomesUsados.has(novoNome.trim().toLowerCase())) {
+        novoNome = `${baseNome} ${contador}`;
+        contador++;
+    }
+
+    try {
+        await addDoc(collection(db, 'gastos_itens'), {
+            nome: novoNome,
+            ordem: Date.now(),
+            createdAt: Date.now()
+        });
+        window.showToast('Item copiado!');
+    } catch (e) {
+        console.error(e);
+        window.showToast('Erro ao copiar item.', true);
+    }
+};
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const busca = normalizarBuscaGasto(document.getElementById('gastos-busca')?.value || '');
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    const meses = window.gastosMesesPadrao;
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (busca) itens = itens.filter(item => normalizarBuscaGasto(item.nome || '').includes(busca));
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="15" class="gastos-empty"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum item encontrado por aqui.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const totalGeral = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-rebuild-row" data-gasto-item-row="${item.id}">
+            <td>
+                <div class="gastos-rebuild-item-main">
+                    <strong class="gastos-rebuild-item-name">${nomeSeguro}</strong>
+                    <span class="gastos-rebuild-item-hint">Clique em um mês para lançar/editar gastos</span>
+                </div>
+            </td>
+            <td class="gastos-rebuild-total-cell">${formatarMoedaGasto(totalGeral)}</td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-rebuild-month-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-rebuild-money">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-rebuild-qty">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+
+        html += `<td>
+            <div class="action-btns-wrapper gastos-rebuild-row-actions">
+                <button class="btn-action edit" title="Editar item" onclick="window.renomearItemGasto('${item.id}')"><i class="fas fa-pencil-alt"></i></button>
+                <button class="btn-action copy" title="Copiar item" onclick="window.copiarItemGasto('${item.id}')"><i class="fas fa-copy"></i></button>
+                <button class="btn-action del" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </td></tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    const totalAno = totaisMes.reduce((acc, v) => acc + v, 0);
+    html += `<tr class="gastos-rebuild-total-row">
+        <td>TOTAL MENSAL</td>
+        <td><span>${formatarMoedaGasto(totalAno)}</span></td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    html += `<td></td></tr>`;
+
+    body.innerHTML = html;
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+    const totalMes = totalLancamentos(lista);
+    const tabs = meses.map((m, idx) => `<button type="button" class="${idx + 1 === Number(mesAtivo) ? 'active' : ''}" onclick="window.abrirGastosItem('${item.id}', ${idx + 1})">${m}</button>`).join('');
+
+    const tabelaLancamentos = lista.length ? `
+        <table class="gastos-rebuild-lanc-table">
+            <thead><tr>
+                <th>Marca</th>
+                <th>Kg/L</th>
+                <th>Quantidade</th>
+                <th>Valor unidade</th>
+                <th>Total</th>
+                <th>Comprador</th>
+                <th>Data</th>
+                <th>Ações</th>
+            </tr></thead>
+            <tbody>${lista.map(l => `
+                <tr>
+                    <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                    <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                    <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                    <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                    <td>
+                        <div class="gastos-rebuild-lanc-actions">
+                            <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                            <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>` : `<div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="15">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                    <div class="gastos-rebuild-drawer-total">Total do mês: ${formatarMoedaGasto(totalMes)}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-rebuild-month-tabs">${tabs}</div>
+
+            <div class="gastos-rebuild-add-box">
+                <div class="gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-lancamento-lista gastos-rebuild-form-list" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                    ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: ajustes finais solicitados ===
+window.getGastosMarcasOcultas = function() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem('favu_gastos_marcas_ocultas') || '[]'));
+    } catch (e) {
+        return new Set();
+    }
+};
+
+window.setGastosMarcasOcultas = function(set) {
+    try {
+        localStorage.setItem('favu_gastos_marcas_ocultas', JSON.stringify([...set]));
+    } catch (e) {}
+};
+
+window.marcasGastosDisponiveis = function() {
+    const mapa = new Map();
+    const ocultas = window.getGastosMarcasOcultas();
+
+    (window.allGastosMarcas || []).forEach(m => {
+        const nome = String(m.nome || m.marca || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    allGastosLancamentos.forEach(l => {
+        const nome = String(l.marca || l.nome || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+};
+
+window.excluirMarcaSelecionadaGasto = function(botao) {
+    const wrap = botao.closest('.gasto-marca-select-wrap');
+    const select = wrap?.querySelector('select');
+    const valor = select?.value || '';
+    if (!valor || valor === '__outros__') return window.showToast('Selecione uma marca cadastrada para excluir.', true);
+
+    customConfirm(`Excluir a marca "${valor}" da lista de opções?`, async () => {
+        const chave = window.normalizarMarcaGasto(valor);
+        const ocultas = window.getGastosMarcasOcultas();
+        ocultas.add(chave);
+        window.setGastosMarcasOcultas(ocultas);
+
+        try {
+            const marcas = (window.allGastosMarcas || []).filter(m => window.normalizarMarcaGasto(m.nome || m.marca) === chave);
+            await Promise.all(marcas.map(m => deleteDoc(doc(db, 'gastos_marcas', m.id)).catch(() => null)));
+        } catch(e) {
+            console.warn('Marca ocultada localmente, mas não foi possível apagar todos os registros:', e);
+        }
+
+        document.querySelectorAll('#t-gastos .gasto-lanc-marca-select, #t-gastos .gasto-list-marca-select').forEach(sel => {
+            const atual = sel.value;
+            sel.innerHTML = window.renderOptionsMarcaGasto(atual === valor ? '' : atual);
+            if (atual === valor) sel.value = '';
+        });
+
+        window.showToast('Marca removida da lista de opções!');
+    });
+};
+
+window.openGastoItemModal = function(itemId = '') {
+    const item = itemId ? getItemGasto(itemId) : null;
+    const idEl = document.getElementById('gasto-item-id');
+    const nomeEl = document.getElementById('gasto-item-nome');
+    const titleEl = document.getElementById('modal-gasto-item-title');
+
+    if (idEl) idEl.value = itemId || '';
+    if (nomeEl) nomeEl.value = item ? (item.nome || '') : '';
+    if (titleEl) titleEl.textContent = item ? 'Editar Item' : 'Novo Item';
+
+    window.openModal('modal-gasto-item');
+    setTimeout(() => nomeEl?.focus(), 80);
+};
+
+window.adicionarItemGasto = function() {
+    window.openGastoItemModal('');
+};
+
+window.renomearItemGasto = function(itemId) {
+    window.openGastoItemModal(itemId);
+};
+
+window.salvarItemGastoModal = async function(event) {
+    event.preventDefault();
+
+    const itemId = document.getElementById('gasto-item-id')?.value || '';
+    const nome = String(document.getElementById('gasto-item-nome')?.value || '').trim();
+
+    if (!nome) return window.showToast('Informe o nome do item.', true);
+
+    try {
+        if (itemId) {
+            await updateDoc(doc(db, 'gastos_itens', itemId), { nome, updatedAt: Date.now() });
+            const vinculados = allGastosLancamentos.filter(l => l.itemId === itemId);
+            await Promise.all(vinculados.map(l => updateDoc(doc(db, 'gastos_lancamentos', l.id), { itemNome: nome }).catch(() => null)));
+            window.showToast('Item atualizado!');
+        } else {
+            await addDoc(collection(db, 'gastos_itens'), { nome, ordem: Date.now(), createdAt: Date.now() });
+            window.showToast('Item criado!');
+        }
+
+        window.closeModal('modal-gasto-item', 'form-gasto-item');
+    } catch (e) {
+        console.error(e);
+        window.showToast('Erro ao salvar item.', true);
+    }
+};
+
+window.limparFiltrosGastos = function() {
+    const filtroItem = document.getElementById('gastos-filtro-item');
+    if (filtroItem) filtroItem.value = '';
+    const ano = document.getElementById('gastos-ano');
+    if (ano) ano.value = String(new Date().getFullYear());
+    window.fecharGastosItem();
+    window.renderGastosPlanilha();
+};
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    const meses = window.gastosMesesPadrao || ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (gastosItemAberto) itens = itens.filter(item => item.id === gastosItemAberto);
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="15" class="gastos-empty"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum item encontrado por aqui.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let totalAnoGeral = 0;
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const totalGeral = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        totalAnoGeral += totalGeral;
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-rebuild-row" data-gasto-item-row="${item.id}">
+            <td>
+                <div class="gastos-rebuild-item-main">
+                    <strong class="gastos-rebuild-item-name">${nomeSeguro}</strong>
+                    <span class="gastos-rebuild-item-hint">Total no ano: ${formatarMoedaGasto(totalGeral)}</span>
+                </div>
+            </td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-rebuild-month-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-rebuild-money">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-rebuild-qty">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+
+        html += `<td class="gastos-rebuild-total-cell">${formatarMoedaGasto(totalGeral)}</td>
+        <td>
+            <div class="action-btns-wrapper gastos-rebuild-row-actions">
+                <button class="btn-action edit" title="Editar item" onclick="window.renomearItemGasto('${item.id}')"><i class="fas fa-pencil-alt"></i></button>
+                <button class="btn-action copy" title="Copiar item" onclick="window.copiarItemGasto('${item.id}')"><i class="fas fa-copy"></i></button>
+                <button class="btn-action del" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </td></tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    html += `<tr class="gastos-rebuild-total-row">
+        <td>TOTAL MENSAL</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    html += `<td><span>${formatarMoedaGasto(totalAnoGeral)}</span></td><td></td></tr>`;
+
+    body.innerHTML = html;
+};
+
+window.abrirGastosItem = function(itemId, mes = null) {
+    const mesNormalizado = Number(mes || gastosMesAberto || (new Date().getMonth() + 1));
+
+    if (gastosItemAberto === itemId && Number(gastosMesAberto) === mesNormalizado) {
+        gastosItemAberto = null;
+        gastosMesAberto = mesNormalizado;
+    } else {
+        gastosItemAberto = itemId;
+        gastosMesAberto = mesNormalizado;
+    }
+
+    const filtroItem = document.getElementById('gastos-filtro-item');
+    if (filtroItem) filtroItem.value = '';
+
+    window.renderGastosPlanilha();
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-rebuild-lancados-box">
+            <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            <table class="gastos-rebuild-lanc-table">
+                <thead><tr>
+                    <th>Marca</th>
+                    <th>Kg/L</th>
+                    <th>Quantidade</th>
+                    <th>Valor unidade</th>
+                    <th>Total</th>
+                    <th>Comprador</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr></thead>
+                <tbody>${lista.map(l => `
+                    <tr>
+                        <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                        <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                        <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                        <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                        <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                        <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                        <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                        <td>
+                            <div class="gastos-rebuild-lanc-actions">
+                                <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>` : `<div class="gastos-rebuild-lancados-box"><strong class="gastos-rebuild-subtitle">Itens lançados</strong><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="15">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-rebuild-add-box">
+                <div class="gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-lancamento-lista gastos-rebuild-form-list" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                    ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: Lançar itens e Itens lançados em formato de tabela limpa ===
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const id = dados.id || '';
+    const marca = String(dados.marca || dados.nome || '').trim();
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutros = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    const qtd = dados.quantidade !== undefined && dados.quantidade !== null ? dados.quantidade : 1;
+    const unit = dados.valorUnidade !== undefined && dados.valorUnidade !== null ? dados.valorUnidade : '';
+    const total = dados.valorTotal !== undefined && dados.valorTotal !== null ? dados.valorTotal : ((Number(qtd) || 0) * (Number(unit) || 0));
+    const comprador = dados.comprador || 'Caixa';
+    const data = dados.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+    return `<tr class="gasto-lanc-row">
+        <td>
+            <input type="hidden" class="gasto-lanc-id" value="${escapeHTMLGasto(id)}">
+            <div class="gasto-marca-select-wrap">
+                <select class="gasto-lanc-marca-select" onchange="window.toggleMarcaOutrosGasto(this)">
+                    ${window.renderOptionsMarcaGasto(usarOutros ? '__outros__' : marca)}
+                </select>
+                <button type="button" class="gasto-marca-delete-btn" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button>
+            </div>
+            <input class="gasto-lanc-marca-outros" type="text" placeholder="Nova marca" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" style="${usarOutros ? '' : 'display:none;'}">
+        </td>
+        <td><input class="gasto-lanc-peso" type="text" placeholder="Ex: 1kg ou 1L" value="${escapeHTMLGasto(dados.peso || '')}"></td>
+        <td><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(qtd)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" value="${escapeHTMLGasto(unit)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00" value="${Number(total || 0).toFixed(2)}" readonly></td>
+        <td><select class="gasto-lanc-comprador"><option value="Caixa" ${comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+        <td><input class="gasto-lanc-data" type="date" value="${escapeHTMLGasto(data)}"></td>
+        <td class="gastos-acoes-cell">
+            <button class="gastos-icon-btn danger gastos-remover-linha" type="button" onclick="window.removerLinhaLancamentoGasto(this)" title="Remover linha"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>`;
+};
+
+window.adicionarLinhaLancamentoGasto = function(itemId, dados = {}) {
+    const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${itemId}"]`);
+    if (!container) return;
+    container.insertAdjacentHTML('beforeend', window.criarLinhaLancamentoGastoHTML(dados));
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-rebuild-lancados-box">
+            <div class="gastos-rebuild-lancados-head">
+                <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            </div>
+            <div class="gastos-rebuild-lancados-table-wrap">
+                <table class="gastos-rebuild-inner-table gastos-rebuild-lancados-table">
+                    <thead><tr>
+                        <th>Marca</th>
+                        <th>Kg/L</th>
+                        <th>Quantidade</th>
+                        <th>Valor unidade</th>
+                        <th>Total</th>
+                        <th>Comprador</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr></thead>
+                    <tbody>${lista.map(l => `
+                        <tr>
+                            <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                            <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                            <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                            <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td class="gastos-acoes-cell">
+                                <div class="gastos-rebuild-lanc-actions">
+                                    <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                    <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : `<div class="gastos-rebuild-lancados-box"><div class="gastos-rebuild-lancados-head"><strong class="gastos-rebuild-subtitle">Itens lançados</strong></div><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="15">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-rebuild-add-box">
+                <div class="gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-rebuild-lancar-table-wrap">
+                    <table class="gastos-rebuild-inner-table gastos-rebuild-lancar-table">
+                        <thead><tr>
+                            <th>Marca</th>
+                            <th>Kg/L</th>
+                            <th>Quantidade</th>
+                            <th>Valor unidade</th>
+                            <th>Total</th>
+                            <th>Comprador</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr></thead>
+                        <tbody class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                            ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: Lançar itens e Itens lançados em tabela real ===
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const id = dados.id || '';
+    const marca = String(dados.marca || dados.nome || '').trim();
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutros = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    const qtd = dados.quantidade !== undefined && dados.quantidade !== null ? dados.quantidade : 1;
+    const unit = dados.valorUnidade !== undefined && dados.valorUnidade !== null ? dados.valorUnidade : '';
+    const total = dados.valorTotal !== undefined && dados.valorTotal !== null ? dados.valorTotal : ((Number(qtd) || 0) * (Number(unit) || 0));
+    const comprador = dados.comprador || 'Caixa';
+    const data = dados.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+    return `<tr class="gasto-lanc-row">
+        <td>
+            <input type="hidden" class="gasto-lanc-id" value="${escapeHTMLGasto(id)}">
+            <div class="gasto-marca-select-wrap">
+                <select class="gasto-lanc-marca-select" onchange="window.toggleMarcaOutrosGasto(this)">
+                    ${window.renderOptionsMarcaGasto(usarOutros ? '__outros__' : marca)}
+                </select>
+                <button type="button" class="gasto-marca-delete-btn" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button>
+            </div>
+            <input class="gasto-lanc-marca-outros" type="text" placeholder="Nova marca" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" style="${usarOutros ? '' : 'display:none;'}">
+        </td>
+        <td><input class="gasto-lanc-peso" type="text" placeholder="Kg/L" value="${escapeHTMLGasto(dados.peso || '')}"></td>
+        <td><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(qtd)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" value="${escapeHTMLGasto(unit)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00" value="${Number(total || 0).toFixed(2)}" readonly></td>
+        <td><select class="gasto-lanc-comprador"><option value="Caixa" ${comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+        <td><input class="gasto-lanc-data" type="date" value="${escapeHTMLGasto(data)}"></td>
+        <td class="gastos-acoes-cell">
+            <button class="gastos-icon-btn danger gastos-remover-linha" type="button" onclick="window.removerLinhaLancamentoGasto(this)" title="Remover linha"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>`;
+};
+
+window.adicionarLinhaLancamentoGasto = function(itemId, dados = {}) {
+    const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${itemId}"]`);
+    if (!container) return;
+    container.insertAdjacentHTML('beforeend', window.criarLinhaLancamentoGastoHTML(dados));
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-rebuild-lancados-box">
+            <div class="gastos-rebuild-lancados-head">
+                <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            </div>
+            <div class="gastos-rebuild-lancados-table-wrap">
+                <table class="gastos-rebuild-inner-table gastos-rebuild-lancados-table">
+                    <thead><tr>
+                        <th>Marca</th>
+                        <th>Kg/L</th>
+                        <th>Quantidade</th>
+                        <th>Valor unidade</th>
+                        <th>Total</th>
+                        <th>Comprador</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr></thead>
+                    <tbody>${lista.map(l => `
+                        <tr>
+                            <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                            <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                            <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                            <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td class="gastos-acoes-cell">
+                                <div class="gastos-rebuild-lanc-actions">
+                                    <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                    <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : `<div class="gastos-rebuild-lancados-box"><div class="gastos-rebuild-lancados-head"><strong class="gastos-rebuild-subtitle">Itens lançados</strong></div><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="15">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-rebuild-add-box">
+                <div class="gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-rebuild-lancar-table-wrap">
+                    <table class="gastos-rebuild-inner-table gastos-rebuild-lancar-table">
+                        <thead><tr>
+                            <th>Marca</th>
+                            <th>Kg/L</th>
+                            <th>Quantidade</th>
+                            <th>Valor unidade</th>
+                            <th>Total</th>
+                            <th>Comprador</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr></thead>
+                        <tbody class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                            ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: Lançar itens exatamente no mesmo layout de Itens lançados ===
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const cabecalhoTabela = `
+        <thead><tr>
+            <th>Marca</th>
+            <th>Kg/L</th>
+            <th>Quantidade</th>
+            <th>Valor unidade</th>
+            <th>Total</th>
+            <th>Comprador</th>
+            <th>Data</th>
+            <th>Ações</th>
+        </tr></thead>`;
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-section-box gastos-rebuild-lancados-box">
+            <div class="gastos-section-head gastos-rebuild-lancados-head">
+                <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            </div>
+            <div class="gastos-section-table-wrap gastos-rebuild-lancados-table-wrap">
+                <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancados-table">
+                    ${cabecalhoTabela}
+                    <tbody>${lista.map(l => `
+                        <tr>
+                            <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                            <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                            <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                            <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td class="gastos-acoes-cell">
+                                <div class="gastos-rebuild-lanc-actions">
+                                    <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                    <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : `<div class="gastos-section-box gastos-rebuild-lancados-box"><div class="gastos-section-head gastos-rebuild-lancados-head"><strong class="gastos-rebuild-subtitle">Itens lançados</strong></div><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="15">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-section-box gastos-rebuild-add-box">
+                <div class="gastos-section-head gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-section-table-wrap gastos-rebuild-lancar-table-wrap">
+                    <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancar-table">
+                        ${cabecalhoTabela}
+                        <tbody class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                            ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: remover coluna Total no ano e exibir unidades no item ===
+window.calcularTotalUnidadesGastoItem = function(resumo) {
+    return Object.values(resumo || {}).reduce((acc, r) => acc + (Number(r?.qtd) || 0), 0);
+};
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    const meses = window.gastosMesesPadrao || ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (gastosItemAberto) itens = itens.filter(item => item.id === gastosItemAberto);
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="14" class="gastos-empty"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum item encontrado por aqui.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const valorTotalAno = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        const totalUnidadesAno = window.calcularTotalUnidadesGastoItem(resumo);
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-rebuild-row" data-gasto-item-row="${item.id}">
+            <td>
+                <div class="gastos-rebuild-item-main">
+                    <strong class="gastos-rebuild-item-name">${nomeSeguro}</strong>
+                    <span class="gastos-rebuild-item-total-line">Valor total: ${formatarMoedaGasto(valorTotalAno)}</span>
+                    <span class="gastos-rebuild-item-units-line">Total de unidades: ${totalUnidadesAno.toLocaleString('pt-BR')} un.</span>
+                </div>
+            </td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-rebuild-month-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-rebuild-money">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-rebuild-qty">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+
+        html += `<td>
+            <div class="action-btns-wrapper gastos-rebuild-row-actions">
+                <button class="btn-action edit" title="Editar item" onclick="window.renomearItemGasto('${item.id}')"><i class="fas fa-pencil-alt"></i></button>
+                <button class="btn-action copy" title="Copiar item" onclick="window.copiarItemGasto('${item.id}')"><i class="fas fa-copy"></i></button>
+                <button class="btn-action del" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </td></tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    html += `<tr class="gastos-rebuild-total-row">
+        <td>TOTAL MENSAL</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    html += `<td></td></tr>`;
+
+    body.innerHTML = html;
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const cabecalhoTabela = `
+        <thead><tr>
+            <th>Marca</th>
+            <th>Kg/L</th>
+            <th>Quantidade</th>
+            <th>Valor unidade</th>
+            <th>Total</th>
+            <th>Comprador</th>
+            <th>Data</th>
+            <th>Ações</th>
+        </tr></thead>`;
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-section-box gastos-rebuild-lancados-box">
+            <div class="gastos-section-head gastos-rebuild-lancados-head">
+                <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            </div>
+            <div class="gastos-section-table-wrap gastos-rebuild-lancados-table-wrap">
+                <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancados-table">
+                    ${cabecalhoTabela}
+                    <tbody>${lista.map(l => `
+                        <tr>
+                            <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                            <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                            <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                            <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td class="gastos-acoes-cell">
+                                <div class="gastos-rebuild-lanc-actions">
+                                    <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                    <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : `<div class="gastos-section-box gastos-rebuild-lancados-box"><div class="gastos-section-head gastos-rebuild-lancados-head"><strong class="gastos-rebuild-subtitle">Itens lançados</strong></div><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="14">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-section-box gastos-rebuild-add-box">
+                <div class="gastos-section-head gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-section-table-wrap gastos-rebuild-lancar-table-wrap">
+                    <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancar-table">
+                        ${cabecalhoTabela}
+                        <tbody class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                            ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+
+
+
+// === GASTOS 2026-06-21: edição direta do nome do item, sem botão editar ===
+window.renomearCategoriaGastoInline = async function(input, itemId) {
+    const item = getItemGasto(itemId);
+    if (!item || !input) return;
+
+    const novo = String(input.value || '').trim();
+    if (!novo) {
+        input.value = item.nome || '';
+        return window.showToast('Informe um nome para o item.', true);
+    }
+
+    if (novo === (item.nome || '')) return;
+
+    try {
+        await updateDoc(doc(db, 'gastos_itens', itemId), { nome: novo, updatedAt: Date.now() });
+        const vinculados = allGastosLancamentos.filter(l => l.itemId === itemId);
+        await Promise.all(vinculados.map(l => updateDoc(doc(db, 'gastos_lancamentos', l.id), { itemNome: novo }).catch(() => null)));
+        window.showToast('Item atualizado!');
+    } catch(e) {
+        console.error(e);
+        input.value = item.nome || '';
+        window.showToast('Erro ao atualizar item.', true);
+    }
+};
+
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    const meses = window.gastosMesesPadrao || ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (gastosItemAberto) itens = itens.filter(item => item.id === gastosItemAberto);
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="14" class="gastos-empty"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum item encontrado por aqui.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const valorTotalAno = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        const totalUnidadesAno = window.calcularTotalUnidadesGastoItem ? window.calcularTotalUnidadesGastoItem(resumo) : Object.values(resumo).reduce((acc, r) => acc + (Number(r?.qtd) || 0), 0);
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-rebuild-row" data-gasto-item-row="${item.id}">
+            <td>
+                <div class="gastos-rebuild-item-main">
+                    <input class="gastos-item-nome-inline" value="${nomeSeguro}" 
+                        title="Clique para alterar o nome"
+                        onblur="window.renomearCategoriaGastoInline(this, '${item.id}')"
+                        onkeydown="if(event.key === 'Enter'){this.blur();}">
+                    <span class="gastos-rebuild-item-total-line">Valor total: ${formatarMoedaGasto(valorTotalAno)}</span>
+                    <span class="gastos-rebuild-item-units-line">Total de unidades: ${totalUnidadesAno.toLocaleString('pt-BR')} un.</span>
+                </div>
+            </td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-rebuild-month-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-rebuild-money">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-rebuild-qty">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+
+        html += `<td>
+            <div class="action-btns-wrapper gastos-rebuild-row-actions">
+                <button class="btn-action copy" title="Copiar item" onclick="window.copiarItemGasto('${item.id}')"><i class="fas fa-copy"></i></button>
+                <button class="btn-action del" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </td></tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    html += `<tr class="gastos-rebuild-total-row">
+        <td>TOTAL MENSAL</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    html += `<td></td></tr>`;
+
+    body.innerHTML = html;
+};
+
+
+
+
+// === GASTOS 2026-06-21: total anual geral na coluna Ações ===
+window.renderGastosPlanilha = function() {
+    const body = document.getElementById('gastos-planilha-body');
+    if (!body) return;
+
+    atualizarSelectAnoGastos();
+    const ano = getAnoGastosSelecionado();
+    const filtroItem = document.getElementById('gastos-filtro-item')?.value || '';
+    const meses = window.gastosMesesPadrao || ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    window.atualizarFiltroItensGastos(filtroItem);
+
+    let itens = [...allGastosItens].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR', { sensitivity: 'base' }));
+    if (filtroItem) itens = itens.filter(item => item.id === filtroItem);
+    if (gastosItemAberto) itens = itens.filter(item => item.id === gastosItemAberto);
+
+    if (!itens.length) {
+        body.innerHTML = `<tr><td colspan="14" class="gastos-empty"><i class="fas fa-box-open" style="font-size:3rem; margin-bottom:15px; display:block; color:#ddd;"></i>Nenhum item encontrado por aqui.</td></tr>`;
+        return;
+    }
+
+    const totaisMes = Array(13).fill(0);
+    let totalAnoGeral = 0;
+    let html = '';
+
+    itens.forEach(item => {
+        const resumo = calcularResumoGastosItem(item, ano);
+        const valorTotalAno = Object.values(resumo).reduce((acc, r) => acc + r.total, 0);
+        const totalUnidadesAno = window.calcularTotalUnidadesGastoItem ? window.calcularTotalUnidadesGastoItem(resumo) : Object.values(resumo).reduce((acc, r) => acc + (Number(r?.qtd) || 0), 0);
+        totalAnoGeral += valorTotalAno;
+        const nomeSeguro = escapeHTMLGasto(item.nome || '');
+
+        html += `<tr class="gastos-rebuild-row" data-gasto-item-row="${item.id}">
+            <td>
+                <div class="gastos-rebuild-item-main">
+                    <input class="gastos-item-nome-inline" value="${nomeSeguro}" 
+                        title="Clique para alterar o nome"
+                        onblur="window.renomearCategoriaGastoInline(this, '${item.id}')"
+                        onkeydown="if(event.key === 'Enter'){this.blur();}">
+                    <span class="gastos-rebuild-item-total-line">Valor total: ${formatarMoedaGasto(valorTotalAno)}</span>
+                    <span class="gastos-rebuild-item-units-line">Total de unidades: ${totalUnidadesAno.toLocaleString('pt-BR')} un.</span>
+                </div>
+            </td>`;
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const r = resumo[mes];
+            totaisMes[mes] += r.total;
+            const ativo = gastosItemAberto === item.id && Number(gastosMesAberto) === mes ? ' active' : '';
+            html += `<td class="gastos-rebuild-month-cell${ativo}" onclick="window.abrirGastosItem('${item.id}', ${mes})">
+                <span class="gastos-rebuild-money">${formatarMoedaGasto(r.total || 0)}</span>
+                <span class="gastos-rebuild-qty">${r.qtd ? `${r.qtd.toLocaleString('pt-BR')} un.` : '0 un.'}</span>
+            </td>`;
+        }
+
+        html += `<td>
+            <div class="action-btns-wrapper gastos-rebuild-row-actions">
+                <button class="btn-action copy" title="Copiar item" onclick="window.copiarItemGasto('${item.id}')"><i class="fas fa-copy"></i></button>
+                <button class="btn-action del" title="Excluir item" onclick="window.excluirItemGasto('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </td></tr>`;
+
+        if (gastosItemAberto === item.id) {
+            html += window.renderGastosDrawer(item, gastosMesAberto || new Date().getMonth() + 1, ano, meses);
+        }
+    });
+
+    html += `<tr class="gastos-rebuild-total-row">
+        <td>TOTAL MENSAL</td>`;
+    for (let mes = 1; mes <= 12; mes++) html += `<td><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    html += `<td>
+        <div class="gastos-total-anual-geral">
+            <small>TOTAL ANUAL</small>
+            <strong>${formatarMoedaGasto(totalAnoGeral || 0)}</strong>
+        </div>
+    </td></tr>`;
+
+    body.innerHTML = html;
+};
+
+
+
+
+// === GASTOS 2026-06-21: marcas cadastráveis pelo Outros e exclusão confirmada ===
+window.getGastosMarcasOcultas = function() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem('favu_gastos_marcas_ocultas') || '[]'));
+    } catch (e) {
+        return new Set();
+    }
+};
+
+window.setGastosMarcasOcultas = function(set) {
+    try {
+        localStorage.setItem('favu_gastos_marcas_ocultas', JSON.stringify([...set]));
+    } catch (e) {}
+};
+
+window.normalizarMarcaGasto = window.normalizarMarcaGasto || function(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+};
+
+window.marcaGastoEstaCadastrada = function(valor) {
+    const chave = window.normalizarMarcaGasto(valor);
+    if (!chave) return false;
+    return window.marcasGastosDisponiveis().some(m => window.normalizarMarcaGasto(m) === chave);
+};
+
+window.marcasGastosDisponiveis = function() {
+    const mapa = new Map();
+    const ocultas = window.getGastosMarcasOcultas();
+
+    (window.allGastosMarcas || []).forEach(m => {
+        const nome = String(m.nome || m.marca || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    allGastosLancamentos.forEach(l => {
+        const nome = String(l.marca || l.nome || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+};
+
+window.renderOptionsMarcaGasto = function(marcaSelecionada = '') {
+    const marcas = window.marcasGastosDisponiveis();
+    const marcaAtual = String(marcaSelecionada || '').trim();
+    const chaveAtual = window.normalizarMarcaGasto(marcaAtual);
+    const existe = marcas.some(m => window.normalizarMarcaGasto(m) === chaveAtual);
+
+    let html = `<option value="">Selecione...</option>`;
+    marcas.forEach(m => {
+        const selected = window.normalizarMarcaGasto(m) === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(m)}" ${selected}>${escapeHTMLGasto(m)}</option>`;
+    });
+    html += `<option value="__outros__" ${marcaAtual && !existe ? 'selected' : ''}>Outros</option>`;
+    return html;
+};
+
+window.atualizarBotaoExcluirMarcaGasto = function(select) {
+    const wrap = select?.closest?.('.gasto-marca-select-wrap');
+    const btn = wrap?.querySelector?.('.gasto-marca-delete-btn');
+    if (!wrap || !btn) return;
+
+    const valor = String(select.value || '').trim();
+    const cadastrado = valor && valor !== '__outros__' && window.marcaGastoEstaCadastrada(valor);
+
+    wrap.classList.toggle('has-registered-brand', !!cadastrado);
+    btn.classList.toggle('visible', !!cadastrado);
+    btn.style.display = cadastrado ? 'inline-flex' : 'none';
+};
+
+window.atualizarBotoesExcluirMarcaGasto = function(scope = document) {
+    (scope || document).querySelectorAll('#t-gastos .gasto-lanc-marca-select, #t-gastos .gasto-list-marca-select').forEach(sel => {
+        window.atualizarBotaoExcluirMarcaGasto(sel);
+    });
+};
+
+window.toggleMarcaOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-marca-outros, .gasto-list-marca-outros');
+
+    if (inputOutros) {
+        inputOutros.style.display = select.value === '__outros__' ? '' : 'none';
+        if (select.value === '__outros__') inputOutros.focus();
+    }
+
+    window.atualizarBotaoExcluirMarcaGasto(select);
+};
+
+window.garantirMarcaGasto = async function(marca) {
+    const nome = String(marca || '').trim();
+    if (!nome) return;
+
+    const chave = window.normalizarMarcaGasto(nome);
+
+    const ocultas = window.getGastosMarcasOcultas();
+    if (ocultas.has(chave)) {
+        ocultas.delete(chave);
+        window.setGastosMarcasOcultas(ocultas);
+    }
+
+    const existente = (window.allGastosMarcas || []).find(m => window.normalizarMarcaGasto(m.nome || m.marca) === chave);
+    if (existente) return;
+
+    try {
+        const ref = await addDoc(collection(db, 'gastos_marcas'), { nome, createdAt: Date.now() });
+        window.allGastosMarcas = window.allGastosMarcas || [];
+        window.allGastosMarcas.push({ id: ref.id, nome, createdAt: Date.now() });
+    } catch(e) {
+        console.warn('Não foi possível salvar marca nova:', e);
+    }
+};
+
+window.atualizarSelectsMarcaGasto = function() {
+    document.querySelectorAll('#t-gastos .gasto-lanc-marca-select, #t-gastos .gasto-list-marca-select').forEach(sel => {
+        const atual = sel.value;
+        sel.innerHTML = window.renderOptionsMarcaGasto(atual);
+        if ([...sel.options].some(o => o.value === atual)) sel.value = atual;
+        window.atualizarBotaoExcluirMarcaGasto(sel);
+    });
+};
+
+window.excluirMarcaSelecionadaGasto = function(botao) {
+    const wrap = botao.closest('.gasto-marca-select-wrap');
+    const select = wrap?.querySelector('select');
+    const valor = String(select?.value || '').trim();
+
+    if (!valor || valor === '__outros__' || !window.marcaGastoEstaCadastrada(valor)) {
+        return window.showToast('Selecione uma marca cadastrada para excluir.', true);
+    }
+
+    customConfirm(`Excluir a marca "${valor}" da lista de opções?`, async () => {
+        const chave = window.normalizarMarcaGasto(valor);
+        const ocultas = window.getGastosMarcasOcultas();
+        ocultas.add(chave);
+        window.setGastosMarcasOcultas(ocultas);
+
+        try {
+            const marcas = (window.allGastosMarcas || []).filter(m => window.normalizarMarcaGasto(m.nome || m.marca) === chave);
+            await Promise.all(marcas
+                .filter(m => m.id && !String(m.id).startsWith('local-'))
+                .map(m => deleteDoc(doc(db, 'gastos_marcas', m.id)).catch(() => null)));
+            window.allGastosMarcas = (window.allGastosMarcas || []).filter(m => window.normalizarMarcaGasto(m.nome || m.marca) !== chave);
+        } catch(e) {
+            console.warn('Marca ocultada da lista, mas não foi possível apagar todos os registros:', e);
+        }
+
+        document.querySelectorAll('#t-gastos .gasto-lanc-marca-select, #t-gastos .gasto-list-marca-select').forEach(sel => {
+            if (window.normalizarMarcaGasto(sel.value) === chave) sel.value = '';
+            sel.innerHTML = window.renderOptionsMarcaGasto(sel.value);
+            window.toggleMarcaOutrosGasto(sel);
+        });
+
+        window.showToast('Marca removida da lista de opções!');
+    });
+};
+
+window.getMarcaDaLinhaGasto = function(row, seletorSelect = '.gasto-lanc-marca-select', seletorOutros = '.gasto-lanc-marca-outros') {
+    const select = row.querySelector(seletorSelect);
+    if (!select) return '';
+    if (select.value === '__outros__') return String(row.querySelector(seletorOutros)?.value || '').trim();
+    return String(select.value || '').trim();
+};
+
+window.renderCampoMarcaListaGasto = function(l) {
+    const marca = String(l.marca || l.nome || '').trim();
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutros = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    const mostrarExcluir = marca && !usarOutros && window.marcaGastoEstaCadastrada(marca);
+
+    return `<div class="gasto-marca-select-wrap ${mostrarExcluir ? 'has-registered-brand' : ''}">
+        <select class="gasto-list-marca-select" onchange="window.toggleMarcaOutrosGasto(this); window.salvarCampoLancamentoGasto('${l.id}', this)">
+            ${window.renderOptionsMarcaGasto(usarOutros ? '__outros__' : marca)}
+        </select>
+        <button type="button" class="gasto-marca-delete-btn ${mostrarExcluir ? 'visible' : ''}" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button>
+    </div>
+    <input class="gasto-list-marca-outros" value="${usarOutros ? escapeHTMLGasto(marca) : ''}" placeholder="Nova marca" style="${usarOutros ? '' : 'display:none;'}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)">`;
+};
+
+const renderGastosPlanilhaMarcasOriginal = window.renderGastosPlanilha;
+window.renderGastosPlanilha = function(...args) {
+    const retorno = renderGastosPlanilhaMarcasOriginal.apply(this, args);
+    setTimeout(() => window.atualizarBotoesExcluirMarcaGasto(document), 80);
+    return retorno;
+};
+
+const adicionarLinhaLancamentoGastoMarcasOriginal = window.adicionarLinhaLancamentoGasto;
+window.adicionarLinhaLancamentoGasto = function(...args) {
+    const retorno = adicionarLinhaLancamentoGastoMarcasOriginal.apply(this, args);
+    setTimeout(() => window.atualizarBotoesExcluirMarcaGasto(document), 50);
+    return retorno;
+};
+
+
+
+
+// === GASTOS 2026-06-21: Local nos lançamentos ===
+window.allGastosLocais = window.allGastosLocais || [];
+
+window.getGastosLocaisOcultos = function() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem('favu_gastos_locais_ocultos') || '[]'));
+    } catch (e) {
+        return new Set();
+    }
+};
+
+window.setGastosLocaisOcultos = function(set) {
+    try {
+        localStorage.setItem('favu_gastos_locais_ocultos', JSON.stringify([...set]));
+    } catch (e) {}
+};
+
+window.normalizarLocalGasto = function(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+};
+
+window.locaisGastosDisponiveis = function() {
+    const mapa = new Map();
+    const ocultos = window.getGastosLocaisOcultos();
+
+    (window.allGastosLocais || []).forEach(l => {
+        const nome = String(l.nome || l.local || l.localCompra || '').trim();
+        const chave = window.normalizarLocalGasto(nome);
+        if (nome && !ocultos.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    (allGastosLancamentos || []).forEach(l => {
+        const nome = String(l.localCompra || l.local || '').trim();
+        const chave = window.normalizarLocalGasto(nome);
+        if (nome && !ocultos.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+};
+
+window.localGastoEstaCadastrado = function(valor) {
+    const chave = window.normalizarLocalGasto(valor);
+    if (!chave) return false;
+    return window.locaisGastosDisponiveis().some(l => window.normalizarLocalGasto(l) === chave);
+};
+
+window.renderOptionsLocalGasto = function(localSelecionado = '') {
+    const locais = window.locaisGastosDisponiveis();
+    const atual = String(localSelecionado || '').trim();
+    const chaveAtual = window.normalizarLocalGasto(atual);
+    const existe = locais.some(l => window.normalizarLocalGasto(l) === chaveAtual);
+
+    let html = `<option value="">Selecione...</option>`;
+    locais.forEach(l => {
+        const selected = window.normalizarLocalGasto(l) === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(l)}" ${selected}>${escapeHTMLGasto(l)}</option>`;
+    });
+    html += `<option value="__outros__" ${atual && !existe ? 'selected' : ''}>Outros</option>`;
+    return html;
+};
+
+window.atualizarBotaoExcluirLocalGasto = function(select) {
+    const wrap = select?.closest?.('.gasto-local-select-wrap');
+    const btn = wrap?.querySelector?.('.gasto-local-delete-btn');
+    if (!wrap || !btn) return;
+
+    const valor = String(select.value || '').trim();
+    const cadastrado = valor && valor !== '__outros__' && window.localGastoEstaCadastrado(valor);
+
+    wrap.classList.toggle('has-registered-local', !!cadastrado);
+    btn.classList.toggle('visible', !!cadastrado);
+    btn.style.display = cadastrado ? 'inline-flex' : 'none';
+};
+
+window.toggleLocalOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-local-outros, .gasto-list-local-outros');
+
+    if (inputOutros) {
+        inputOutros.style.display = select.value === '__outros__' ? '' : 'none';
+        if (select.value === '__outros__') inputOutros.focus();
+    }
+
+    window.atualizarBotaoExcluirLocalGasto(select);
+};
+
+window.getLocalDaLinhaGasto = function(row, seletorSelect = '.gasto-lanc-local-select', seletorOutros = '.gasto-lanc-local-outros') {
+    const select = row.querySelector(seletorSelect);
+    if (!select) return '';
+    if (select.value === '__outros__') return String(row.querySelector(seletorOutros)?.value || '').trim();
+    return String(select.value || '').trim();
+};
+
+window.garantirLocalGasto = async function(local) {
+    const nome = String(local || '').trim();
+    if (!nome) return;
+
+    const chave = window.normalizarLocalGasto(nome);
+
+    const ocultos = window.getGastosLocaisOcultos();
+    if (ocultos.has(chave)) {
+        ocultos.delete(chave);
+        window.setGastosLocaisOcultos(ocultos);
+    }
+
+    const existente = (window.allGastosLocais || []).find(l => window.normalizarLocalGasto(l.nome || l.local || l.localCompra) === chave);
+    if (existente) return;
+
+    try {
+        const ref = await addDoc(collection(db, 'gastos_locais'), { nome, createdAt: Date.now() });
+        window.allGastosLocais = window.allGastosLocais || [];
+        window.allGastosLocais.push({ id: ref.id, nome, createdAt: Date.now() });
+    } catch(e) {
+        console.warn('Não foi possível salvar local novo:', e);
+    }
+};
+
+window.excluirLocalSelecionadoGasto = function(botao) {
+    const wrap = botao.closest('.gasto-local-select-wrap');
+    const select = wrap?.querySelector('select');
+    const valor = String(select?.value || '').trim();
+
+    if (!valor || valor === '__outros__' || !window.localGastoEstaCadastrado(valor)) {
+        return window.showToast('Selecione um local cadastrado para excluir.', true);
+    }
+
+    customConfirm(`Excluir o local "${valor}" da lista de opções?`, async () => {
+        const chave = window.normalizarLocalGasto(valor);
+        const ocultos = window.getGastosLocaisOcultos();
+        ocultos.add(chave);
+        window.setGastosLocaisOcultos(ocultos);
+
+        try {
+            const locais = (window.allGastosLocais || []).filter(l => window.normalizarLocalGasto(l.nome || l.local || l.localCompra) === chave);
+            await Promise.all(locais
+                .filter(l => l.id && !String(l.id).startsWith('local-'))
+                .map(l => deleteDoc(doc(db, 'gastos_locais', l.id)).catch(() => null)));
+            window.allGastosLocais = (window.allGastosLocais || []).filter(l => window.normalizarLocalGasto(l.nome || l.local || l.localCompra) !== chave);
+        } catch(e) {
+            console.warn('Local ocultado da lista, mas não foi possível apagar todos os registros:', e);
+        }
+
+        document.querySelectorAll('#t-gastos .gasto-lanc-local-select, #t-gastos .gasto-list-local-select').forEach(sel => {
+            if (window.normalizarLocalGasto(sel.value) === chave) sel.value = '';
+            sel.innerHTML = window.renderOptionsLocalGasto(sel.value);
+            window.toggleLocalOutrosGasto(sel);
+        });
+
+        window.showToast('Local removido da lista de opções!');
+    });
+};
+
+window.renderCampoLocalListaGasto = function(l) {
+    const local = String(l.localCompra || l.local || '').trim();
+    const locais = window.locaisGastosDisponiveis();
+    const usarOutros = local && !locais.some(x => window.normalizarLocalGasto(x) === window.normalizarLocalGasto(local));
+    const mostrarExcluir = local && !usarOutros && window.localGastoEstaCadastrado(local);
+
+    return `<div class="gasto-local-select-wrap ${mostrarExcluir ? 'has-registered-local' : ''}">
+        <select class="gasto-list-local-select" onchange="window.toggleLocalOutrosGasto(this); window.salvarCampoLancamentoGasto('${l.id}', this)">
+            ${window.renderOptionsLocalGasto(usarOutros ? '__outros__' : local)}
+        </select>
+        <button type="button" class="gasto-local-delete-btn ${mostrarExcluir ? 'visible' : ''}" onclick="window.excluirLocalSelecionadoGasto(this)" title="Excluir local selecionado">×</button>
+    </div>
+    <input class="gasto-list-local-outros" value="${usarOutros ? escapeHTMLGasto(local) : ''}" placeholder="Novo local" style="${usarOutros ? '' : 'display:none;'}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)">`;
+};
+
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const id = dados.id || '';
+    const marca = String(dados.marca || dados.nome || '').trim();
+    const local = String(dados.localCompra || dados.local || '').trim();
+
+    const marcas = window.marcasGastosDisponiveis();
+    const usarOutrosMarca = marca && !marcas.some(m => window.normalizarMarcaGasto(m) === window.normalizarMarcaGasto(marca));
+    const mostrarExcluirMarca = marca && !usarOutrosMarca && window.marcaGastoEstaCadastrada?.(marca);
+
+    const locais = window.locaisGastosDisponiveis();
+    const usarOutrosLocal = local && !locais.some(l => window.normalizarLocalGasto(l) === window.normalizarLocalGasto(local));
+    const mostrarExcluirLocal = local && !usarOutrosLocal && window.localGastoEstaCadastrado(local);
+
+    const qtd = dados.quantidade !== undefined && dados.quantidade !== null ? dados.quantidade : 1;
+    const unit = dados.valorUnidade !== undefined && dados.valorUnidade !== null ? dados.valorUnidade : '';
+    const total = dados.valorTotal !== undefined && dados.valorTotal !== null ? dados.valorTotal : ((Number(qtd) || 0) * (Number(unit) || 0));
+    const comprador = dados.comprador || 'Caixa';
+    const data = dados.dataCompra || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+    return `<tr class="gasto-lanc-row">
+        <td>
+            <input type="hidden" class="gasto-lanc-id" value="${escapeHTMLGasto(id)}">
+            <div class="gasto-marca-select-wrap ${mostrarExcluirMarca ? 'has-registered-brand' : ''}">
+                <select class="gasto-lanc-marca-select" onchange="window.toggleMarcaOutrosGasto(this)">
+                    ${window.renderOptionsMarcaGasto(usarOutrosMarca ? '__outros__' : marca)}
+                </select>
+                <button type="button" class="gasto-marca-delete-btn ${mostrarExcluirMarca ? 'visible' : ''}" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada">×</button>
+            </div>
+            <input class="gasto-lanc-marca-outros" type="text" placeholder="Nova marca" value="${usarOutrosMarca ? escapeHTMLGasto(marca) : ''}" style="${usarOutrosMarca ? '' : 'display:none;'}">
+        </td>
+        <td>
+            <div class="gasto-local-select-wrap ${mostrarExcluirLocal ? 'has-registered-local' : ''}">
+                <select class="gasto-lanc-local-select" onchange="window.toggleLocalOutrosGasto(this)">
+                    ${window.renderOptionsLocalGasto(usarOutrosLocal ? '__outros__' : local)}
+                </select>
+                <button type="button" class="gasto-local-delete-btn ${mostrarExcluirLocal ? 'visible' : ''}" onclick="window.excluirLocalSelecionadoGasto(this)" title="Excluir local selecionado">×</button>
+            </div>
+            <input class="gasto-lanc-local-outros" type="text" placeholder="Novo local" value="${usarOutrosLocal ? escapeHTMLGasto(local) : ''}" style="${usarOutrosLocal ? '' : 'display:none;'}">
+        </td>
+        <td><input class="gasto-lanc-peso" type="text" placeholder="Kg/L" value="${escapeHTMLGasto(dados.peso || '')}"></td>
+        <td><input class="gasto-lanc-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(qtd)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-unit" type="number" min="0" step="0.01" placeholder="0,00" value="${escapeHTMLGasto(unit)}" oninput="window.atualizarTotalLancamentoGasto(this)"></td>
+        <td><input class="gasto-lanc-total" type="number" min="0" step="0.01" placeholder="0,00" value="${Number(total || 0).toFixed(2)}" readonly></td>
+        <td><select class="gasto-lanc-comprador"><option value="Caixa" ${comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+        <td><input class="gasto-lanc-data" type="date" value="${escapeHTMLGasto(data)}"></td>
+        <td class="gastos-acoes-cell">
+            <button class="gastos-icon-btn danger gastos-remover-linha" type="button" onclick="window.removerLinhaLancamentoGasto(this)" title="Remover linha"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>`;
+};
+
+window.salvarLancamentosGasto = async function(itemId) {
+    const item = getItemGasto(itemId);
+    const container = document.querySelector(`.gastos-lancamento-lista[data-item-id="${itemId}"]`);
+    if (!item || !container) return;
+
+    const rows = Array.from(container.querySelectorAll('.gasto-lanc-row'));
+    let salvou = 0;
+
+    try {
+        for (const row of rows) {
+            if (row.classList.contains('gasto-lanc-row-removida')) continue;
+
+            const lancId = row.querySelector('.gasto-lanc-id')?.value || '';
+            const marca = window.getMarcaDaLinhaGasto(row);
+            const localCompra = window.getLocalDaLinhaGasto(row);
+            const peso = row.querySelector('.gasto-lanc-peso')?.value.trim() || '';
+            const quantidade = Number(row.querySelector('.gasto-lanc-qtd')?.value || 0);
+            const valorUnidade = Number(row.querySelector('.gasto-lanc-unit')?.value || 0);
+            const valorTotal = quantidade * valorUnidade;
+            const comprador = row.querySelector('.gasto-lanc-comprador')?.value || 'Caixa';
+            const dataCompra = row.querySelector('.gasto-lanc-data')?.value || dataDefaultGasto(gastosMesAberto, getAnoGastosSelecionado());
+
+            const linhaVazia = !marca && !localCompra && !peso && !quantidade && !valorUnidade;
+            if (linhaVazia) continue;
+
+            if (!marca) return window.showToast('Preencha a marca.', true);
+            if (!quantidade || !valorUnidade) return window.showToast('Preencha quantidade e valor unidade.', true);
+            if (!dataCompra || !comprador) return window.showToast('Preencha data e comprador.', true);
+
+            await window.garantirMarcaGasto(marca);
+            if (localCompra) await window.garantirLocalGasto(localCompra);
+
+            const dataObj = parseDataISO(dataCompra);
+            const payload = {
+                itemId,
+                itemNome: item.nome,
+                nome: marca,
+                marca,
+                localCompra,
+                peso,
+                quantidade,
+                valorUnidade,
+                valorTotal,
+                comprador,
+                dataCompra,
+                ano: dataObj ? dataObj.getFullYear() : getAnoGastosSelecionado(),
+                mes: dataObj ? dataObj.getMonth() + 1 : gastosMesAberto,
+                updatedAt: Date.now()
+            };
+
+            if (lancId) await updateDoc(doc(db, 'gastos_lancamentos', lancId), payload);
+            else await addDoc(collection(db, 'gastos_lancamentos'), { ...payload, createdAt: Date.now() });
+
+            salvou++;
+        }
+
+        window.showToast(salvou ? 'Lançamentos salvos!' : 'Nenhum lançamento novo para salvar.');
+        window.atualizarSelectsMarcaGasto?.();
+        window.renderGastosPlanilha();
+    } catch(e) {
+        console.error(e);
+        window.showToast('Erro ao salvar lançamentos.', true);
+    }
+};
+
+window.salvarCampoLancamentoGasto = async function(lancId, elemento) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return;
+
+    const row = elemento.closest('tr');
+    if (!row) return;
+
+    const marca = window.getMarcaDaLinhaGasto(row, '.gasto-list-marca-select', '.gasto-list-marca-outros');
+    const localCompra = window.getLocalDaLinhaGasto(row, '.gasto-list-local-select', '.gasto-list-local-outros');
+    const peso = row.querySelector('.gasto-list-peso')?.value.trim() || '';
+    const quantidade = Number(row.querySelector('.gasto-list-qtd')?.value || 0);
+    const valorUnidade = Number(row.querySelector('.gasto-list-unit')?.value || 0);
+    const valorTotal = quantidade * valorUnidade;
+    const comprador = row.querySelector('.gasto-list-comprador')?.value || 'Caixa';
+    const dataCompra = row.querySelector('.gasto-list-data')?.value || l.dataCompra;
+
+    if (!marca) return window.showToast('Preencha a marca.', true);
+
+    await window.garantirMarcaGasto(marca);
+    if (localCompra) await window.garantirLocalGasto(localCompra);
+
+    const dataObj = parseDataISO(dataCompra);
+
+    try {
+        await updateDoc(doc(db, 'gastos_lancamentos', lancId), {
+            nome: marca,
+            marca,
+            localCompra,
+            peso,
+            quantidade,
+            valorUnidade,
+            valorTotal,
+            comprador,
+            dataCompra,
+            ano: dataObj ? dataObj.getFullYear() : l.ano,
+            mes: dataObj ? dataObj.getMonth() + 1 : l.mes,
+            updatedAt: Date.now()
+        });
+
+        window.atualizarSelectsMarcaGasto?.();
+        window.showToast('Lançamento atualizado!');
+    } catch(e) {
+        console.error(e);
+        window.showToast('Erro ao atualizar lançamento.', true);
+    }
+};
+
+window.renderGastosDrawer = function(item, mesAtivo, ano, meses) {
+    const lista = lancamentosDoItemMes(item.id, mesAtivo, ano).sort((a, b) => {
+        const ca = Number(a.createdAt || 0);
+        const cb = Number(b.createdAt || 0);
+        if (ca !== cb) return ca - cb;
+        return String(a.marca || a.nome || '').localeCompare(String(b.marca || b.nome || ''), 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const dataPadrao = dataDefaultGasto(mesAtivo, ano);
+    const mesNome = meses[Number(mesAtivo) - 1] || '';
+
+    const cabecalhoTabela = `
+        <thead><tr>
+            <th>Marca</th>
+            <th>Local</th>
+            <th>Kg/L</th>
+            <th>Quantidade</th>
+            <th>Valor unidade</th>
+            <th>Total</th>
+            <th>Comprador</th>
+            <th>Data</th>
+            <th>Ações</th>
+        </tr></thead>`;
+
+    const tabelaLancamentos = lista.length ? `
+        <div class="gastos-section-box gastos-rebuild-lancados-box">
+            <div class="gastos-section-head gastos-rebuild-lancados-head">
+                <strong class="gastos-rebuild-subtitle">Itens lançados</strong>
+            </div>
+            <div class="gastos-section-table-wrap gastos-rebuild-lancados-table-wrap">
+                <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancados-table">
+                    ${cabecalhoTabela}
+                    <tbody>${lista.map(l => `
+                        <tr>
+                            <td>${window.renderCampoMarcaListaGasto(l)}</td>
+                            <td>${window.renderCampoLocalListaGasto(l)}</td>
+                            <td><input class="gasto-list-peso" value="${escapeHTMLGasto(l.peso || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-qtd" type="number" min="0" step="0.001" value="${escapeHTMLGasto(l.quantidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><input class="gasto-list-unit" type="number" min="0" step="0.01" value="${escapeHTMLGasto(l.valorUnidade || 0)}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td><strong class="gasto-list-total">${formatarMoedaGasto(l.valorTotal)}</strong></td>
+                            <td><select class="gasto-list-comprador" onchange="window.salvarCampoLancamentoGasto('${l.id}', this)"><option value="Caixa" ${l.comprador === 'Caixa' ? 'selected' : ''}>Caixa</option><option value="Arabela" ${l.comprador === 'Arabela' ? 'selected' : ''}>Arabela</option><option value="Flávio" ${l.comprador === 'Flávio' ? 'selected' : ''}>Flávio</option></select></td>
+                            <td><input class="gasto-list-data" type="date" value="${escapeHTMLGasto(l.dataCompra || '')}" onblur="window.salvarCampoLancamentoGasto('${l.id}', this)"></td>
+                            <td class="gastos-acoes-cell">
+                                <div class="gastos-rebuild-lanc-actions">
+                                    <button class="gastos-icon-btn copy" title="Copiar lançamento" onclick="window.copiarLancamentoGasto('${l.id}')"><i class="fas fa-copy"></i></button>
+                                    <button class="gastos-icon-btn danger" title="Excluir lançamento" onclick="window.excluirLancamentoGasto('${l.id}')"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : `<div class="gastos-section-box gastos-rebuild-lancados-box"><div class="gastos-section-head gastos-rebuild-lancados-head"><strong class="gastos-rebuild-subtitle">Itens lançados</strong></div><div class="gastos-empty" style="padding:18px !important;">Nenhum lançamento neste mês.</div></div>`;
+
+    return `<tr class="gastos-rebuild-drawer-row"><td colspan="14">
+        <div class="gastos-rebuild-drawer" id="gasto-drawer-${item.id}">
+            <div class="gastos-rebuild-drawer-header">
+                <div>
+                    <div class="gastos-rebuild-drawer-title">${escapeHTMLGasto(item.nome)} — ${mesNome}/${ano}</div>
+                </div>
+                <div class="gastos-rebuild-drawer-actions">
+                    <button class="gastos-icon-btn danger" onclick="window.fecharGastosItem()" title="Fechar"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="gastos-section-box gastos-rebuild-add-box">
+                <div class="gastos-section-head gastos-rebuild-add-head">
+                    <strong class="gastos-rebuild-subtitle">Lançar itens</strong>
+                    <div class="gastos-rebuild-drawer-actions">
+                        <button class="gastos-icon-btn copy" type="button" onclick="window.adicionarLinhaLancamentoGasto('${item.id}')" title="Adicionar linha"><i class="fas fa-plus"></i></button>
+                        <button class="gastos-icon-btn save" type="button" onclick="window.salvarLancamentosGasto('${item.id}')" title="Salvar todos"><i class="fas fa-check"></i></button>
+                    </div>
+                </div>
+                <div class="gastos-section-table-wrap gastos-rebuild-lancar-table-wrap">
+                    <table class="gastos-section-table gastos-rebuild-inner-table gastos-rebuild-lancar-table">
+                        ${cabecalhoTabela}
+                        <tbody class="gastos-lancamento-lista" data-item-id="${item.id}" data-mes="${mesAtivo}" data-ano="${ano}">
+                            ${window.criarLinhaLancamentoGastoHTML({ dataCompra: dataPadrao })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            ${tabelaLancamentos}
+        </div>
+    </td></tr>`;
+};
+
+const copiarLancamentoGastoLocalCompraOriginal = window.copiarLancamentoGasto;
+window.copiarLancamentoGasto = async function(lancId) {
+    const l = allGastosLancamentos.find(x => x.id === lancId);
+    if (!l) return copiarLancamentoGastoLocalCompraOriginal?.(lancId);
+    const copia = { ...l, id: '', createdAt: Date.now(), updatedAt: Date.now() };
+    delete copia.id;
+    try {
+        await addDoc(collection(db, 'gastos_lancamentos'), copia);
+        window.showToast('Lançamento copiado!');
+    } catch(e) {
+        console.error(e);
+        window.showToast('Erro ao copiar lançamento.', true);
+    }
+};
+
+try {
+    if (!window.__gastosLocaisListenerStarted) {
+        window.__gastosLocaisListenerStarted = true;
+        onSnapshot(collection(db, 'gastos_locais'), snap => {
+            window.allGastosLocais = [];
+            snap.forEach(d => window.allGastosLocais.push({ id: d.id, ...d.data() }));
+            window.renderGastosPlanilha?.();
+        }, err => console.warn('Não foi possível carregar locais de compra:', err));
+    }
+} catch(e) {
+    console.warn('Listener de locais de compra não iniciado:', e);
+}
+
+
+
+
+// === GASTOS 2026-06-21: cabeçalho da tabela principal fixo ao rolar ===
+window.destroyGastosFixedHeader = function() {
+    const antigo = document.getElementById('gastos-fixed-header-clone');
+    if (antigo) antigo.remove();
+};
+
+window.getGastosMainTable = function() {
+    return document.querySelector('#t-gastos table.gastos-rebuild-table, #t-gastos table.gastos-planilha-table');
+};
+
+window.getGastosTableScroller = function(table) {
+    if (!table) return null;
+    return table.closest('.gastos-rebuild-table-card, .gastos-planilha-wrap, .table-responsive, .panel-card') || table.parentElement;
+};
+
+window.syncGastosFixedHeader = function() {
+    const gastosPane = document.getElementById('t-gastos');
+    const table = window.getGastosMainTable?.();
+    const thead = table?.querySelector(':scope > thead');
+    if (!gastosPane || !table || !thead || !document.body.contains(table)) {
+        window.destroyGastosFixedHeader?.();
+        return;
+    }
+
+    const paneStyle = window.getComputedStyle(gastosPane);
+    if (paneStyle.display === 'none' || gastosPane.hidden) {
+        window.destroyGastosFixedHeader?.();
+        return;
+    }
+
+    const scroller = window.getGastosTableScroller(table);
+    const tableRect = table.getBoundingClientRect();
+    const theadRect = thead.getBoundingClientRect();
+    const scrollerRect = (scroller || table).getBoundingClientRect();
+
+    const topOffset = 0;
+    const shouldShow = tableRect.top < topOffset && tableRect.bottom > (theadRect.height + topOffset + 8);
+
+    let cloneWrap = document.getElementById('gastos-fixed-header-clone');
+    if (!shouldShow) {
+        if (cloneWrap) cloneWrap.style.display = 'none';
+        return;
+    }
+
+    if (!cloneWrap) {
+        cloneWrap = document.createElement('div');
+        cloneWrap.id = 'gastos-fixed-header-clone';
+        document.body.appendChild(cloneWrap);
+    }
+
+    const sourceThs = Array.from(thead.querySelectorAll('th'));
+    const colgroup = `<colgroup>${sourceThs.map(th => `<col style="width:${Math.round(th.getBoundingClientRect().width)}px">`).join('')}</colgroup>`;
+    cloneWrap.innerHTML = `<table>${colgroup}<thead>${thead.innerHTML}</thead></table>`;
+
+    const cloneTable = cloneWrap.querySelector('table');
+    const visibleLeft = Math.max(scrollerRect.left, 0);
+    const visibleRight = Math.min(scrollerRect.right, window.innerWidth);
+    const visibleWidth = Math.max(0, visibleRight - visibleLeft);
+
+    cloneWrap.style.display = visibleWidth > 0 ? 'block' : 'none';
+    cloneWrap.style.left = `${visibleLeft}px`;
+    cloneWrap.style.top = `${topOffset}px`;
+    cloneWrap.style.width = `${visibleWidth}px`;
+    cloneWrap.style.height = `${Math.ceil(theadRect.height) + 4}px`;
+
+    if (cloneTable) {
+        cloneTable.style.width = `${Math.round(tableRect.width)}px`;
+        cloneTable.style.transform = `translateX(-${scroller?.scrollLeft || 0}px)`;
+    }
+};
+
+window.scheduleGastosFixedHeaderSync = function() {
+    if (window.__gastosFixedHeaderRaf) cancelAnimationFrame(window.__gastosFixedHeaderRaf);
+    window.__gastosFixedHeaderRaf = requestAnimationFrame(() => window.syncGastosFixedHeader?.());
+};
+
+if (!window.__gastosFixedHeaderEventsStarted) {
+    window.__gastosFixedHeaderEventsStarted = true;
+    window.addEventListener('scroll', window.scheduleGastosFixedHeaderSync, { passive: true });
+    window.addEventListener('resize', window.scheduleGastosFixedHeaderSync, { passive: true });
+    document.addEventListener('scroll', window.scheduleGastosFixedHeaderSync, true);
+    document.addEventListener('click', () => setTimeout(window.scheduleGastosFixedHeaderSync, 100), true);
+    setInterval(window.scheduleGastosFixedHeaderSync, 700);
+}
+
+const renderGastosPlanilhaCabecalhoFixoOriginal = window.renderGastosPlanilha;
+window.renderGastosPlanilha = function(...args) {
+    const retorno = renderGastosPlanilhaCabecalhoFixoOriginal.apply(this, args);
+    setTimeout(window.scheduleGastosFixedHeaderSync, 80);
+    const table = window.getGastosMainTable?.();
+    const scroller = window.getGastosTableScroller?.(table);
+    if (scroller && !scroller.__gastosFixedHeaderScrollBound) {
+        scroller.__gastosFixedHeaderScrollBound = true;
+        scroller.addEventListener('scroll', window.scheduleGastosFixedHeaderSync, { passive: true });
+    }
+    return retorno;
+};
+
+setTimeout(window.scheduleGastosFixedHeaderSync, 300);
+
+
+
+
+// === GASTOS 2026-06-21: desativar clone fixo e deixar só a tabela rolar ===
+window.destroyGastosFixedHeader = function() {
+    const antigo = document.getElementById('gastos-fixed-header-clone');
+    if (antigo) antigo.remove();
+};
+
+window.syncGastosFixedHeader = function() {
+    window.destroyGastosFixedHeader?.();
+};
+
+window.scheduleGastosFixedHeaderSync = function() {
+    window.destroyGastosFixedHeader?.();
+};
+
+const renderGastosPlanilhaRolagemItensOriginal = window.renderGastosPlanilha;
+window.renderGastosPlanilha = function(...args) {
+    const retorno = renderGastosPlanilhaRolagemItensOriginal.apply(this, args);
+    setTimeout(() => {
+        window.destroyGastosFixedHeader?.();
+        const table = document.querySelector('#t-gastos table.gastos-rebuild-table, #t-gastos table.gastos-planilha-table');
+        const wrap = table?.closest('.gastos-rebuild-table-card, .gastos-planilha-wrap, .table-responsive, .panel-card');
+        if (wrap) {
+            wrap.style.overflowY = 'auto';
+            wrap.style.overflowX = 'auto';
+        }
+    }, 50);
+    return retorno;
+};
+
+setTimeout(() => window.destroyGastosFixedHeader?.(), 100);
+setTimeout(() => window.destroyGastosFixedHeader?.(), 600);
+
+
+
+
+// === GASTOS 2026-06-21: impedir clone e manter scroll apenas no tbody ===
+window.destroyGastosFixedHeader = function() {
+    const antigo = document.getElementById('gastos-fixed-header-clone');
+    if (antigo) antigo.remove();
+};
+
+window.syncGastosFixedHeader = function() {
+    window.destroyGastosFixedHeader?.();
+};
+
+window.scheduleGastosFixedHeaderSync = function() {
+    window.destroyGastosFixedHeader?.();
+};
+
+const renderGastosPlanilhaScrollTbodyOriginal = window.renderGastosPlanilha;
+window.renderGastosPlanilha = function(...args) {
+    const retorno = renderGastosPlanilhaScrollTbodyOriginal.apply(this, args);
+    setTimeout(() => {
+        window.destroyGastosFixedHeader?.();
+        const body = document.getElementById('gastos-planilha-body');
+        if (body) {
+            body.style.overflowY = 'auto';
+            body.style.overflowX = 'hidden';
+        }
+    }, 60);
+    return retorno;
+};
+
+setTimeout(() => window.destroyGastosFixedHeader?.(), 100);
+setTimeout(() => window.destroyGastosFixedHeader?.(), 600);
+
+
+
+
+// === GASTOS 2026-06-21: marcas/locais em ordem alfabética e padrão Selecione ===
+window.ordenarOpcoesGastoAlfabetico = function(lista) {
+    return [...(lista || [])]
+        .filter(v => String(v || '').trim())
+        .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', {
+            sensitivity: 'base',
+            numeric: true,
+            ignorePunctuation: true
+        }));
+};
+
+window.marcasGastosDisponiveis = function() {
+    const mapa = new Map();
+    const ocultas = window.getGastosMarcasOcultas ? window.getGastosMarcasOcultas() : new Set();
+
+    (window.allGastosMarcas || []).forEach(m => {
+        const nome = String(m.nome || m.marca || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    (allGastosLancamentos || []).forEach(l => {
+        const nome = String(l.marca || l.nome || '').trim();
+        const chave = window.normalizarMarcaGasto(nome);
+        if (nome && !ocultas.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return window.ordenarOpcoesGastoAlfabetico([...mapa.values()]);
+};
+
+window.locaisGastosDisponiveis = function() {
+    const mapa = new Map();
+    const ocultos = window.getGastosLocaisOcultos ? window.getGastosLocaisOcultos() : new Set();
+
+    (window.allGastosLocais || []).forEach(l => {
+        const nome = String(l.nome || l.local || l.localCompra || '').trim();
+        const chave = window.normalizarLocalGasto ? window.normalizarLocalGasto(nome) : String(nome).toLowerCase().trim();
+        if (nome && !ocultos.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    (allGastosLancamentos || []).forEach(l => {
+        const nome = String(l.localCompra || l.local || '').trim();
+        const chave = window.normalizarLocalGasto ? window.normalizarLocalGasto(nome) : String(nome).toLowerCase().trim();
+        if (nome && !ocultos.has(chave) && !mapa.has(chave)) mapa.set(chave, nome);
+    });
+
+    return window.ordenarOpcoesGastoAlfabetico([...mapa.values()]);
+};
+
+window.renderOptionsMarcaGasto = function(marcaSelecionada = '') {
+    const marcas = window.marcasGastosDisponiveis();
+    const marcaAtual = String(marcaSelecionada || '').trim();
+    const chaveAtual = window.normalizarMarcaGasto(marcaAtual);
+    const existe = marcas.some(m => window.normalizarMarcaGasto(m) === chaveAtual);
+    const selecionarOutros = marcaAtual === '__outros__' || (marcaAtual && !existe);
+
+    let html = `<option value="" ${!marcaAtual ? 'selected' : ''}>Selecione...</option>`;
+    marcas.forEach(m => {
+        const selected = !selecionarOutros && window.normalizarMarcaGasto(m) === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(m)}" ${selected}>${escapeHTMLGasto(m)}</option>`;
+    });
+    html += `<option value="__outros__" ${selecionarOutros ? 'selected' : ''}>Outros</option>`;
+    return html;
+};
+
+window.renderOptionsLocalGasto = function(localSelecionado = '') {
+    const locais = window.locaisGastosDisponiveis();
+    const atual = String(localSelecionado || '').trim();
+    const chaveAtual = window.normalizarLocalGasto ? window.normalizarLocalGasto(atual) : String(atual).toLowerCase().trim();
+    const existe = locais.some(l => (window.normalizarLocalGasto ? window.normalizarLocalGasto(l) : String(l).toLowerCase().trim()) === chaveAtual);
+    const selecionarOutros = atual === '__outros__' || (atual && !existe);
+
+    let html = `<option value="" ${!atual ? 'selected' : ''}>Selecione...</option>`;
+    locais.forEach(l => {
+        const chave = window.normalizarLocalGasto ? window.normalizarLocalGasto(l) : String(l).toLowerCase().trim();
+        const selected = !selecionarOutros && chave === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(l)}" ${selected}>${escapeHTMLGasto(l)}</option>`;
+    });
+    html += `<option value="__outros__" ${selecionarOutros ? 'selected' : ''}>Outros</option>`;
+    return html;
+};
+
+// Garante que novas linhas sempre abram com Marca em "Selecione", e não em "Outros".
+const criarLinhaLancamentoGastoHTMLAlfabeticoOriginal = window.criarLinhaLancamentoGastoHTML;
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const dadosNormalizados = { ...(dados || {}) };
+    if (!String(dadosNormalizados.marca || dadosNormalizados.nome || '').trim()) {
+        dadosNormalizados.marca = '';
+        dadosNormalizados.nome = '';
+    }
+    if (!String(dadosNormalizados.localCompra || dadosNormalizados.local || '').trim()) {
+        dadosNormalizados.localCompra = '';
+        dadosNormalizados.local = '';
+    }
+    return criarLinhaLancamentoGastoHTMLAlfabeticoOriginal(dadosNormalizados);
+};
+
+
+
+
+// === GASTOS 2026-06-21: Outros logo após Selecione e Local renomeado ===
+window.renderOptionsMarcaGasto = function(marcaSelecionada = '') {
+    const marcas = window.marcasGastosDisponiveis();
+    const marcaAtual = String(marcaSelecionada || '').trim();
+    const chaveAtual = window.normalizarMarcaGasto(marcaAtual);
+    const existe = marcas.some(m => window.normalizarMarcaGasto(m) === chaveAtual);
+    const selecionarOutros = marcaAtual === '__outros__' || (marcaAtual && !existe);
+
+    let html = `<option value="" ${!marcaAtual ? 'selected' : ''}>Selecione...</option>`;
+    html += `<option value="__outros__" ${selecionarOutros ? 'selected' : ''}>Outros</option>`;
+    marcas.forEach(m => {
+        const selected = !selecionarOutros && window.normalizarMarcaGasto(m) === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(m)}" ${selected}>${escapeHTMLGasto(m)}</option>`;
+    });
+    return html;
+};
+
+window.renderOptionsLocalGasto = function(localSelecionado = '') {
+    const locais = window.locaisGastosDisponiveis();
+    const atual = String(localSelecionado || '').trim();
+    const chaveAtual = window.normalizarLocalGasto ? window.normalizarLocalGasto(atual) : String(atual).toLowerCase().trim();
+    const existe = locais.some(l => (window.normalizarLocalGasto ? window.normalizarLocalGasto(l) : String(l).toLowerCase().trim()) === chaveAtual);
+    const selecionarOutros = atual === '__outros__' || (atual && !existe);
+
+    let html = `<option value="" ${!atual ? 'selected' : ''}>Selecione...</option>`;
+    html += `<option value="__outros__" ${selecionarOutros ? 'selected' : ''}>Outros</option>`;
+    locais.forEach(l => {
+        const chave = window.normalizarLocalGasto ? window.normalizarLocalGasto(l) : String(l).toLowerCase().trim();
+        const selected = !selecionarOutros && chave === chaveAtual ? 'selected' : '';
+        html += `<option value="${escapeHTMLGasto(l)}" ${selected}>${escapeHTMLGasto(l)}</option>`;
+    });
+    return html;
+};
+
+window.toggleMarcaOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-marca-outros, .gasto-list-marca-outros');
+
+    if (inputOutros) {
+        if (select.value === '__outros__') {
+            inputOutros.style.display = '';
+            inputOutros.focus();
+        } else {
+            inputOutros.style.display = 'none';
+            inputOutros.value = '';
+        }
+    }
+
+    window.atualizarBotaoExcluirMarcaGasto?.(select);
+};
+
+window.toggleLocalOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-local-outros, .gasto-list-local-outros');
+
+    if (inputOutros) {
+        if (select.value === '__outros__') {
+            inputOutros.style.display = '';
+            inputOutros.focus();
+        } else {
+            inputOutros.style.display = 'none';
+            inputOutros.value = '';
+        }
+    }
+
+    window.atualizarBotaoExcluirLocalGasto?.(select);
+};
+
+const renderGastosDrawerLocalRenomeadoOriginal = window.renderGastosDrawer;
+window.renderGastosDrawer = function(...args) {
+    const html = renderGastosDrawerLocalRenomeadoOriginal.apply(this, args);
+    return String(html).replaceAll('Local', 'Local');
+};
+
+
+
+
+// === GASTOS 2026-06-21: Nova marca só aparece quando Marca = Outros ===
+window.ajustarCamposNovaMarcaGasto = function(scope = document) {
+    (scope || document).querySelectorAll('#t-gastos .gasto-lanc-row').forEach(row => {
+        const select = row.querySelector('.gasto-lanc-marca-select');
+        const input = row.querySelector('.gasto-lanc-marca-outros');
+        if (!select || !input) return;
+
+        if (select.value === '__outros__') {
+            input.classList.add('show-outros');
+            input.style.setProperty('display', 'block', 'important');
+        } else {
+            input.classList.remove('show-outros');
+            input.style.setProperty('display', 'none', 'important');
+        }
+    });
+};
+
+window.toggleMarcaOutrosGasto = function(select) {
+    const row = select.closest('.gasto-lanc-row, tr');
+    const inputOutros = row?.querySelector('.gasto-lanc-marca-outros, .gasto-list-marca-outros');
+
+    if (inputOutros) {
+        if (select.value === '__outros__') {
+            inputOutros.classList.add('show-outros');
+            inputOutros.style.setProperty('display', 'block', 'important');
+            inputOutros.focus();
+        } else {
+            inputOutros.classList.remove('show-outros');
+            inputOutros.style.setProperty('display', 'none', 'important');
+            inputOutros.value = '';
+        }
+    }
+
+    window.atualizarBotaoExcluirMarcaGasto?.(select);
+};
+
+const criarLinhaLancamentoGastoHTMLNovaMarcaOriginal = window.criarLinhaLancamentoGastoHTML;
+window.criarLinhaLancamentoGastoHTML = function(dados = {}) {
+    const html = criarLinhaLancamentoGastoHTMLNovaMarcaOriginal(dados);
+    setTimeout(() => window.ajustarCamposNovaMarcaGasto(document), 30);
+    return html;
+};
+
+const renderGastosPlanilhaNovaMarcaOriginal = window.renderGastosPlanilha;
+window.renderGastosPlanilha = function(...args) {
+    const retorno = renderGastosPlanilhaNovaMarcaOriginal.apply(this, args);
+    setTimeout(() => window.ajustarCamposNovaMarcaGasto(document), 80);
+    return retorno;
+};
+
+const adicionarLinhaLancamentoGastoNovaMarcaOriginal = window.adicionarLinhaLancamentoGasto;
+window.adicionarLinhaLancamentoGasto = function(...args) {
+    const retorno = adicionarLinhaLancamentoGastoNovaMarcaOriginal.apply(this, args);
+    setTimeout(() => window.ajustarCamposNovaMarcaGasto(document), 50);
+    return retorno;
+};
+
+setTimeout(() => window.ajustarCamposNovaMarcaGasto(document), 300);
+

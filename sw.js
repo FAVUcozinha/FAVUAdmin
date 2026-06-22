@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v100-upload-sem-nome-sem-preview-vazio';
+const CACHE_NAME = 'favu-app-v127-gastos-nova-marca-so-outros';
 const urlsToCache = [
   './',
   './index.html',
