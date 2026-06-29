@@ -7487,9 +7487,9 @@ window.calcularDivisaoFechamento = function() {
     const campoGastoAra = document.getElementById('gasto-manual-ara');
     const campoGastoFla = document.getElementById('gasto-manual-fla');
 
-    if (campoGastoCaixa && document.activeElement !== campoGastoCaixa) campoGastoCaixa.value = (gastosLancados.caixa || 0).toFixed(2);
-    if (campoGastoAra && document.activeElement !== campoGastoAra) campoGastoAra.value = (gastosLancados.arabela || 0).toFixed(2);
-    if (campoGastoFla && document.activeElement !== campoGastoFla) campoGastoFla.value = (gastosLancados.flavio || 0).toFixed(2);
+    if (campoGastoCaixa && campoGastoCaixa.value === '') campoGastoCaixa.value = (gastosLancados.caixa || 0).toFixed(2);
+    if (campoGastoAra && campoGastoAra.value === '') campoGastoAra.value = (gastosLancados.arabela || 0).toFixed(2);
+    if (campoGastoFla && campoGastoFla.value === '') campoGastoFla.value = (gastosLancados.flavio || 0).toFixed(2);
 
     const gCaixa = parseFloat(campoGastoCaixa?.value || 0) || 0;
     const gAra = parseFloat(campoGastoAra?.value || 0) || 0;
@@ -7504,7 +7504,7 @@ window.calcularDivisaoFechamento = function() {
     const lucroAra = lucroLiquido * (percAra / 100);
     const lucroFla = lucroLiquido * (percFla / 100);
 
-    const finalCaixa = lucroCaixa + gCaixa;
+    const finalCaixa = lucroCaixa;
     const finalAra = lucroAra + gAra;
     const finalFla = lucroFla + gFla;
 
@@ -7619,7 +7619,7 @@ window.enviarFechamentoWA = function(destinatario) {
     const lucroAra = lucroLiquido * pAra;
     const lucroFla = lucroLiquido * pFla;
 
-    const finalCaixa = lucroCaixa + gCaixa;
+    const finalCaixa = lucroCaixa;
     const finalAra = lucroAra + gAra;
     const finalFla = lucroFla + gFla;
 
