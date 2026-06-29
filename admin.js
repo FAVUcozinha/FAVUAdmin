@@ -3978,9 +3978,11 @@ window.obterPedidosDaSemanaAtual = function() {
 window.obterPedidosFiltrados = function() {
     const s = document.getElementById('search-input-pedidos') ? document.getElementById('search-input-pedidos').value.trim() : '';
     const displayData = document.getElementById('date-filter-display') ? document.getElementById('date-filter-display').value.trim() : '';
-    if (displayData) sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
+    
+    // Sincroniza o filtro oculto sempre (mesmo se o usuário limpar o campo visualmente)
+    sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
 
-    const df = document.getElementById('date-input') ? document.getElementById('date-input').value : ''; 
+    const df = document.getElementById('date-input') ? document.getElementById('date-input').value : '';
     const sp = document.getElementById('filter-status-pagamento') ? document.getElementById('filter-status-pagamento').value : '';
     const fp = document.getElementById('filter-forma-pagamento') ? document.getElementById('filter-forma-pagamento').value : '';
     const ob = document.getElementById('filter-observacao') ? document.getElementById('filter-observacao').value : '';
@@ -4021,9 +4023,9 @@ window.filtrarPedidos = function() {
     clearTimeout(timerFiltroPedidos);
     timerFiltroPedidos = setTimeout(() => {
         const displayData = document.getElementById('date-filter-display') ? document.getElementById('date-filter-display').value.trim() : '';
-        if (displayData) sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
+        sincronizarFiltroDataOcultoPeloDisplay(displayData, false);
 
-        // Sem filtro de data, a tela deve exibir TODOS os pedidos, não apenas a semana atual.
+        // O escopo sempre será idêntico ao que for retornado pelo filtro
         const escopo = window.obterPedidosFiltrados();
         window.renderizar(escopo);
     }, 350);
@@ -4053,13 +4055,12 @@ window.renderizar = function(pedidos) {
 }
 
 window.atualizarDashboardPedidos = function() {
+    // Garante que o Faturamento some exatamentre a mesma lista do Kanban
     let pedCalc = window.ticketsSelecionados.size > 0 
         ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
-        : ( (document.getElementById('search-input-pedidos')?.value.trim() || document.getElementById('date-input')?.value) 
-            ? window.obterPedidosFiltrados() 
-            : window.obterPedidosFiltrados().filter(p => window.obterPedidosDaSemanaAtual().includes(p)) );
+        : window.obterPedidosFiltrados();
             
-    let tv = 0, tp = 0; 
+    let tv = 0, tp = 0;
     pedCalc.filter(p => !isPedidoExcluidoPainel(p)).forEach(p => { 
         if (!(p.Status_do_Pedido || '').toLowerCase().includes('cancelado')) {
             tp++; 
