@@ -5159,8 +5159,40 @@ window.atualizarDisplayData = function() {
     } else { document.getElementById('date-filter-display').value = ''; document.getElementById('date-input').value = ''; }
 }
 window.aplicarFiltroData = function() { if (!window.dataInicialIntervalo) return window.showToast("Selecione uma data!", true); if (window.dataInicialIntervalo && !window.dataFinalIntervalo) window.dataFinalIntervalo = new Date(window.dataInicialIntervalo); window.atualizarDisplayData(); window.filtrarPedidos(); window.closeDatePicker(); }
-window.selecionarHoje = function() { window.dataInicialIntervalo = new Date(new Date().setHours(0,0,0,0)); window.dataFinalIntervalo = null; window.atualizarDisplayData(); window.renderCalendar(); window.aplicarFiltroData(); }
-window.filtrarMesAtual = function() { const hj = new Date(), mA = hj.getMonth(), aA = hj.getFullYear(); window.dataInicialIntervalo = new Date(aA, mA, 1, 0,0,0,0); window.dataFinalIntervalo = new Date(aA, mA + 1, 0, 0,0,0,0); window.atualizarDisplayData(); window.renderCalendar(); window.filtrarPedidos(); window.closeDatePicker(); }
+window.filtrarEstaSemana = function() { 
+    let hoje = new Date(); hoje.setHours(0,0,0,0); 
+    let diaSemana = hoje.getDay(); 
+    let diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); 
+    let segunda = new Date(hoje); segunda.setDate(diff); 
+    let domingo = new Date(segunda); domingo.setDate(segunda.getDate() + 6); 
+    window.dataInicialIntervalo = segunda; window.dataFinalIntervalo = domingo; 
+    window.atualizarDisplayData(); window.renderCalendar(); window.aplicarFiltroData(); 
+};
+
+window.filtrarProximaSemana = function() { 
+    let hoje = new Date(); hoje.setHours(0,0,0,0); 
+    let diaSemana = hoje.getDay(); 
+    let diff = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1) + 7; 
+    let segunda = new Date(hoje); segunda.setDate(diff); 
+    let domingo = new Date(segunda); domingo.setDate(segunda.getDate() + 6); 
+    window.dataInicialIntervalo = segunda; window.dataFinalIntervalo = domingo; 
+    window.atualizarDisplayData(); window.renderCalendar(); window.aplicarFiltroData(); 
+};
+
+window.filtrarEsteMes = function() { 
+    const hj = new Date(), mA = hj.getMonth(), aA = hj.getFullYear(); 
+    window.dataInicialIntervalo = new Date(aA, mA, 1, 0,0,0,0); 
+    window.dataFinalIntervalo = new Date(aA, mA + 1, 0, 0,0,0,0); 
+    window.atualizarDisplayData(); window.renderCalendar(); window.aplicarFiltroData(); 
+};
+
+window.filtrarProximoMes = function() { 
+    const hj = new Date(), mA = hj.getMonth() + 1, aA = hj.getFullYear(); 
+    window.dataInicialIntervalo = new Date(aA, mA, 1, 0,0,0,0); 
+    window.dataFinalIntervalo = new Date(aA, mA + 1, 0, 0,0,0,0); 
+    window.atualizarDisplayData(); window.renderCalendar(); window.aplicarFiltroData(); 
+};
+
 window.limparFiltros = function() { document.getElementById('search-input-pedidos').value = ''; document.getElementById('date-input').value = ''; document.getElementById('date-filter-display').value = ''; document.getElementById('filter-status-pagamento').value = ''; document.getElementById('filter-forma-pagamento').value = ''; document.getElementById('filter-observacao').value = ''; window.dataInicialIntervalo = null; window.dataFinalIntervalo = null; window.filtrarPedidos(); }
 window.mudarMes = function(delta) { window.currentCalendarDate.setMonth(window.currentCalendarDate.getMonth() + delta); window.renderCalendar(); }
 window.fecharModalPedido = function(id) { document.getElementById(id).style.display = 'none'; }
@@ -7417,7 +7449,28 @@ onAuthStateChanged(auth, (user) => {
 // ==========================================
 // FECHAMENTO FINANCEIRO E DIVISÃO (SÓCIOS)
 // ==========================================
+// ==========================================
+// FECHAMENTO FINANCEIRO E DIVISÃO (SÓCIOS)
+// ==========================================
+window.gastoManualCaixaEditado = false;
+window.gastoManualAraEditado = false;
+window.gastoManualFlaEditado = false;
+
+window.onGastoManualInput = function(tipo) {
+    if (tipo === 'caixa') window.gastoManualCaixaEditado = true;
+    if (tipo === 'ara') window.gastoManualAraEditado = true;
+    if (tipo === 'fla') window.gastoManualFlaEditado = true;
+    window.calcularDivisaoFechamento();
+};
+
 window.abrirModalFechamento = function() {
+    window.gastoManualCaixaEditado = false;
+    window.gastoManualAraEditado = false;
+    window.gastoManualFlaEditado = false;
+    if(document.getElementById('gasto-manual-caixa')) document.getElementById('gasto-manual-caixa').value = '';
+    if(document.getElementById('gasto-manual-ara')) document.getElementById('gasto-manual-ara').value = '';
+    if(document.getElementById('gasto-manual-fla')) document.getElementById('gasto-manual-fla').value = '';
+
     // Pega os pedidos da tela atual (idêntico ao cálculo do Dashboard)
     let pedidos = window.ticketsSelecionados.size > 0 
         ? window.todosPedidos.filter(p => window.ticketsSelecionados.has(p.ID_do_Pedido)) 
@@ -7487,9 +7540,9 @@ window.calcularDivisaoFechamento = function() {
     const campoGastoAra = document.getElementById('gasto-manual-ara');
     const campoGastoFla = document.getElementById('gasto-manual-fla');
 
-    if (campoGastoCaixa && campoGastoCaixa.value === '') campoGastoCaixa.value = (gastosLancados.caixa || 0).toFixed(2);
-    if (campoGastoAra && campoGastoAra.value === '') campoGastoAra.value = (gastosLancados.arabela || 0).toFixed(2);
-    if (campoGastoFla && campoGastoFla.value === '') campoGastoFla.value = (gastosLancados.flavio || 0).toFixed(2);
+    if (campoGastoCaixa && !window.gastoManualCaixaEditado) campoGastoCaixa.value = (gastosLancados.caixa || 0).toFixed(2);
+    if (campoGastoAra && !window.gastoManualAraEditado) campoGastoAra.value = (gastosLancados.arabela || 0).toFixed(2);
+    if (campoGastoFla && !window.gastoManualFlaEditado) campoGastoFla.value = (gastosLancados.flavio || 0).toFixed(2);
 
     const gCaixa = parseFloat(campoGastoCaixa?.value || 0) || 0;
     const gAra = parseFloat(campoGastoAra?.value || 0) || 0;
