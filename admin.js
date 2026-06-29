@@ -5147,8 +5147,30 @@ window.renderCalendar = function() {
 }
 window.selecionarData = function(y, m, d) {
     const sD = new Date(y, m, d, 0,0,0,0);
-    if (window.dataInicialIntervalo && window.dataFinalIntervalo) { window.dataInicialIntervalo = sD; window.dataFinalIntervalo = null; } else if (!window.dataInicialIntervalo) { window.dataInicialIntervalo = sD; window.dataFinalIntervalo = null; } else if (!window.dataFinalIntervalo) { if (sD < window.dataInicialIntervalo) { window.dataFinalIntervalo = new Date(window.dataInicialIntervalo); window.dataInicialIntervalo = sD; } else { if (sD.getTime() === window.dataInicialIntervalo.getTime()) { window.dataInicialIntervalo = null; window.dataFinalIntervalo = null; } else window.dataFinalIntervalo = sD; } }
-    window.atualizarDisplayData(); window.renderCalendar();
+    
+    if (window.dataInicialIntervalo && window.dataFinalIntervalo) { 
+        window.dataInicialIntervalo = sD; 
+        window.dataFinalIntervalo = null; 
+    } else if (!window.dataInicialIntervalo) { 
+        window.dataInicialIntervalo = sD; 
+        window.dataFinalIntervalo = null; 
+    } else if (!window.dataFinalIntervalo) { 
+        if (sD < window.dataInicialIntervalo) { 
+            window.dataFinalIntervalo = new Date(window.dataInicialIntervalo); 
+            window.dataInicialIntervalo = sD; 
+        } else { 
+            window.dataFinalIntervalo = sD; 
+        } 
+    }
+    
+    window.atualizarDisplayData(); 
+    window.renderCalendar();
+    
+    // Dispara a filtragem automaticamente assim que o intervalo de duas datas for concluído
+    if (window.dataInicialIntervalo && window.dataFinalIntervalo) {
+        window.filtrarPedidos();
+        window.closeDatePicker();
+    }
 }
 window.atualizarDisplayData = function() {
     if (window.dataInicialIntervalo && window.dataFinalIntervalo) {
