@@ -890,8 +890,8 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
         text-transform: uppercase !important;
         font-size: 1rem !important;
     }
-    #t-pedidos .filter-bar .btn,
-    #t-pedidos .filter-bar button {
+    #t-pedidos .filter-bar .btn:not(.btn-clear-filter),
+    #t-pedidos .filter-bar button:not(.btn-clear-filter) {
         background: var(--favu-rust) !important;
         color: #fff !important;
         border: 2px solid var(--favu-rust) !important;
@@ -899,6 +899,10 @@ input[type="date"], input[type="time"], .time-slot-select, .time-free-input {
         font-family: 'Basic Choice', cursive !important;
         width: 100% !important;
         justify-content: center !important;
+    }
+    /* Limpar Filtros de Pedidos segue o mesmo padrão visual de Categorias, também no mobile */
+    #t-pedidos .filter-bar .btn-clear-filter {
+        width: 100% !important;
     }
 }
 
@@ -2476,7 +2480,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 #t-gastos .gastos-lancamentos-table select,
 #t-gastos #gastos-busca,
 #t-gastos #gastos-ano,
-#t-gastos #gastos-filtro-item {
+#t-gastos #gastos-filtro-item,
+#t-gastos #gastos-date-filter-display {
     font-family: var(--font-numbers) !important;
 }
 
@@ -2884,6 +2889,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #t-gastos #gastos-filtro-item,
     #t-gastos #gastos-ano,
     #t-gastos #gastos-busca,
+    #t-gastos #gastos-date-filter-display,
     #t-gastos .gastos-limpar-btn {
         width: 100% !important;
         min-width: 0 !important;
@@ -4439,12 +4445,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #fff !important;
 }
 
-/* Cancelar do Novo Item de Gastos igual ao Cancelar da edição de Categoria */
+/* AJUSTE (2026-08): Cancelar do Novo Item de Gastos igual ao Cancelar de "Cadastrar
+   Categoria" (.btn-secondary = verde sólido, texto branco) - a versão anterior estava
+   com contorno rust, que não é a cor real do Cancelar de Categoria. */
 #modal-gasto-item .gasto-item-cancel-btn,
-#modal-gasto-item button[onclick="window.closeModal('modal-gasto-item', 'form-gasto-item')"] {
-    background: transparent !important;
-    border: 2px solid var(--favu-rust) !important;
-    color: var(--favu-rust) !important;
+#modal-gastos-lote .gastos-lote-add-linha-btn,
+#modal-editar-gasto-lancamento .gastos-lote-add-linha-btn {
+    background: var(--favu-green) !important;
+    border: none !important;
+    color: #fff !important;
 }
 
 
@@ -4486,6 +4495,78 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     width: 115px !important;
     min-width: 115px !important;
     max-width: 115px !important;
+}
+
+/* AJUSTE (2026-08): a tabela de Lançamentos usa a mesma classe .gastos-rebuild-table da
+   Planilha, mas tem só 12 colunas (Ações é a 12ª, não a 14ª). Por isso ela caía na regra
+   de "Meses" acima (78px, overflow hidden), comprimindo os 3 botões de ação
+   (editar/copiar/excluir). Escopo por #gastos-painel-lancamentos (2 IDs = mais específico
+   que as regras acima) para dar à coluna Ações largura própria, sem afetar a Planilha. */
+#t-gastos #gastos-painel-lancamentos .gastos-rebuild-table th:nth-child(12),
+#t-gastos #gastos-painel-lancamentos .gastos-rebuild-table td:nth-child(12) {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    overflow: visible !important;
+}
+
+/* AJUSTE (2026-08): a coluna "Local" (3ª de Lançamentos) também caía na regra genérica de
+   "Meses" (78px, overflow hidden, texto centralizado) - certo pra Planilha, ruim aqui, onde
+   o nome do local agora pode quebrar em 2 linhas (nome + tag). Mesmo escopo por 2 IDs. */
+#t-gastos #gastos-painel-lancamentos .gastos-rebuild-table th:nth-child(3),
+#t-gastos #gastos-painel-lancamentos .gastos-rebuild-table td:nth-child(3) {
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    text-align: center !important;
+    word-break: break-word !important;
+}
+
+/* AJUSTE (2026-08): "Local" com apelido entre parênteses (ex.: "Distribuidora e
+   Panificadora (Displan)") mostra o apelido como uma tag menor abaixo do nome principal. */
+#t-gastos .gasto-local-principal {
+    display: block !important;
+}
+#t-gastos .gasto-local-tag {
+    display: inline-block !important;
+    margin-top: 4px !important;
+    padding: 2px 8px !important;
+    background: var(--favu-beige) !important;
+    color: var(--favu-moss) !important;
+    font-size: 0.7em !important;
+    font-weight: bold !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+}
+
+/* AJUSTE (2026-08): "Total do Período" volta a ser a última linha da própria tabela (não
+   mais uma barra solta), mas fixa (sticky) no fim da área visível - a cabeça (thead) já é
+   sticky no topo, então os itens rolam entre os dois. Valor alinhado à direita (última
+   coluna). Classe própria (não .gastos-total-row) pra não herdar o estilo da Planilha. */
+#t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row,
+#t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row td {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 850 !important;
+}
+#t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row td {
+    background: var(--favu-green) !important;
+    color: #fff !important;
+    font-family: 'Basic Choice', cursive !important;
+    font-size: 1.05rem !important;
+    text-transform: uppercase !important;
+    padding: 14px 15px !important;
+    border-top: 2px solid var(--favu-rust) !important;
+    text-align: left !important;
+}
+#t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row td:last-child {
+    text-align: right !important;
+    font-size: 1.2rem !important;
+    font-family: var(--font-numbers) !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
 }
 
 /* O valor dentro do mês não deve aumentar a largura da coluna. */
@@ -5476,6 +5557,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #t-gastos #gastos-filtro-item,
     #t-gastos #gastos-ano,
     #t-gastos #gastos-busca,
+    #t-gastos #gastos-date-filter-display,
     #t-gastos .gastos-limpar-btn,
     #t-gastos .gastos-novo-item-btn {
         width: 100% !important;
@@ -5508,6 +5590,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('custom-confirm').classList.remove('show'); setTimeout(()=>document.getElementById('custom-confirm').style.display='none', 300)">Cancelar</button>
                 <button id="confirm-btn" class="btn btn-primary" style="flex:1;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOVO (2026-08): ao excluir um lançamento de gasto parcelado, permite escolher entre
+         excluir só esta parcela ou todas as parcelas do mesmo grupo (parcelaGrupoId). -->
+    <div id="modal-excluir-parcela-gasto" class="modal" style="z-index: 100000;" onclick="if(event.target === this) window.closeModal('modal-excluir-parcela-gasto')">
+        <div class="popup-conteudo" style="max-width: 420px; padding: 30px;">
+            <button class="close-modal" onclick="window.closeModal('modal-excluir-parcela-gasto')">&times;</button>
+            <h3 class="font-display" style="color: #E60000; font-size: 1.8rem; margin:0 0 15px 0;">Excluir parcela</h3>
+            <p id="excl-parc-msg" style="margin: 0 0 25px 0; font-family: 'Basic Choice', cursive !important; font-size: 1.1rem; color: var(--favu-moss);"></p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn btn-secondary" style="width:100%;" onclick="window.closeModal('modal-excluir-parcela-gasto')">Cancelar</button>
+                <button id="excl-parc-btn-uma" type="button" class="btn btn-outline" style="width:100%;">Excluir só esta parcela</button>
+                <button id="excl-parc-btn-todas" type="button" class="btn btn-danger" style="width:100%;">Excluir todas as parcelas</button>
             </div>
         </div>
     </div>
@@ -5663,7 +5760,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             </select>
                         </div>
                         <div class="filter-item" style="justify-content: flex-end;">
-                            <button class="btn btn-outline" style="padding: 8px 15px; border-color: #ddd; color: var(--favu-moss); white-space: nowrap;" onclick="window.limparFiltros()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                            <button class="btn btn-outline btn-clear-filter" onclick="window.limparFiltros()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
                         </div>
                     </div>
                 </div>
@@ -5962,39 +6059,96 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <div id="t-gastos" class="tab-pane gastos-rebuild-pane">
                 <div class="buttons-area gastos-rebuild-buttons">
                     <button class="btn btn-primary gastos-rebuild-new-btn" onclick="window.adicionarItemGasto()"><i class="fas fa-plus"></i> Novo Item</button>
+                    <button class="btn btn-outline gastos-rebuild-new-btn" onclick="window.abrirModalGastosLote()" style="background: var(--favu-moss) !important;"><i class="fas fa-layer-group"></i> Lançar gastos</button>
+                </div>
+
+                <div class="prod-tabs gastos-subtabs">
+                    <button type="button" class="prod-tab-btn gastos-subtab-btn active" data-subaba="gastos" onclick="window.trocarSubAbaGastos('gastos')"><i class="fas fa-table"></i> Gastos</button>
+                    <button type="button" class="prod-tab-btn gastos-subtab-btn" data-subaba="lancamentos" onclick="window.trocarSubAbaGastos('lancamentos')"><i class="fas fa-list"></i> Lançamentos</button>
                 </div>
 
                 <div class="panel-card gastos-rebuild-header">
-                    <h2 class="font-display gastos-rebuild-title">Gastos Cadastrados</h2>
-                    <div class="search-filter-actions gastos-rebuild-actions">
-                        <select id="gastos-filtro-item" class="search-bar gastos-rebuild-filter" onchange="window.fecharGastosItem(); window.renderGastosPlanilha()"><option value="">Todos os itens</option></select>
-                        <select id="gastos-ano" class="search-bar gastos-rebuild-filter gastos-rebuild-year" onchange="window.fecharGastosItem(); window.renderGastosPlanilha()"></select>
-                        <button type="button" class="btn btn-outline btn-clear-filter gastos-rebuild-clear-btn" onclick="window.limparFiltrosGastos()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                    <h2 class="font-display gastos-rebuild-title" id="gastos-titulo-painel">Planilha de Gastos</h2>
+
+                    <div id="filter-toggle-btn-gastos" onclick="document.getElementById('filter-bar-gastos').classList.toggle('show')">
+                        <span class="gastos-filtro-toggle-label"><i class="fas fa-filter"></i> Filtros</span>
+                    </div>
+
+                    <div class="filter-bar" id="filter-bar-gastos">
+                        <div class="filter-group-main">
+                            <div class="filter-item" id="gastos-filtro-ano-wrap">
+                                <label>Ano</label>
+                                <select id="gastos-ano" onchange="window.renderGastosPlanilha()"></select>
+                            </div>
+                            <div class="filter-item" id="gastos-filtro-item-wrap" style="display:none;">
+                                <label>Item</label>
+                                <select id="gastos-filtro-item" onchange="window.renderGastosPlanilha()"><option value="">Todos os itens</option></select>
+                            </div>
+                            <div class="filter-item" id="gastos-filtro-periodo-wrap" style="display:none;">
+                                <label>Período</label>
+                                <input type="text" id="gastos-date-filter-display" placeholder="Selecione o período" readonly onclick="window.openGastosDatePicker()" style="background:white; cursor:pointer;">
+                                <select id="gastos-mes-filtro" onchange="window.renderGastosPlanilha()" style="display:none;"></select>
+                            </div>
+                        </div>
+                        <div class="filter-group-additional" id="gastos-filtros-acoes" style="display:none;">
+                            <div class="filter-item" style="justify-content: flex-end;">
+                                <button type="button" class="btn btn-outline btn-clear-filter" onclick="window.limparFiltrosGastos()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                            </div>
+                            <div class="filter-item" style="justify-content: flex-end;">
+                                <button type="button" class="btn btn-outline" style="padding: 8px 15px; border-color: #ddd; color: var(--favu-moss); white-space: nowrap;" onclick="window.abrirModalExportarGastos()"><i class="fas fa-file-export"></i> Exportar Mês</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="panel-card table-responsive gastos-rebuild-table-card">
+                <div id="gastos-painel-resumo">
+                    <div class="panel-card table-responsive gastos-rebuild-table-card">
+                        <table class="favu-table gastos-rebuild-table">
+                            <thead>
+                                <tr>
+                                    <th class="gastos-rebuild-item-th">Item</th>
+                                    <th>Jan</th>
+                                    <th>Fev</th>
+                                    <th>Mar</th>
+                                    <th>Abr</th>
+                                    <th>Mai</th>
+                                    <th>Jun</th>
+                                    <th>Jul</th>
+                                    <th>Ago</th>
+                                    <th>Set</th>
+                                    <th>Out</th>
+                                    <th>Nov</th>
+                                    <th>Dez</th>
+                                    <th class="gastos-rebuild-actions-th">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gastos-planilha-body">
+                                <tr><td colspan="15" class="gastos-empty">Carregando gastos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="gastos-painel-lancamentos" class="panel-card table-responsive gastos-rebuild-table-card" style="display:none;">
                     <table class="favu-table gastos-rebuild-table">
                         <thead>
                             <tr>
-                                <th class="gastos-rebuild-item-th">Item</th>
-                                <th>Jan</th>
-                                <th>Fev</th>
-                                <th>Mar</th>
-                                <th>Abr</th>
-                                <th>Mai</th>
-                                <th>Jun</th>
-                                <th>Jul</th>
-                                <th>Ago</th>
-                                <th>Set</th>
-                                <th>Out</th>
-                                <th>Nov</th>
-                                <th>Dez</th>
+                                <th>Item</th>
+                                <th>Marca</th>
+                                <th>Local</th>
+                                <th>Kg/L</th>
+                                <th>Quantidade</th>
+                                <th>Unidade</th>
+                                <th>Total</th>
+                                <th>Comprador</th>
+                                <th>Data</th>
+                                <th>Nota Fiscal</th>
+                                <th>Observação</th>
                                 <th class="gastos-rebuild-actions-th">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="gastos-planilha-body">
-                            <tr><td colspan="15" class="gastos-empty">Carregando gastos...</td></tr>
+                        <tbody id="gastos-lancamentos-lista-body">
+                            <tr><td colspan="11" class="gastos-empty">Carregando lançamentos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -6595,8 +6749,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <button class="date-picker-btn" style="background:var(--favu-green);" onclick="window.filtrarProximaSemana()">PRÓXIMA SEMANA</button>
                 </div>
                 <div class="date-picker-buttons-row">
+                    <button class="date-picker-btn" style="background:var(--favu-rust);" onclick="window.filtrarMesAnterior()">MÊS ANTERIOR</button>
                     <button class="date-picker-btn" style="background:#E60000;" onclick="window.filtrarEsteMes()">ESTE MÊS</button>
-                    <button class="date-picker-btn" style="background:var(--favu-rust);" onclick="window.filtrarProximoMes()">PRÓXIMO MÊS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gastos-date-picker-modal" class="modal-direct" onclick="if(event.target === this) window.closeGastosDatePicker()">
+        <div class="date-picker-content">
+            <div class="date-picker-header">
+                <button class="date-picker-nav" onclick="window.mudarMesGastosCalendar(-1)">‹</button>
+                <div id="gastos-month-year-display"></div>
+                <button class="date-picker-nav" onclick="window.mudarMesGastosCalendar(1)">›</button>
+            </div>
+            <div class="date-picker-calendar" id="gastos-calendar-grid"></div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div class="date-picker-buttons-row">
+                    <button class="date-picker-btn" style="background:var(--favu-moss);" onclick="window.gastosFiltrarSemanaPassada()">SEMANA PASSADA</button>
+                    <button class="date-picker-btn" style="background:#A5D6A7; color:#1D2814;" onclick="window.gastosFiltrarEstaSemana()">ESTA SEMANA</button>
+                </div>
+                <div class="date-picker-buttons-row">
+                    <button class="date-picker-btn" style="background:var(--favu-rust);" onclick="window.gastosFiltrarMesAnterior()">MÊS ANTERIOR</button>
+                    <button class="date-picker-btn" style="background:#E60000;" onclick="window.gastosFiltrarEsteMes()">ESTE MÊS</button>
                 </div>
             </div>
         </div>
@@ -7828,11 +8003,14 @@ body.side-menu-open #bulk-actions-avisos { display: none !important; }
 }
 #search-orcamento::placeholder { color: #888 !important; }
 
+/* AJUSTE (2026-08): a barra de categorias ficava presa a max-width:1200px, mais estreita
+   que "Simulador de Orçamentos" acima (sem limite de largura). Removido o teto pra
+   acompanhar a largura real do painel. */
 #t-orcamentos .orc-categorias-nav-wrapper,
 #t-orcamentos .categorias-nav-wrapper {
     width: 100% !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
+    max-width: none !important;
+    margin: 0 !important;
     padding: 0 !important;
 }
 
@@ -8194,6 +8372,14 @@ body.side-menu-open #bulk-actions-avisos { display: none !important; }
     .orc-table th.col-icon, .orc-table td.col-icon { width: 5% !important; }
     .descricao-orc, .orc-table .descricao { font-size: 0.75rem !important; margin-top: 4px !important; }
     #orc-cats-nav .categoria-btn-orc { font-size: 0.95rem !important; padding: 6px 18px !important; }
+    /* AJUSTE (2026-08): no desktop, mostrar todas as categorias (quebrando linha) em vez de
+       cortar/exigir arrastar - o arrastar continua só no mobile (abaixo de 601px). */
+    #orc-cats-nav.categorias-draggable {
+        flex-wrap: wrap !important;
+        overflow-x: visible !important;
+        cursor: default !important;
+    }
+    #orc-cats-nav.categorias-draggable:active { cursor: default !important; }
     .orc-table input[type="number"] { width: 36px !important; height: 28px !important; font-size: 0.95rem !important; }
     .orc-table .qtd-btn-table { font-size: 1.1rem !important; }
     #modal-orcamento-pedido .orc-popup,
@@ -11069,9 +11255,388 @@ input[type="date"]::-webkit-date-and-time-value {
     color: var(--favu-green) !important;
 }
 
+/* NOVO (2026-08): Nota Fiscal + modal "Lançar Vários Gastos" — regras globais, funcionam dentro ou fora de #t-gastos */
+.gasto-nota-wrap { display: flex; gap: 4px; align-items: center; }
+.gasto-nota-wrap input { flex: 1; min-width: 0; }
+.gasto-nota-wrap .gastos-icon-btn { flex-shrink: 0; }
+
+#modal-gastos-lote .gastos-icon-btn,
+#modal-editar-gasto-lancamento .gastos-icon-btn {
+    width: 36px; height: 36px; min-width: 36px; max-width: 36px; padding: 0; border-radius: 8px;
+    border: none; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1rem; line-height: 1; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+}
+#modal-gastos-lote .gastos-icon-btn.copy,
+#modal-editar-gasto-lancamento .gastos-icon-btn.copy { background: var(--favu-rust); color: #fff; }
+#modal-gastos-lote .gastos-icon-btn.danger,
+#modal-editar-gasto-lancamento .gastos-icon-btn.danger { background: #E60000; color: #fff; }
+#modal-gastos-lote .gastos-icon-btn:hover,
+#modal-editar-gasto-lancamento .gastos-icon-btn:hover { filter: brightness(1.2); }
+#modal-gastos-lote table.favu-table th { white-space: nowrap; }
+#modal-gastos-lote .favu-table td { padding: 8px 6px; vertical-align: middle; }
+@media (min-width: 1025px) {
+    #modal-gastos-lote table.favu-table { min-width: 760px; }
+    #modal-gastos-lote .gasto-lote-row select,
+    #modal-gastos-lote .gasto-lote-row input { min-width: 100px; }
+}
+
+.gastos-lote-campos-unicos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    background: rgba(224, 159, 65, 0.08);
+    border: 1px dashed var(--favu-rust);
+    border-radius: 12px;
+}
+.gastos-lote-campos-unicos label small { font-weight: normal; color: #888; font-size: 0.75rem; }
+
+/* AJUSTE (2026-08): campo "Parcelar" — agora único para o lote inteiro (ao lado de Local/
+   Nota Fiscal/Data), com design de caixa/checkbox em vez do texto solto de antes. */
+.gasto-lote-parcelar-label,
+#modal-editar-gasto-lancamento .gasto-lote-parcelar-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-family: var(--font-numbers);
+    color: var(--favu-moss);
+    font-weight: normal;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+.gasto-lote-parcelar-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    accent-color: var(--favu-rust);
+    cursor: pointer;
+    margin: 0;
+}
+#gasto-lote-parcelas-unico,
+#edit-lanc-parcelas {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    font-family: var(--font-numbers);
+    color: var(--favu-moss);
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* NOVO (2026-08): botão de alternar filtros de Gastos no mobile, no mesmo padrão de Pedidos */
+#filter-toggle-btn-gastos { display: none; }
+.gastos-filtro-toggle-label { font-weight: bold; color: var(--favu-rust); font-family: 'Basic Choice', cursive; font-size: 1.1rem; }
+@media (max-width: 768px) {
+    #filter-toggle-btn-gastos {
+        display: block !important;
+        background: #fff !important;
+        border: 1px solid rgba(224, 159, 65, 0.35) !important;
+        border-radius: 14px !important;
+        box-shadow: var(--shadow-soft) !important;
+        padding: 11px 14px !important;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+    .gastos-filtro-toggle-label {
+        color: var(--favu-moss) !important;
+        text-transform: uppercase !important;
+        font-size: 1rem !important;
+        font-family: 'Basic Choice', cursive !important;
+    }
+    #t-gastos .filter-bar { display: none; }
+    #t-gastos .filter-bar.show { display: flex; }
+}
+
+/* NOVO (2026-08): campo de data sem o ícone de calendário sobrepondo o valor, em toda a aba Gastos */
+#t-gastos input[type="date"],
+#modal-gastos-lote input[type="date"],
+#modal-editar-gasto-lancamento input[type="date"] {
+    min-width: 148px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    position: relative !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 38px !important;
+    box-sizing: border-box !important;
+    background-color: #fff !important;
+}
+#t-gastos input[type="date"]::-webkit-calendar-picker-indicator,
+#modal-gastos-lote input[type="date"]::-webkit-calendar-picker-indicator,
+#modal-editar-gasto-lancamento input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+#t-gastos input[type="date"]::-webkit-date-and-time-value,
+#modal-gastos-lote input[type="date"]::-webkit-date-and-time-value,
+#modal-editar-gasto-lancamento input[type="date"]::-webkit-date-and-time-value {
+    text-align: left !important;
+    min-height: 44px !important;
+    line-height: 44px !important;
+}
+
+/* NOVO (2026-08): sub-abas Gastos/Lançamentos usando o mesmo padrão pill de Produtos */
+.gastos-subtabs { margin-bottom: 15px; }
+@media (max-width: 600px) {
+    .gastos-subtabs { flex-wrap: nowrap; gap: 8px; }
+    .gastos-subtabs .gastos-subtab-btn {
+        flex: 1 1 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 8px;
+    }
+}
+
+/* NOVO (2026-08): agrupamento visual de variações de tamanho na edição de Pedidos (nome/categoria 1x) */
+#edit-modal-pedido .edit-item-produto-header {
+    font-family: 'Basic Choice', cursive !important;
+    color: var(--favu-moss) !important;
+    font-size: 1rem !important;
+    margin: 8px 0 4px 0 !important;
+    padding-left: 2px;
+}
+#edit-modal-pedido .edit-item-row-variacao {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+#edit-modal-pedido .edit-item-variacao-label {
+    font-family: var(--font-numbers);
+    font-size: 0.85rem;
+    color: #777;
+    padding-left: 10px;
+    display: inline-block;
+}
+
+/* AJUSTE (2026-08): oculta a coluna Categoria em Produtos - já filtramos por categoria nas abas */
+#tbl-produtos th:nth-child(4), #tbl-produtos td:nth-child(4) { display: none !important; }
+
+/* AJUSTE (2026-08): remove o estilo "pill" antigo dos selects Item/Ano do filtro de Gastos -
+   ficam idênticos ao select de Mês (mesmo padrão limpo de Pedidos), corrigindo a altura excessiva. */
+#t-gastos #gastos-filtro-item,
+#t-gastos #gastos-ano,
+#t-gastos #gastos-date-filter-display {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    line-height: normal !important;
+    padding: 8px 12px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    font-weight: normal !important;
+    box-sizing: border-box !important;
+}
+#t-gastos #gastos-filtro-item { min-width: 170px !important; flex: none !important; }
+#t-gastos #gastos-ano { min-width: 110px !important; flex: none !important; }
+#t-gastos #gastos-date-filter-display { min-width: 170px !important; flex: none !important; }
+
+/* AJUSTE (2026-08): filtro de Mês+Ano de Gastos unificado em popup, no mesmo fluxo do
+   filtro de Data de Entrega de Pedidos. O select de mês original vira campo oculto que
+   guarda o mês escolhido, mantendo toda a lógica de filtragem/exportação existente intacta.
+   #gastos-ano NÃO fica mais oculto aqui: virou o único filtro visível na aba Planilha de
+   Gastos (ver trocarSubAbaGastos), independente do período de Lançamentos. */
+#t-gastos #gastos-mes-filtro {
+    display: none !important;
+}
+
+/* AJUSTE (2026-08): mobile - tabela "Gastos Cadastrados" mostra só a coluna do Item (fixa)
+   + a coluna do mês atualmente filtrado (via popup de período), escondendo as demais 11
+   colunas de mês pra caber na tela sem scroll horizontal. Desktop permanece intacto
+   (nada aqui roda fora do media query). Lançamentos (outra tabela) não é afetada. */
+@media (max-width: 900px) {
+    #gastos-painel-resumo table.gastos-rebuild-table {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(1),
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:nth-child(1) {
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 60 !important;
+        width: 150px !important;
+        min-width: 150px !important;
+        max-width: 150px !important;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.08) !important;
+    }
+
+    #gastos-painel-resumo .gastos-rebuild-month-cell {
+        display: none !important;
+    }
+    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(n+2):nth-child(-n+13) {
+        display: none !important;
+    }
+
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="1"] .gastos-rebuild-month-cell[data-label="Jan:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="2"] .gastos-rebuild-month-cell[data-label="Fev:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="3"] .gastos-rebuild-month-cell[data-label="Mar:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="4"] .gastos-rebuild-month-cell[data-label="Abr:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="5"] .gastos-rebuild-month-cell[data-label="Mai:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="6"] .gastos-rebuild-month-cell[data-label="Jun:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="7"] .gastos-rebuild-month-cell[data-label="Jul:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="8"] .gastos-rebuild-month-cell[data-label="Ago:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="9"] .gastos-rebuild-month-cell[data-label="Set:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="10"] .gastos-rebuild-month-cell[data-label="Out:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="11"] .gastos-rebuild-month-cell[data-label="Nov:"],
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="12"] .gastos-rebuild-month-cell[data-label="Dez:"] {
+        display: table-cell !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="1"] > thead > tr > th:nth-child(2),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="2"] > thead > tr > th:nth-child(3),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="3"] > thead > tr > th:nth-child(4),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="4"] > thead > tr > th:nth-child(5),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="5"] > thead > tr > th:nth-child(6),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="6"] > thead > tr > th:nth-child(7),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="7"] > thead > tr > th:nth-child(8),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="8"] > thead > tr > th:nth-child(9),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="9"] > thead > tr > th:nth-child(10),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="10"] > thead > tr > th:nth-child(11),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="11"] > thead > tr > th:nth-child(12),
+    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="12"] > thead > tr > th:nth-child(13) {
+        display: table-cell !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+
+    /* AJUSTE (2026-08): a célula do Item mostrava "Valor total"/"Total de unidades" do ANO
+       inteiro, o que conflitava visualmente com a coluna do mês atual ao lado (valores
+       diferentes lado a lado). No mobile, deixa só o nome do item nessa célula - o valor
+       do mês atual já aparece na sua própria coluna. Ações também pode ficar oculta aqui
+       pra sobrar mais espaço pras duas colunas que importam (Item | Mês). */
+    #gastos-painel-resumo .gastos-rebuild-item-total-line,
+    #gastos-painel-resumo .gastos-rebuild-item-units-line {
+        display: none !important;
+    }
+    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(14),
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:nth-child(14) {
+        display: none !important;
+    }
+}
+
+/* AJUSTE (2026-08): campo "+ Adicionar" inline (Item/Marca/Local) - aparece abaixo do select
+   selecionado para cadastrar o novo valor sem sair da tela, e lixeira para excluir o já cadastrado. */
+.gasto-item-novo-input, .gasto-marca-novo-input, .gasto-local-novo-input {
+    margin-top: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px dashed var(--favu-rust);
+    border-radius: 8px;
+    background: rgba(224, 159, 65, 0.06);
+    font-family: var(--font-numbers);
+    font-size: 0.9rem;
+}
+
+/* Container do select+lixeira e do campo "+ Adicionar" dentro da célula da tabela de lote,
+   garante empilhamento correto também na visão em cards do mobile. */
+#modal-gastos-lote .gasto-campo-com-novo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+#t-gastos .gasto-marca-select-wrap, #t-gastos .gasto-local-select-wrap, #t-gastos .gasto-item-select-wrap,
+#modal-gastos-lote .gasto-marca-select-wrap, #modal-gastos-lote .gasto-local-select-wrap, #modal-gastos-lote .gasto-item-select-wrap,
+#modal-editar-gasto-lancamento .gasto-marca-select-wrap, #modal-editar-gasto-lancamento .gasto-local-select-wrap, #modal-editar-gasto-lancamento .gasto-item-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+#t-gastos .gasto-marca-select-wrap select, #t-gastos .gasto-local-select-wrap select, #t-gastos .gasto-item-select-wrap select,
+#modal-gastos-lote .gasto-marca-select-wrap select, #modal-gastos-lote .gasto-local-select-wrap select, #modal-gastos-lote .gasto-item-select-wrap select,
+#modal-editar-gasto-lancamento .gasto-marca-select-wrap select, #modal-editar-gasto-lancamento .gasto-local-select-wrap select, #modal-editar-gasto-lancamento .gasto-item-select-wrap select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#t-gastos .gasto-marca-delete-btn, #t-gastos .gasto-local-delete-btn, #t-gastos .gasto-item-delete-btn,
+#modal-gastos-lote .gasto-marca-delete-btn, #modal-gastos-lote .gasto-local-delete-btn, #modal-gastos-lote .gasto-item-delete-btn,
+#modal-editar-gasto-lancamento .gasto-marca-delete-btn, #modal-editar-gasto-lancamento .gasto-local-delete-btn, #modal-editar-gasto-lancamento .gasto-item-delete-btn {
+    display: none;
+    flex-shrink: 0;
+    width: 30px;
+    min-width: 30px;
+    height: 36px;
+    border: 1px solid rgba(192, 57, 43, 0.25);
+    border-radius: 9px;
+    background: #fff;
+    color: #c0392b;
+    cursor: pointer;
+    font-weight: 900;
+    font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+/* AJUSTE (2026-08): a lixeira só aparece (e só passa a ocupar espaço) quando o mouse está
+   sobre o campo — antes só ficava transparente (opacity:0) mas continuava reservando o
+   espaço do select; agora com display:none o select ocupa 100% até o hover acontecer. */
+#t-gastos .gasto-marca-select-wrap:hover .gasto-marca-delete-btn, #t-gastos .gasto-local-select-wrap:hover .gasto-local-delete-btn, #t-gastos .gasto-item-select-wrap:hover .gasto-item-delete-btn,
+#modal-gastos-lote .gasto-marca-select-wrap:hover .gasto-marca-delete-btn, #modal-gastos-lote .gasto-local-select-wrap:hover .gasto-local-delete-btn, #modal-gastos-lote .gasto-item-select-wrap:hover .gasto-item-delete-btn,
+#modal-editar-gasto-lancamento .gasto-marca-select-wrap:hover .gasto-marca-delete-btn, #modal-editar-gasto-lancamento .gasto-local-select-wrap:hover .gasto-local-delete-btn, #modal-editar-gasto-lancamento .gasto-item-select-wrap:hover .gasto-item-delete-btn,
+#t-gastos .gasto-marca-select-wrap:focus-within .gasto-marca-delete-btn, #t-gastos .gasto-local-select-wrap:focus-within .gasto-local-delete-btn, #t-gastos .gasto-item-select-wrap:focus-within .gasto-item-delete-btn,
+#modal-gastos-lote .gasto-marca-select-wrap:focus-within .gasto-marca-delete-btn, #modal-gastos-lote .gasto-local-select-wrap:focus-within .gasto-local-delete-btn, #modal-gastos-lote .gasto-item-select-wrap:focus-within .gasto-item-delete-btn,
+#modal-editar-gasto-lancamento .gasto-marca-select-wrap:focus-within .gasto-marca-delete-btn, #modal-editar-gasto-lancamento .gasto-local-select-wrap:focus-within .gasto-local-delete-btn, #modal-editar-gasto-lancamento .gasto-item-select-wrap:focus-within .gasto-item-delete-btn {
+    display: inline-flex;
+}
+#t-gastos .gasto-marca-delete-btn:hover, #t-gastos .gasto-local-delete-btn:hover, #t-gastos .gasto-item-delete-btn:hover,
+#modal-gastos-lote .gasto-marca-delete-btn:hover, #modal-gastos-lote .gasto-local-delete-btn:hover, #modal-gastos-lote .gasto-item-delete-btn:hover,
+#modal-editar-gasto-lancamento .gasto-marca-delete-btn:hover, #modal-editar-gasto-lancamento .gasto-local-delete-btn:hover, #modal-editar-gasto-lancamento .gasto-item-delete-btn:hover {
+    background: #c0392b;
+    color: #fff;
+}
+/* Em telas sem mouse (toque), mostra a lixeira sempre visível (ainda que discreta), já que não há hover. */
+@media (hover: none) {
+    #t-gastos .gasto-marca-delete-btn, #t-gastos .gasto-local-delete-btn, #t-gastos .gasto-item-delete-btn,
+    #modal-gastos-lote .gasto-marca-delete-btn, #modal-gastos-lote .gasto-local-delete-btn, #modal-gastos-lote .gasto-item-delete-btn,
+    #modal-editar-gasto-lancamento .gasto-marca-delete-btn, #modal-editar-gasto-lancamento .gasto-local-delete-btn, #modal-editar-gasto-lancamento .gasto-item-delete-btn {
+        display: inline-flex;
+        opacity: 0.55;
+    }
+}
+
+/* AJUSTE (2026-08): remove a caixa/borda que isolava os filtros de Gastos (Item, Período,
+   Limpar Filtros, Exportar Mês) — ficam soltos na tela, sem card destacando-os do resto. */
+#t-gastos .filter-bar {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
 </style>
 
-    <script type="module" src="./admin.js?v=20260621-gastos-nova-marca-so-outros-1"></script>
+    <script type="module" src="./admin.js?v=20260801-gastos-ux-melhorias-13"></script>
 
 
     <div id="modal-gasto-item" class="modal">
@@ -11092,6 +11657,182 @@ input[type="date"]::-webkit-date-and-time-value {
                         <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-gastos-lote" class="modal">
+        <div class="modal-content modal-content-large" style="border: 2px solid var(--favu-rust);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-rust);">Lançar gastos</h3>
+                <button class="close-modal" onclick="window.closeModal('modal-gastos-lote')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="gastos-lote-campos-unicos">
+                    <div>
+                        <label>Local da compra</label>
+                        <div class="gasto-local-select-wrap">
+                            <select id="gasto-lote-local-unico" onchange="window.tratarSelecaoLocalGasto(this)"></select>
+                            <button type="button" class="gasto-local-delete-btn" onclick="window.excluirLocalSelecionadoGasto(this)" title="Excluir local selecionado"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <input type="text" id="gasto-lote-local-novo-input" class="gasto-local-novo-input" placeholder="Nome do novo local" style="display:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" onblur="window.confirmarNovoLocalGastoInline(this)">
+                    </div>
+                    <div>
+                        <label>Nota Fiscal</label>
+                        <div class="gasto-nota-wrap">
+                            <input type="text" id="gasto-lote-nota-unica" placeholder="Cole o link da nota fiscal">
+                            <button type="button" class="gastos-icon-btn copy" onclick="window.abrirNotaFiscalGasto(this)" title="Abrir nota fiscal"><i class="fas fa-file-invoice"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Data da compra</label>
+                        <input type="date" id="gasto-lote-data-unica">
+                    </div>
+                    <div>
+                        <label>Parcelamento</label>
+                        <select id="gasto-lote-parcelas-unico"></select>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto; width:100%;">
+                    <table class="favu-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Marca</th>
+                                <th>Kg/L</th>
+                                <th>Quantidade</th>
+                                <th>Unidade</th>
+                                <th>Total</th>
+                                <th>Comprador</th>
+                                <th>Observação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gastos-lote-rows"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;">
+                    <button type="button" class="btn gastos-lote-add-linha-btn" style="flex:1;" onclick="window.adicionarLinhaGastoLote()"><i class="fas fa-plus"></i> Adicionar linha</button>
+                    <button type="button" class="btn btn-primary" style="flex:1;" onclick="window.salvarGastosLote()"><i class="fas fa-check"></i> Salvar Todos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-gasto-lancamento" class="modal">
+        <div class="modal-content" style="max-width: 560px; border: 2px solid var(--favu-moss);">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-moss);">Editar Lançamento</h3>
+                <button class="close-modal" onclick="window.closeModal('modal-editar-gasto-lancamento')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-gasto-lancamento" onsubmit="window.salvarEdicaoLancamentoGasto(event)">
+                    <input type="hidden" id="edit-lanc-id">
+                    <div style="margin-bottom:15px;">
+                        <label>Item</label>
+                        <div class="gasto-item-select-wrap">
+                            <select id="edit-lanc-item" onchange="window.tratarSelecaoItemGasto(this)"></select>
+                            <button type="button" class="gasto-item-delete-btn" onclick="window.excluirItemSelecionadoGasto(this)" title="Excluir item selecionado"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <input type="text" id="edit-lanc-item-novo-input" class="gasto-item-novo-input" placeholder="Nome do novo item" style="display:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" onblur="window.confirmarNovoItemGastoInline(this)">
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <label>Marca</label>
+                            <div class="gasto-marca-select-wrap">
+                                <select id="edit-lanc-marca" onchange="window.tratarSelecaoMarcaGasto(this)"></select>
+                                <button type="button" class="gasto-marca-delete-btn" onclick="window.excluirMarcaSelecionadaGasto(this)" title="Excluir marca selecionada"><i class="fas fa-trash"></i></button>
+                            </div>
+                            <input type="text" id="edit-lanc-marca-novo-input" class="gasto-marca-novo-input" placeholder="Nome da nova marca" style="display:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" onblur="window.confirmarNovaMarcaGastoInline(this)">
+                        </div>
+                        <div>
+                            <label>Local</label>
+                            <div class="gasto-local-select-wrap">
+                                <select id="edit-lanc-local" onchange="window.tratarSelecaoLocalGasto(this)"></select>
+                                <button type="button" class="gasto-local-delete-btn" onclick="window.excluirLocalSelecionadoGasto(this)" title="Excluir local selecionado"><i class="fas fa-trash"></i></button>
+                            </div>
+                            <input type="text" id="edit-lanc-local-novo-input" class="gasto-local-novo-input" placeholder="Nome do novo local" style="display:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" onblur="window.confirmarNovoLocalGastoInline(this)">
+                        </div>
+                    </div>
+                    <div class="form-grid-2">
+                        <div>
+                            <label>Kg/L</label>
+                            <input type="text" id="edit-lanc-peso" placeholder="Kg/L">
+                        </div>
+                        <div>
+                            <label>Quantidade</label>
+                            <input type="number" id="edit-lanc-qtd" min="0" step="0.001">
+                        </div>
+                        <div>
+                            <label>Unidade</label>
+                            <input type="number" id="edit-lanc-unit" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <label>Comprador</label>
+                            <select id="edit-lanc-comprador"><option value="Caixa">Caixa</option><option value="Arabela">Arabela</option><option value="Flávio">Flávio</option></select>
+                        </div>
+                        <div>
+                            <label>Data</label>
+                            <input type="date" id="edit-lanc-data">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label>Nota Fiscal</label>
+                        <div class="gasto-nota-wrap">
+                            <input type="text" id="edit-lanc-nota" placeholder="Link da nota fiscal">
+                            <button type="button" class="gastos-icon-btn copy" onclick="window.abrirNotaFiscalGasto(this)" title="Abrir nota fiscal"><i class="fas fa-file-invoice"></i></button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <label>Observação</label>
+                        <input type="text" id="edit-lanc-obs" placeholder="Observação">
+                    </div>
+                    <div id="edit-lanc-parcelas-wrap" style="display:none; margin-bottom:15px;">
+                        <label>Nº de parcelas <small id="edit-lanc-parcela-hint" style="color: var(--favu-rust); font-family: var(--font-numbers); font-weight:normal;"></small></label>
+                        <select id="edit-lanc-parcelas"></select>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:20px;">
+                        <button type="button" class="btn btn-outline gastos-lote-add-linha-btn" onclick="window.closeModal('modal-editar-gasto-lancamento')" style="flex:1;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1;">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-escolha-parcela" class="modal">
+        <div class="modal-content modal-content-small" style="border: 2px solid var(--favu-rust); text-align:center;">
+            <div class="modal-header">
+                <h3 style="color: var(--favu-rust);">Este lançamento é parcelado</h3>
+                <button class="close-modal" onclick="window.closeModal('modal-escolha-parcela')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--favu-moss); font-family: var(--font-numbers); margin-bottom:20px;">O valor foi alterado. O que deseja fazer?</p>
+                <button type="button" class="btn btn-outline" style="width:100%; margin-bottom:10px;" onclick="window.confirmarEdicaoParcela('parcela')">Alterar somente esta parcela</button>
+                <button type="button" class="btn btn-primary" style="width:100%;" onclick="window.confirmarEdicaoParcela('total')">Alterar valor total (redistribuir entre as parcelas)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-exportar-gastos" class="modal">
+        <div class="modal-content" style="max-width: 480px; border: 2px solid var(--favu-rust);">
+            <div class="modal-header">
+                <div>
+                    <h3 style="color: var(--favu-rust); font-family: var(--font-numbers) !important; font-weight: bold; margin: 0;">Exportar Gastos</h3>
+                    <span id="gastos-exportar-periodo" style="display: block; font-size: 1rem; color: #666; font-family: var(--font-numbers) !important; margin-top: 4px;"></span>
+                </div>
+                <button class="close-modal" onclick="window.closeModal('modal-exportar-gastos')">&times;</button>
+            </div>
+            <div class="modal-body" style="font-family: var(--font-numbers) !important;">
+                <p style="margin:0 0 15px 0; color: var(--favu-moss);">Escolha como deseja receber os gastos do período selecionado, organizados por item.</p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button type="button" class="btn btn-primary" style="background-color:#25D366; border-color:#25D366; font-weight:bold;" onclick="window.enviarGastosMesWA('Arabela')"><i class="fab fa-whatsapp"></i> Enviar para Arabela</button>
+                    <button type="button" class="btn btn-primary" style="background-color:#25D366; border-color:#25D366; font-weight:bold;" onclick="window.enviarGastosMesWA('Flavio')"><i class="fab fa-whatsapp"></i> Enviar para Flávio</button>
+                    <button type="button" class="btn btn-primary" style="background-color:#2B579A; border-color:#2B579A; font-weight:bold;" onclick="window.exportarGastosWord()"><i class="fas fa-file-word"></i> Baixar em Word</button>
+                </div>
             </div>
         </div>
     </div>
