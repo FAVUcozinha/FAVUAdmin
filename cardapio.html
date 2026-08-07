@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="images/favu.png">
+
+    <!-- OTIMIZAÇÃO DE PERFORMANCE: adianta a conexão com os domínios externos usados
+         nesta página (CDN do Font Awesome e SDK/back-end do Firebase), reduzindo o
+         tempo de espera percebido pelo cliente ao abrir o cardápio, especialmente no celular. -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style-cardapio.css?v=20260619-qtd-visual-1">
 </head>

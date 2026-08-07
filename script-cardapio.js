@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, getDoc, doc, query, where, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, doc, query, where, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5JlV7R2w629uiescD4AiixNAr-Qt0qI0",
@@ -858,12 +858,16 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         try {
             const refCupom = doc(db, "cupons", cupomCodigo);
-            const snapCupom = await getDoc(refCupom);
-            if (!snapCupom.exists()) return;
-
-            const dados = snapCupom.data();
+            // CORREÇÃO DE CONSISTÊNCIA: antes esse código lia "usosAtuais",
+            // somava 1 no JavaScript e gravava o número calculado de volta
+            // (ler → calcular → escrever). Se dois clientes usassem o mesmo
+            // cupom quase ao mesmo tempo, os dois liam o mesmo valor antigo e
+            // os dois gravavam "valor+1", perdendo um dos usos — o que permite
+            // o cupom ser usado mais vezes do que o limite configurado.
+            // increment() do Firestore soma no servidor de forma atômica, sem
+            // essa condição de corrida, mesmo com vários pedidos simultâneos.
             await updateDoc(refCupom, {
-                usosAtuais: getCupomUsosAtuaisCliente(dados) + 1,
+                usosAtuais: increment(1),
                 updatedAt: Date.now()
             });
         } catch (err) {

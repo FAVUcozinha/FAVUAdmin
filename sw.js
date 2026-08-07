@@ -1,11 +1,18 @@
-const CACHE_NAME = 'favu-app-v139-gastos-ux-melhorias-13';
+const CACHE_NAME = 'favu-app-v141-gastos-mobile-fixo';
+// CORREÇÃO DE PERFORMANCE: esta lista tinha 'style.css' e 'script.js', que
+// não existem em nenhum lugar do projeto (são sobras de uma versão antiga do
+// site). O método cache.addAll() é "tudo ou nada": se UM único arquivo da
+// lista der 404, a promise inteira é rejeitada e NENHUM arquivo é
+// pré-cacheado, nem os que existem e são válidos. Isso não gerava erro visível
+// (o catch abaixo só registra um aviso no console), mas na prática o
+// Service Worker nunca tinha nada em cache pra usar como fallback rápido,
+// o que contribuía para o app demorar a carregar, especialmente em
+// conexões de internet mais lentas.
 const urlsToCache = [
   './',
   './index.html',
   './cardapio.html',
-  './style.css',
   './style-cardapio.css',
-  './script.js',
   './script-cardapio.js',
   './admin.js',
   './manifest.json',
@@ -16,9 +23,17 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache).catch(err => {
-        console.warn('Falha ao pré-cachear alguns arquivos:', err);
-      });
+      // CORREÇÃO DE PERFORMANCE: em vez de cache.addAll() (tudo ou nada),
+      // cacheamos cada arquivo individualmente com Promise.allSettled. Assim,
+      // se algum arquivo da lista não existir ou falhar (por exemplo, se
+      // 'style-cardapio.css' não estiver publicado nesse caminho), os demais
+      // arquivos válidos ainda são pré-cacheados normalmente, em vez de o
+      // Service Worker ficar sem nenhum arquivo em cache.
+      return Promise.allSettled(
+        urlsToCache.map(url => cache.add(url).catch(err => {
+          console.warn(`Falha ao pré-cachear "${url}":`, err);
+        }))
+      );
     })
   );
 });

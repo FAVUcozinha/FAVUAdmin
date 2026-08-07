@@ -315,10 +315,22 @@ window.fileToDataURL = function(file) {
     });
 };
 
-// Enquanto o CORS do Firebase Storage não estiver corrigido, deixe false.
-// Assim as imagens são salvas diretamente no Firestore como Base64 e o site volta a funcionar sem erro de CORS.
-// Depois de aplicar o cors.json no bucket, você pode trocar para true.
-const USAR_FIREBASE_STORAGE = false;
+// OTIMIZAÇÃO DE PERFORMANCE (importante): agora tentamos sempre subir a imagem
+// para o Firebase Storage primeiro. Isso é essencial para a lentidão do app,
+// porque salvar imagens como Base64 direto no Firestore (o que estava
+// acontecendo antes, com essa flag em false) faz cada leitura de produtos/
+// categorias/avisos trazer o texto completo das fotos embutido no documento,
+// deixando as consultas e a tela muito mais pesadas do que precisam ser.
+//
+// Este código é seguro mesmo que o CORS do bucket ainda não tenha sido
+// configurado: se o upload para o Storage falhar (ver catch abaixo), ele cai
+// automaticamente para o Base64 no Firestore, exatamente como funcionava
+// antes — ou seja, nada quebra. Mas para colher o ganho de performance de
+// verdade, é necessário aplicar o arquivo cors.json (que já está neste
+// projeto) no bucket "favu-app.firebasestorage.app", por exemplo com:
+//   gsutil cors set cors.json gs://favu-app.firebasestorage.app
+// Isso pode ser feito pelo Google Cloud Shell, sem precisar instalar nada.
+const USAR_FIREBASE_STORAGE = true;
 
 async function salvarImagemBase64(compressedFile) {
     const dataUrl = await window.fileToDataURL(compressedFile);
@@ -6826,11 +6838,13 @@ if (formCupom) {
 }
 
 
-async function init() { 
-    window.addVariation(false); 
-    await syncCats(); 
-    await loadProds(); 
-    loadAvisos(); 
+async function init() {
+    window.addVariation(false);
+    // OTIMIZAÇÃO: categorias e produtos não dependem um do outro, então podem
+    // ser buscados em paralelo em vez de esperar um terminar pra começar o outro.
+    // Isso reduz o tempo até o painel ficar utilizável no carregamento inicial.
+    await Promise.all([syncCats(), loadProds()]);
+    loadAvisos();
     loadTema(); 
     loadCarrossel(); 
     window.inicializarKanban(); 
@@ -7247,27 +7261,13 @@ function calcularTotaisGastosPorPeriodoFechamento() {
     return totais;
 }
 
-window.inicializarGastos = function() {
-    const select = document.getElementById('gastos-ano');
-    if (select && !select.innerHTML) {
-        const anoAtual = new Date().getFullYear();
-        select.innerHTML = Array.from({ length: 11 }, (_, i) => anoAtual - 5 + i).reverse().map(a => `<option value="${a}">Ano: ${a}</option>`).join('');
-        select.value = String(anoAtual);
-    }
-
-    onSnapshot(collection(db, 'gastos_itens'), snap => {
-        allGastosItens = [];
-        snap.forEach(d => allGastosItens.push({ id: d.id, ...d.data() }));
-        window.renderGastosPlanilha?.();
-    });
-
-    onSnapshot(collection(db, 'gastos_lancamentos'), snap => {
-        allGastosLancamentos = [];
-        snap.forEach(d => allGastosLancamentos.push({ id: d.id, ...d.data() }));
-        window.renderGastosPlanilha?.();
-        if (document.getElementById('modal-fechamento-financeiro')?.style.display === 'flex') window.calcularDivisaoFechamento?.();
-    });
-};
+// NOTA (limpeza de performance): existia aqui uma segunda definição de
+// window.inicializarGastos, idêntica em espírito à definição mais completa
+// que está abaixo (perto de "EXPORTAR PEDIDOS PARA EXCEL/CSV"). Como JS usa
+// a última atribuição feita a window.inicializarGastos, essa primeira versão
+// nunca era executada — era código morto que só aumentava o tamanho do
+// arquivo e registrava listeners que seriam imediatamente substituídos.
+// Foi removida; a versão funcional continua mais abaixo no arquivo.
 
 
 
@@ -9219,7 +9219,12 @@ window.renderGastosPlanilha = function() {
 
     html += `<tr class="gastos-rebuild-total-row">
         <td data-label="">TOTAL MENSAL</td>`;
-    for (let mes = 1; mes <= 12; mes++) html += `<td data-label="${meses[mes - 1]}:"><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
+    // CORREÇÃO (achado ao testar em celular real): estas células de mês não tinham a classe
+    // "gastos-rebuild-month-cell" que as células de mês das linhas de item têm. No celular,
+    // o CSS usa essa classe pra esconder os 11 meses que não são o mês filtrado - sem ela,
+    // esta linha de total sempre mostrava os 12 meses inteiros, espremidos. Adicionando a
+    // mesma classe aqui, a linha de total passa a respeitar o filtro de mês igual às outras.
+    for (let mes = 1; mes <= 12; mes++) html += `<td class="gastos-rebuild-month-cell" data-label="${meses[mes - 1]}:"><span>${formatarMoedaGasto(totaisMes[mes] || 0)}</span></td>`;
     html += `<td data-label="Total anual:">
         <div class="gastos-total-anual-geral">
             <small>TOTAL ANUAL</small>
@@ -10617,7 +10622,7 @@ window.criarLinhaGastoLoteHTML = function() {
                 <input type="text" class="gasto-marca-novo-input" placeholder="Nome da nova marca" style="display:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}" onblur="window.confirmarNovaMarcaGastoInline(this)">
             </div>
         </td>
-        <td data-label="Kg/L:"><input class="gasto-lote-peso" type="text" placeholder="Kg/L"></td>
+        <td data-label="Medida:"><input class="gasto-lote-peso" type="text" placeholder="Medida"></td>
         <td data-label="Quantidade:"><input class="gasto-lote-qtd" type="number" min="0" step="0.001" value="1" oninput="window.atualizarTotalGastoLote(this)"></td>
         <td data-label="Unidade:"><input class="gasto-lote-unit" type="number" min="0" step="0.01" placeholder="0,00" oninput="window.atualizarTotalGastoLote(this)"></td>
         <td data-label="Total:"><input class="gasto-lote-total" type="number" min="0" step="0.01" value="0.00" readonly></td>
@@ -10853,10 +10858,15 @@ window.trocarSubAbaGastos = function(aba) {
 
     // Planilha de Gastos: só o filtro de Ano. Lançamentos: Item + Período + Limpar/Exportar.
     const anoWrap = document.getElementById('gastos-filtro-ano-wrap');
+    const mesWrap = document.getElementById('gastos-filtro-mes-wrap');
     const itemWrap = document.getElementById('gastos-filtro-item-wrap');
     const periodoWrap = document.getElementById('gastos-filtro-periodo-wrap');
     const acoesWrap = document.getElementById('gastos-filtros-acoes');
     if (anoWrap) anoWrap.style.display = aba === 'gastos' ? '' : 'none';
+    // NOVO: filtro de Mês só faz sentido na Tabela (Planilha) - no celular, é ele que decide
+    // qual dos 12 meses aparece nos cartões. No Desktop ele fica sempre escondido por CSS
+    // (@media min-width:901px), então essa linha só tem efeito visível no celular.
+    if (mesWrap) mesWrap.style.display = aba === 'gastos' ? '' : 'none';
     if (itemWrap) itemWrap.style.display = aba === 'lancamentos' ? '' : 'none';
     if (periodoWrap) periodoWrap.style.display = aba === 'lancamentos' ? '' : 'none';
     if (acoesWrap) acoesWrap.style.display = aba === 'lancamentos' ? '' : 'none';
@@ -10946,7 +10956,7 @@ window.renderGastosLancamentosLista = function() {
             <td data-label="Item:">${escapeHTMLGasto(l.itemNome || '')}</td>
             <td data-label="Marca:">${escapeHTMLGasto(l.marca || l.nome || '')}</td>
             <td data-label="Local:">${window.formatarLocalComTagGasto(l.localCompra)}</td>
-            <td data-label="Kg/L:">${escapeHTMLGasto(l.peso || '-')}</td>
+            <td data-label="Medida:">${escapeHTMLGasto(l.peso || '-')}</td>
             <td data-label="Quantidade:">${(Number(l.quantidade) || 0).toLocaleString('pt-BR')}</td>
             <td data-label="Unidade:">${formatarMoedaGasto(l.valorUnidade)}</td>
             <td data-label="Total:"><strong>${formatarMoedaGasto(total)}</strong></td>
@@ -11250,8 +11260,11 @@ window.renderGastosPlanilha = function(...args) {
     // coluna de mês (junto com a coluna de Item, fixa) e esconder as outras 11.
     const tabelaResumoGastos = document.querySelector('#gastos-painel-resumo table.gastos-rebuild-table');
     if (tabelaResumoGastos) {
-        // Mobile mostra sempre o mês atual real (não há mais filtro de mês na Planilha de Gastos).
-        tabelaResumoGastos.setAttribute('data-mes-ativo', String(new Date().getMonth() + 1));
+        // NOVO: o mês mostrado no celular agora vem do filtro de Mês (#gastos-mes-filtro,
+        // visível no popup de Filtros da aba Tabela). Continua caindo no mês atual real
+        // por padrão, já que o select já nasce com esse valor selecionado.
+        const mesFiltroSelecionado = document.getElementById('gastos-mes-filtro')?.value;
+        tabelaResumoGastos.setAttribute('data-mes-ativo', String(mesFiltroSelecionado || new Date().getMonth() + 1));
     }
     return retorno;
 };
@@ -11404,7 +11417,7 @@ window.exportarGastosWord = async function() {
     const logoBase64 = await window.carregarLogoFavuBase64();
     const moeda = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    const colunas = ['Marca', 'Local', 'Kg/L', 'Quantidade', 'Unidade', 'Total', 'Comprador', 'Data', 'Nota Fiscal', 'Observação'];
+    const colunas = ['Marca', 'Local', 'Medida', 'Quantidade', 'Unidade', 'Total', 'Comprador', 'Data', 'Nota Fiscal', 'Observação'];
     const larguraColuna = (100 / colunas.length).toFixed(2);
     const theadHtml = `<tr>${colunas.map(c => `<th style="width:${larguraColuna}%;">${c}</th>`).join('')}</tr>`;
 
@@ -11512,7 +11525,7 @@ window.exportarGastosMesCSV = function() {
         linhas.push([]);
     });
 
-    const cabecalho = ['Item', 'Marca', 'Local de Compra', 'Kg/L', 'Quantidade', 'Unidade', 'Valor Total', 'Comprador', 'Data', 'Nota Fiscal'];
+    const cabecalho = ['Item', 'Marca', 'Local de Compra', 'Medida', 'Quantidade', 'Unidade', 'Valor Total', 'Comprador', 'Data', 'Nota Fiscal'];
     const escaparCSV = (valor) => {
         const texto = String(valor === undefined || valor === null ? '' : valor);
         return /[",;\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;

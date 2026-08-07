@@ -11,6 +11,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="images/favu.png">
 
+    <!-- OTIMIZAÇÃO DE PERFORMANCE: preconnect avisa o navegador, o quanto antes, que ele vai
+         precisar abrir conexão com esses domínios (CDN do Font Awesome e SDK do Firebase),
+         adiantando DNS/TLS antes mesmo do CSS/JS ser lido. Ganho pequeno, mas gratuito e sem
+         nenhum risco, especialmente em conexões móveis mais lentas. -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         html { font-size: 90%; } 
@@ -5198,6 +5206,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 24px !important;
     box-shadow: var(--shadow-soft) !important;
     margin-top: 15px !important;
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): a regra genérica ".tab-pane"
+       roda uma animação de entrada (fadeIn) que anima "transform". Enquanto ela roda (todo
+       fim de troca de sub-aba/aba), este elemento passa a servir de "container de referência"
+       para qualquer elemento position:fixed dentro dele (é assim que o CSS funciona: um
+       ancestral animando transform "sequestra" o posicionamento fixed de seus descendentes),
+       o que fazia a barra fixa de Total Mensal/Total do Período (ver mais abaixo) pular de
+       lugar bem no instante de abrir a aba Gastos. Desligando a animação só aqui, a barra
+       fixa sempre se posiciona relativa à tela real, sem afetar a animação nas outras abas. */
+    animation: none !important;
 }
 
 #t-gastos .gastos-top-action {
@@ -6063,8 +6080,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
 
                 <div class="prod-tabs gastos-subtabs">
-                    <button type="button" class="prod-tab-btn gastos-subtab-btn active" data-subaba="gastos" onclick="window.trocarSubAbaGastos('gastos')"><i class="fas fa-table"></i> Gastos</button>
-                    <button type="button" class="prod-tab-btn gastos-subtab-btn" data-subaba="lancamentos" onclick="window.trocarSubAbaGastos('lancamentos')"><i class="fas fa-list"></i> Lançamentos</button>
+                    <button type="button" class="prod-tab-btn gastos-subtab-btn active" data-subaba="gastos" onclick="window.trocarSubAbaGastos('gastos')"><i class="fas fa-table"></i> Tabela</button>
+                    <button type="button" class="prod-tab-btn gastos-subtab-btn" data-subaba="lancamentos" onclick="window.trocarSubAbaGastos('lancamentos')"><i class="fas fa-list"></i> Lista</button>
                 </div>
 
                 <div class="panel-card gastos-rebuild-header">
@@ -6080,6 +6097,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <label>Ano</label>
                                 <select id="gastos-ano" onchange="window.renderGastosPlanilha()"></select>
                             </div>
+                            <!-- NOVO: filtro de mês visível só no celular, só na sub-aba "Tabela" (ver
+                                 window.trocarSubAbaGastos e o CSS "@media (min-width: 901px) #gastos-filtro-mes-wrap"
+                                 mais abaixo, que mantém isso escondido no Desktop). Reaproveita o mesmo <select>
+                                 #gastos-mes-filtro que já existia (antes escondido dentro do filtro de Período de
+                                 Lançamentos, servindo só de estado interno) - o onchange já disparava
+                                 window.renderGastosPlanilha(), então nenhuma lógica de filtragem precisou mudar. -->
+                            <div class="filter-item" id="gastos-filtro-mes-wrap">
+                                <label>Mês</label>
+                                <select id="gastos-mes-filtro" onchange="window.renderGastosPlanilha()"></select>
+                            </div>
                             <div class="filter-item" id="gastos-filtro-item-wrap" style="display:none;">
                                 <label>Item</label>
                                 <select id="gastos-filtro-item" onchange="window.renderGastosPlanilha()"><option value="">Todos os itens</option></select>
@@ -6087,7 +6114,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                             <div class="filter-item" id="gastos-filtro-periodo-wrap" style="display:none;">
                                 <label>Período</label>
                                 <input type="text" id="gastos-date-filter-display" placeholder="Selecione o período" readonly onclick="window.openGastosDatePicker()" style="background:white; cursor:pointer;">
-                                <select id="gastos-mes-filtro" onchange="window.renderGastosPlanilha()" style="display:none;"></select>
                             </div>
                         </div>
                         <div class="filter-group-additional" id="gastos-filtros-acoes" style="display:none;">
@@ -6102,6 +6128,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 </div>
 
                 <div id="gastos-painel-resumo">
+                    <!-- NOVO (2026-08): cabeçalho simplificado de 2 colunas, só aparece no celular
+                         (ver CSS ".gastos-planilha-mobile-cols-header") - no Desktop fica oculto e
+                         o <thead> de verdade (com os 12 meses) continua sendo o único cabeçalho. -->
+                    <div class="gastos-planilha-mobile-cols-header"><span>Item</span><span>Valores</span></div>
                     <div class="panel-card table-responsive gastos-rebuild-table-card">
                         <table class="favu-table gastos-rebuild-table">
                             <thead>
@@ -6136,7 +6166,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                                 <th>Item</th>
                                 <th>Marca</th>
                                 <th>Local</th>
-                                <th>Kg/L</th>
+                                <th>Medida</th>
                                 <th>Quantidade</th>
                                 <th>Unidade</th>
                                 <th>Total</th>
@@ -11453,40 +11483,141 @@ input[type="date"]::-webkit-date-and-time-value {
 #t-gastos #gastos-ano { min-width: 110px !important; flex: none !important; }
 #t-gastos #gastos-date-filter-display { min-width: 170px !important; flex: none !important; }
 
-/* AJUSTE (2026-08): filtro de Mês+Ano de Gastos unificado em popup, no mesmo fluxo do
-   filtro de Data de Entrega de Pedidos. O select de mês original vira campo oculto que
-   guarda o mês escolhido, mantendo toda a lógica de filtragem/exportação existente intacta.
-   #gastos-ano NÃO fica mais oculto aqui: virou o único filtro visível na aba Planilha de
-   Gastos (ver trocarSubAbaGastos), independente do período de Lançamentos. */
-#t-gastos #gastos-mes-filtro {
-    display: none !important;
+/* REFEITO (achados ao testar em celular real): a versão anterior deste bloco mantinha a
+   tabela de "Gastos Cadastrados" como uma tabela de verdade (table-layout:fixed, largura
+   mínima de 1280px vindo de uma regra sem media query mais acima), só escondendo colunas
+   por posição. Isso cortava o nome de itens longos e, principalmente, nunca chegava a
+   escender as colunas de mês da linha "TOTAL MENSAL" (essas células não tinham a classe
+   .gastos-rebuild-month-cell, usada pela regra de esconder/mostrar), fazendo os 12 meses
+   aparecerem espremidos ali. Agora o card de cada item usa o mesmo tipo de layout em
+   cartão já usado em Lançamentos (ver bloco mais abaixo), então esta seção substitui o
+   bloco antigo por completo - nada de Desktop muda, tudo aqui é @media (max-width:900px).
+
+   Também adiciona o filtro de Mês pedido para a versão mobile: o <select> #gastos-mes-filtro
+   (já existente, agora dentro de #gastos-filtro-mes-wrap) volta a ficar visível, mas só
+   dentro do popup de Filtros e só no celular - no Desktop ele continua oculto, e o Ano
+   continua sendo o único filtro visível lá, exatamente como antes. */
+/* Visível por padrão (mobile, sub-aba "Tabela" já ativa por padrão); trocarSubAbaGastos
+   esconde/mostra ao alternar para "Lista". No Desktop fica sempre oculto, forçado abaixo. */
+@media (min-width: 901px) {
+    #gastos-filtro-mes-wrap { display: none !important; }
 }
 
-/* AJUSTE (2026-08): mobile - tabela "Gastos Cadastrados" mostra só a coluna do Item (fixa)
-   + a coluna do mês atualmente filtrado (via popup de período), escondendo as demais 11
-   colunas de mês pra caber na tela sem scroll horizontal. Desktop permanece intacto
-   (nada aqui roda fora do media query). Lançamentos (outra tabela) não é afetada. */
+/* Cabeçalho simplificado "Item | Valores" - só existe visualmente no celular (ver
+   media query abaixo); no Desktop fica oculto, o <thead> de verdade continua igual. */
+.gastos-planilha-mobile-cols-header { display: none; }
+
 @media (max-width: 900px) {
-    #gastos-painel-resumo table.gastos-rebuild-table {
-        min-width: 0 !important;
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): o botão "Filtros" (mesmo
+       padrão visual do de Pedidos) ficava espremido do lado do título, na mesma linha,
+       porque o cabeçalho (.gastos-rebuild-header) é um flex "row" com título e botão
+       lado a lado. Em Pedidos o botão de filtro é um elemento solto, fora do cabeçalho,
+       por isso já nascia com a largura toda. Aqui, sem alterar o HTML, empilhamos o
+       cabeçalho no celular (título em cima, botão "Filtros" abaixo, ocupando toda a
+       largura), reproduzindo o mesmo resultado visual de Pedidos. */
+    #t-gastos .gastos-rebuild-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+    }
+    #t-gastos .gastos-rebuild-title {
+        text-align: center !important;
+    }
+    #filter-toggle-btn-gastos {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+    }
+    #filter-bar-gastos {
         width: 100% !important;
     }
 
-    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(1),
-    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:nth-child(1) {
-        position: sticky !important;
-        left: 0 !important;
-        z-index: 60 !important;
-        width: 150px !important;
-        min-width: 150px !important;
-        max-width: 150px !important;
-        box-shadow: 2px 0 4px rgba(0,0,0,0.08) !important;
+    /* --- Tabela vira lista de cartões (mesma técnica usada em Lançamentos) --- */
+    #gastos-painel-resumo table.gastos-rebuild-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: auto !important;
     }
-
-    #gastos-painel-resumo .gastos-rebuild-month-cell {
+    #gastos-painel-resumo table.gastos-rebuild-table > thead {
         display: none !important;
     }
-    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(n+2):nth-child(-n+13) {
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): existe uma regra bem mais
+       acima no arquivo (Desktop, sem media query) que limita a altura deste corpo de
+       tabela a "calc(100vh - 360px)" com rolagem PRÓPRIA (overflow-y: auto) - útil no
+       Desktop, onde a tabela fica dentro de um espaço fixo na tela. No celular isso
+       criava uma segunda área de rolagem "escondida" dentro da lista (com altura
+       limitada, cortando itens de fato, não só visualmente) além da rolagem normal da
+       página - uma delas usa 2 IDs ("#t-gastos #gastos-planilha-body"), mais específica
+       que a regra de 1 ID que já existia aqui para o celular, entao a limitação de
+       altura nunca tinha sido removida no mobile. Repetindo os mesmos 2 IDs aqui,
+       liberamos a altura no celular (a lista cresce e rola junto com a página toda,
+       abaixo do título e por baixo da barra fixa de total) sem alterar o Desktop. */
+    #t-gastos #gastos-planilha-body {
+        display: block !important;
+        width: 100% !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+        padding-bottom: 140px !important; /* espaço pra barra de total (fixa na tela) não cobrir o último item - precisa ser maior que a altura real da barra, senão ela sobrepõe o fim da lista */
+    }
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): existe uma regra bem mais
+       acima no arquivo, sem media query, "#t-gastos #gastos-planilha-body > tr", que
+       força "display: table !important" e "width: 100% !important" em toda linha desta
+       tabela. Ela usa 2 seletores de ID (#t-gastos + #gastos-planilha-body), o que é MAIS
+       específico que o seletor de 1 ID usado aqui antes ("#gastos-painel-resumo table...
+       tr") - por isso o cartão nunca virava de fato "flex" no celular real (mesmo
+       parecendo visualmente quase certo). Repetindo aqui os mesmos 2 IDs da regra
+       antiga, esta regra passa a ter a mesma especificidade e - por vir depois no
+       arquivo - vence de fato, sem precisar tocar na regra antiga (que continua servindo
+       o Desktop normalmente). */
+    #t-gastos #gastos-planilha-body > tr {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        width: 100% !important;
+        background: #fff !important;
+        border: 1px solid #eee !important;
+        border-radius: 16px !important;
+        box-shadow: var(--shadow-soft) !important;
+        padding: 14px 15px !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* Célula do Item: nome, ocupando o espaço à esquerda do cartão. */
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:first-child {
+        display: block !important;
+        position: static !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: 1 1 auto !important;
+        text-align: left !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+    #gastos-painel-resumo .gastos-rebuild-item-main {
+        display: block !important;
+    }
+    #gastos-painel-resumo .gastos-item-nome-inline {
+        width: 100% !important;
+        font-size: 1.05rem !important;
+    }
+    /* "Valor total"/"Total de unidades" do ano competiam visualmente com o valor do mês
+       filtrado ao lado - escondidos no cartão mobile (o valor do mês já aparece à direita). */
+    #gastos-painel-resumo .gastos-rebuild-item-total-line,
+    #gastos-painel-resumo .gastos-rebuild-item-units-line {
+        display: none !important;
+    }
+
+    /* Todas as células de mês ficam ocultas por padrão - só o mês filtrado é mostrado
+       (regra abaixo). Isso já cobre tanto as linhas de item quanto a linha "TOTAL MENSAL",
+       já que as duas agora usam a mesma classe .gastos-rebuild-month-cell. */
+    #gastos-painel-resumo .gastos-rebuild-month-cell {
         display: none !important;
     }
 
@@ -11502,42 +11633,307 @@ input[type="date"]::-webkit-date-and-time-value {
     #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="10"] .gastos-rebuild-month-cell[data-label="Out:"],
     #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="11"] .gastos-rebuild-month-cell[data-label="Nov:"],
     #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="12"] .gastos-rebuild-month-cell[data-label="Dez:"] {
-        display: table-cell !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        text-align: right !important;
         width: auto !important;
         min-width: 0 !important;
-        max-width: none !important;
+        max-width: 45% !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+        position: static !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    #gastos-painel-resumo .gastos-rebuild-money { font-size: 1.05rem !important; }
+    #gastos-painel-resumo .gastos-rebuild-qty { font-size: 0.8rem !important; }
+
+    /* Ações (copiar/excluir item) saem do cartão compacto no celular - continuam no Desktop. */
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td[data-label="Ações:"] {
+        display: none !important;
     }
 
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="1"] > thead > tr > th:nth-child(2),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="2"] > thead > tr > th:nth-child(3),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="3"] > thead > tr > th:nth-child(4),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="4"] > thead > tr > th:nth-child(5),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="5"] > thead > tr > th:nth-child(6),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="6"] > thead > tr > th:nth-child(7),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="7"] > thead > tr > th:nth-child(8),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="8"] > thead > tr > th:nth-child(9),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="9"] > thead > tr > th:nth-child(10),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="10"] > thead > tr > th:nth-child(11),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="11"] > thead > tr > th:nth-child(12),
-    #gastos-painel-resumo table.gastos-rebuild-table[data-mes-ativo="12"] > thead > tr > th:nth-child(13) {
-        display: table-cell !important;
+    /* AJUSTE (pedido do cliente): no cartão mobile, todo item mostrado já é um "item" e já
+       está no mês escolhido no filtro - repetir os rótulos "ITEM:" e "AGO:" (ou o mês que
+       estiver ativo) em cada cartão só ocupava espaço à toa. Esconde os dois rótulos (o
+       cabeçalho "ITEM | VALORES" abaixo, fora da lista, já deixa claro o que é cada
+       coluna) - texto e valores continuam exatamente os mesmos, só o rótulo some. */
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:first-child::before,
+    #gastos-painel-resumo .gastos-rebuild-month-cell::before {
+        content: none !important;
+    }
+
+    /* AJUSTE (pedido do cliente): tira as linhas divisórias que sobravam embaixo do nome
+       do item e embaixo do valor/quantidade de cada cartão - eram pensadas para uma
+       tabela de verdade (linha após linha), mas no cartão (com borda e sombra próprias)
+       ficavam sobrando dentro do próprio cartão. */
+    #t-gastos #gastos-planilha-body > tr.gastos-rebuild-row > td,
+    #t-gastos #gastos-planilha-body > tr.gastos-rebuild-row + tr.gastos-rebuild-row > td {
+        border-bottom: none !important;
+        border-top: none !important;
+    }
+
+    /* AJUSTE (pedido do cliente): cabeçalho simplificado de 2 colunas ("Item" | "Valores")
+       acima da lista de cartões, já que no celular o <thead> de verdade (com os 12 meses)
+       fica escondido. Elemento novo, adicionado só para o celular (ver HTML logo acima de
+       #gastos-painel-resumo) - no Desktop continua tudo exatamente como estava. */
+    .gastos-planilha-mobile-cols-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 0 4px 8px !important;
+        font-family: 'Basic Choice', cursive !important;
+        color: var(--favu-moss) !important;
+        text-transform: uppercase !important;
+        font-size: 0.85rem !important;
+        font-weight: bold !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Linha "TOTAL MENSAL": mostra só o total do mês filtrado.
+       CORREÇÃO (2026-08, achado ao testar em celular real): "position: sticky" aqui
+       dependia de qual ancestral é o "container de rolagem" da linha - em celular real
+       isso variou e a barra passou a aparecer travada no meio da lista, sobre outros
+       itens, em vez de ficar fixa no rodapé da tela. Trocado para "position: fixed",
+       que sempre se refere à tela do aparelho (não a um container de rolagem
+       ambíguo), ficando sempre visível colada na margem inferior da tela, com os
+       itens da lista rolando por baixo dela e por cima do título - exatamente como em
+       "Total do Período" de Lançamentos (ver mesma correção mais abaixo). */
+    #t-gastos #gastos-planilha-body > tr.gastos-rebuild-total-row {
+        background: var(--favu-green) !important;
+        border-radius: 16px !important;
+        border: none !important;
+        position: fixed !important;
+        left: 15px !important;
+        right: 15px !important;
+        bottom: 15px !important;
+        width: auto !important;
+        margin: 0 !important;
+        z-index: 950 !important;
+        box-shadow: 0 6px 22px rgba(0,0,0,0.28) !important;
+    }
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr.gastos-rebuild-total-row > td:first-child {
+        color: #fff !important;
+        font-family: 'Basic Choice', cursive !important;
+        text-transform: uppercase !important;
+        font-size: 1.05rem !important;
+        background: transparent !important;
+    }
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr.gastos-rebuild-total-row .gastos-rebuild-month-cell {
+        color: #fff !important;
+        font-family: var(--font-numbers) !important;
+        font-size: 1.2rem !important;
+        font-weight: bold !important;
+    }
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr.gastos-rebuild-total-row .gastos-rebuild-month-cell span {
+        color: #fff !important;
+    }
+    /* O rótulo do mês (ex.: "AGO:") não precisa repetir dentro da barra de total - o mês
+       já está claro no filtro/no restante da tela. */
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr.gastos-rebuild-total-row .gastos-rebuild-month-cell::before {
+        content: none !important;
+    }
+    /* A célula "Total anual" não faz sentido junto da barra do mês filtrado - escondida no mobile. */
+    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr.gastos-rebuild-total-row > td[data-label="Total anual:"] {
+        display: none !important;
+    }
+}
+
+/* MELHORIA DE MOBILE (visibilidade do menu de Gastos): a aba "Planilha" acima
+   já tinha um tratamento pra mobile (escondendo colunas de mês e fixando a
+   coluna Item). A aba "Lançamentos" (#gastos-painel-lancamentos) ficava sem
+   nenhum tratamento equivalente: regras mais antigas e sem media query
+   (#t-gastos table.gastos-rebuild-table { display:block!important;
+   min-width:1280px!important; ... }) forçam a tabela a se comportar como uma
+   "tabela falsa" de largura mínima 1280px em qualquer tamanho de tela,
+   inclusive celular - por isso, fora do Desktop, essa tabela de 12 colunas só
+   aparecia minúscula e cortada, exigindo rolar bastante para os dois lados.
+   O HTML já gerado em JS (window.renderGastosLancamentosLista) sempre incluiu
+   o atributo data-label em cada célula, exatamente o que o sistema genérico
+   de "tabela vira cartão" (.favu-table, ver topo do arquivo) usa - esse
+   atributo só nunca foi aproveitado aqui porque as regras acima sobrescreviam
+   o comportamento. Este bloco reativa o layout em cartão, com !important e
+   maior especificidade (id do próprio contêiner), sem alterar nenhuma regra
+   existente - a aba "Planilha" e a visão de Desktop continuam exatamente
+   como estavam. */
+@media (max-width: 900px) {
+    #gastos-painel-lancamentos {
+        overflow-x: hidden !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: auto !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > thead {
+        display: none !important;
+    }
+
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): a mesma regra Desktop citada
+       acima (na Planilha) também restringe a altura de QUALQUER tbody dentro de uma
+       "table.gastos-rebuild-table" (a de Lançamentos também tem essa classe) a
+       "calc(100vh - 360px)" com rolagem própria. Adicionando o ID real deste tbody
+       (#gastos-lancamentos-lista-body) ao seletor, ganhamos especificidade suficiente
+       pra liberar a altura no celular, igual à correção da Planilha acima. */
+    #t-gastos #gastos-lancamentos-lista-body,
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody {
+        display: block !important;
+        width: 100% !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+        padding-bottom: 140px !important; /* espaço pra barra de total (fixa na tela) não cobrir o último cartão - precisa ser maior que a altura real da barra, senão ela sobrepõe o fim da lista */
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr {
+        display: block !important;
+        width: 100% !important;
+        background: #fff !important;
+        border: 1px solid #eee !important;
+        border-radius: 16px !important;
+        box-shadow: var(--shadow-soft) !important;
+        padding: 12px 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr > td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        text-align: right !important;
+        border-left: none !important;
+        border-bottom: 1px dashed #eee !important;
+        padding: 8px 0 !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr > td::before {
+        content: attr(data-label);
+        font-family: 'Basic Choice', cursive;
+        color: var(--favu-rust);
+        font-size: 1rem;
+        text-align: left;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr > td:last-child {
+        border-bottom: none !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr > td[data-label="Observação:"] {
+        text-align: right !important;
+        white-space: normal !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table .action-btns-wrapper {
+        justify-content: flex-end !important;
+    }
+
+    /* CORREÇÃO (achado ao testar em celular real): existe, mais acima no arquivo,
+       uma regra pensada só para as colunas de MÊS da aba Planilha
+       ("#t-gastos .gastos-rebuild-table td:nth-child(n+2):nth-child(-n+13)"),
+       que trava largura em 78px e corta o conteúdo (overflow:hidden). Como a
+       tabela de Lançamentos usa a mesma classe .gastos-rebuild-table, essa
+       regra também restringia as colunas 2 a 12 dela (Marca, Local, Kg/L,
+       Quantidade, Unidade, Total, Comprador, Data, Nota Fiscal, Observação e
+       Ações) - só que aqui essas colunas não são meses, são campos com nomes
+       e valores mais longos (ex.: nome de marca, valor em reais), que ficavam
+       cortados no meio (ex.: "Sicao" aparecendo como "Sica"). Um ajuste
+       anterior já tinha corrigido isso pontualmente para as colunas 3 e 12;
+       esta regra corrige as demais (2 a 12) do mesmo jeito, também só no modo
+       cartão (até 900px) e com a mesma técnica de 2 IDs pra vencer a regra
+       original sem alterá-la. */
+    #t-gastos #gastos-painel-lancamentos .gastos-rebuild-table td:nth-child(n+2):nth-child(-n+12) {
         width: auto !important;
         min-width: 0 !important;
-        max-width: none !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        text-align: right !important;
     }
 
-    /* AJUSTE (2026-08): a célula do Item mostrava "Valor total"/"Total de unidades" do ANO
-       inteiro, o que conflitava visualmente com a coluna do mês atual ao lado (valores
-       diferentes lado a lado). No mobile, deixa só o nome do item nessa célula - o valor
-       do mês atual já aparece na sua própria coluna. Ações também pode ficar oculta aqui
-       pra sobrar mais espaço pras duas colunas que importam (Item | Mês). */
-    #gastos-painel-resumo .gastos-rebuild-item-total-line,
-    #gastos-painel-resumo .gastos-rebuild-item-units-line {
-        display: none !important;
+    /* Linha de total do período: mostra como uma barra de resumo, não como cartão comum. */
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr.gastos-lancamentos-total-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        background: var(--favu-green) !important;
+        color: #fff !important;
+        border-radius: 12px !important;
     }
-    #gastos-painel-resumo table.gastos-rebuild-table > thead > tr > th:nth-child(14),
-    #gastos-painel-resumo table.gastos-rebuild-table > tbody > tr > td:nth-child(14) {
-        display: none !important;
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr.gastos-lancamentos-total-row > td {
+        display: block !important;
+        color: #fff !important;
+        border-bottom: none !important;
+        width: auto !important;
+        text-align: left !important;
+    }
+
+    /* CORREÇÃO (achado ao testar em celular real): o valor ("R$ 5.088,52") estava quebrando
+       no meio do número (ex.: "R$ 50" numa linha e "8,52" na linha de baixo), porque o texto
+       do rótulo "TOTAL DO PERÍODO" e o valor disputavam o mesmo espaço sem regra de quebra
+       definida. Agora o rótulo pode encolher/quebrar se precisar (é só texto), e o valor
+       nunca quebra e fica alinhado à direita - na mesma posição horizontal onde o valor de
+       "Total:" de cada lançamento também termina, deixando os números em coluna. */
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr.gastos-lancamentos-total-row > td:first-child {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr.gastos-lancamentos-total-row > td:last-child {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        text-align: right !important;
+        padding-left: 10px !important;
+    }
+
+    #gastos-painel-lancamentos table.gastos-rebuild-table > tbody > tr.gastos-lancamentos-total-row > td::before {
+        content: none !important;
+    }
+
+    /* AJUSTE: existe uma regra sem media query (mais acima no arquivo, pensada para
+       quando esta linha ainda era uma linha comum de tabela no Desktop) que desenha uma
+       linha laranja em cima de CADA célula desta linha de total - no cartão mobile isso
+       aparecia como duas linhas soltas (uma sobre "TOTAL DO PERÍODO", outra sobre o
+       valor), sem servir mais pra nada aqui. Removida só no celular. */
+    #t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row td {
+        border-top: none !important;
+    }
+
+    /* CORREÇÃO (2026-08, achado ao testar em celular real): existe uma regra bem mais
+       acima no arquivo (sem media query, vale pra Desktop e mobile) que deixa esta linha
+       "position: sticky; bottom: 0;". Em celular real isso dependeu de qual ancestral
+       atua como "container de rolagem" da linha, e a barra passou a aparecer travada
+       no meio da lista, sobre outros lançamentos, em vez de ficar fixa no rodapé da
+       tela. Como aquela regra usa 2 seletores de ID (mais específica que qualquer
+       seletor de 1 ID), só uma regra com a mesma combinação de 2 IDs consegue
+       sobrescrevê-la - é o que as duas regras abaixo fazem: primeiro anulam o sticky
+       antigo (tanto na linha quanto nas células), depois aplicam "position: fixed" só
+       na linha. Fixed sempre se refere à tela do aparelho, não a um container de
+       rolagem ambíguo, então a barra passa a ficar sempre visível colada na margem
+       inferior da tela, com os lançamentos rolando por baixo dela e por cima do
+       título - igual à correção equivalente feita na Planilha (Tabela), acima. */
+    #t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row,
+    #t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row td {
+        position: static !important;
+    }
+    #t-gastos #gastos-painel-lancamentos .gastos-lancamentos-total-row {
+        position: fixed !important;
+        left: 15px !important;
+        right: 15px !important;
+        bottom: 15px !important;
+        width: auto !important;
+        margin: 0 !important;
+        z-index: 950 !important;
+        box-shadow: 0 6px 22px rgba(0,0,0,0.28) !important;
     }
 }
 
@@ -11624,19 +12020,16 @@ input[type="date"]::-webkit-date-and-time-value {
     }
 }
 
-/* AJUSTE (2026-08): remove a caixa/borda que isolava os filtros de Gastos (Item, Período,
-   Limpar Filtros, Exportar Mês) — ficam soltos na tela, sem card destacando-os do resto. */
-#t-gastos .filter-bar {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-}
+/* DESFEITO (2026-08): o ajuste anterior tirava a caixa/borda dos filtros de Gastos
+   (Item, Período, Limpar Filtros, Exportar Mês), deixando-os soltos na tela. Pedido do
+   cliente foi o oposto - que o painel de filtros de Gastos (Tabela e Lista) apareça com
+   a mesma demarcação e cor de fundo que já vemos em Pedidos ao abrir o botão "Filtros"
+   no celular. Bastou remover aquele ajuste: sem ele, ".filter-bar" volta a usar o
+   mesmo estilo genérico (fundo, borda, cantos arredondados) que Pedidos já usa. */
 
 </style>
 
-    <script type="module" src="./admin.js?v=20260801-gastos-ux-melhorias-13"></script>
+    <script type="module" src="./admin.js?v=20260806-gastos-mobile-fixo-2"></script>
 
 
     <div id="modal-gasto-item" class="modal">
@@ -11700,7 +12093,7 @@ input[type="date"]::-webkit-date-and-time-value {
                             <tr>
                                 <th>Item</th>
                                 <th>Marca</th>
-                                <th>Kg/L</th>
+                                <th>Medida</th>
                                 <th>Quantidade</th>
                                 <th>Unidade</th>
                                 <th>Total</th>
@@ -11757,8 +12150,8 @@ input[type="date"]::-webkit-date-and-time-value {
                     </div>
                     <div class="form-grid-2">
                         <div>
-                            <label>Kg/L</label>
-                            <input type="text" id="edit-lanc-peso" placeholder="Kg/L">
+                            <label>Medida</label>
+                            <input type="text" id="edit-lanc-peso" placeholder="Medida">
                         </div>
                         <div>
                             <label>Quantidade</label>
