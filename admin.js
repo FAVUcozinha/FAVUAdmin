@@ -14485,14 +14485,14 @@ window.trocarSubAbaLayout = function(sub) {
     if (titulo) titulo.textContent = window.__paginaLayout === 'cardapio' ? 'Temas do cardápio' : 'Temas da página inicial';
 };
 
-const LINK_PADRAO_ACAO = { cardapio: 'cardapio.html', inicio: 'index.html' };
+const LINK_PADRAO_ACAO = { cardapio: 'pedido.html', inicio: 'index.html' };
 function linhaItemSite(site, lista, item, idx, total, opc) {
     const acaoId = item.acao || 'link';
     const acao = ACOES_SITE[acaoId] || ACOES_SITE.link;
     const base = `window.editarItemSite('${site}','${lista}',${idx}`;
     // Link visível em todas as ações (dá para trocar no futuro). "Quem somos" não usa link.
     const cardapioId = item.cardapio || 'padrao';
-    const linkCardapioAcao = cardapioId === 'padrao' ? 'cardapio.html' : `cardapio.html?menu=${cardapioId}`;
+    const linkCardapioAcao = cardapioId === 'padrao' ? 'pedido.html' : `pedido.html?menu=${cardapioId}`;
     const campoLink = acaoId === 'quem_somos'
         ? `<div class="site-campo site-campo-link"><label>Link</label><input type="text" value="Abre a janela (sem link)" disabled></div>`
         : acaoId === 'cardapio'
@@ -14996,7 +14996,7 @@ window.baseNomeCategoria = baseNomeCategoria;
 const slugCardapio = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'cardapio';
 function linkCardapioSite(id) {
     const base = (window.URL_SITE_CLIENTES || 'https://favucozinha.com.br/').replace(/\/?$/, '/');
-    return id === 'padrao' ? `${base}cardapio.html` : `${base}cardapio.html?menu=${id}`;
+    return id === 'padrao' ? `${base}pedido` : `${base}pedido?menu=${id}`;
 }
 window.abrirGerenciarCardapios = function() {
     let m = document.getElementById('modal-cardapios');
@@ -15010,7 +15010,7 @@ window.abrirGerenciarCardapios = function() {
                 <div class="cardapio-linha ${c.ativo === false ? 'pausado' : ''}">
                     <div class="cardapio-linha-info">
                         <input type="text" value="${escapeHtmlPedido(c.nome)}" onchange="window.renomearCardapio(${i}, this.value)">
-                        <small><i class="fas fa-link"></i> <span class="cardapio-link">cardapio.html${c.id === 'padrao' ? '' : `?menu=${c.id}`}</span> · ${contarCats(c.id)} categoria(s)${c.id === 'padrao' ? ' · padrão' : ''}</small>
+                        <small><i class="fas fa-link"></i> <span class="cardapio-link">pedido${c.id === 'padrao' ? '' : `?menu=${c.id}`}</span> · ${contarCats(c.id)} categoria(s)${c.id === 'padrao' ? ' · padrão' : ''}</small>
                     </div>
                     <div class="cardapio-linha-acoes">
                         <button type="button" class="btn-action" title="Copiar o link" onclick="window.copiarLinkCardapio('${c.id}')"><i class="fas fa-copy"></i></button>
