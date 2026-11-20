@@ -1,5 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, getDoc, doc, query, where, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 2026-11-19: o Firebase NÃO segura mais a abertura do cardápio. Ele é carregado em
+// segundo plano; o cardápio aparece com os dados pedidos pelo endereço web do banco
+// (rápido e funciona no navegador do Instagram). O Firebase só é esperado por quem
+// precisa dele (enviar pedido, cupom, tema, comunicados).
+const SDK_FIREBASE = "https://www.gstatic.com/firebasejs/10.7.1/";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5JlV7R2w629uiescD4AiixNAr-Qt0qI0",
@@ -10,8 +13,25 @@ const firebaseConfig = {
   appId: "1:793414871188:web:07ab447df44d742e022c81"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Conexão simples ("long polling"): o modo padrão do Firebase trava no navegador
+// interno do Instagram/Facebook (de onde vem o link da bio).
+const sdkPronto = Promise.all([import(SDK_FIREBASE + "firebase-app.js"), import(SDK_FIREBASE + "firebase-firestore.js")]).then(([modApp, f]) => {
+    const app = modApp.initializeApp(firebaseConfig);
+    let banco;
+    try { banco = f.initializeFirestore(app, { experimentalForceLongPolling: true }); } catch (e) { banco = f.getFirestore(app); }
+    return { f, db: banco };
+});
+sdkPronto.catch(e => console.warn('Firebase:', e));
+// Mesmas funções de antes; cada uma espera o Firebase só quando é chamada.
+const db = {};
+function collection(_db, ...partes) { return sdkPronto.then(s => s.f.collection(s.db, ...partes)); }
+function doc(_db, ...partes) { return sdkPronto.then(s => s.f.doc(s.db, ...partes)); }
+function where(...args) { return { __where: args }; }
+function query(base, ...filtros) { return sdkPronto.then(async s => s.f.query(await base, ...filtros.map(c => (c && c.__where) ? s.f.where(...c.__where) : c))); }
+async function getDocs(q) { const s = await sdkPronto; return s.f.getDocs(await q); }
+async function getDoc(r) { const s = await sdkPronto; return s.f.getDoc(await r); }
+async function setDoc(r, ...resto) { const s = await sdkPronto; return s.f.setDoc(await r, ...resto); }
+async function updateDoc(r, ...resto) { const s = await sdkPronto; return s.f.updateDoc(await r, ...resto); }
 
 let configCategorias = {};
 let bancoDeProdutos = {}; 
@@ -379,14 +399,16 @@ async function obterTemaParaAplicar() {
             }
         } catch (e) {}
     }
-    // Tema agendado (painel > Temas > Agendamento): vale dentro do período.
+    // Tema agendado e tema no ar buscados ao mesmo tempo (antes, um depois do outro).
+    const [ag, temaDoc] = await Promise.all([
+        buscarDocRapido('config', 'tema_agendados').catch(() => null),
+        buscarDocRapido('config', 'tema')
+    ]);
     try {
-        const ag = await getDoc(doc(db, 'config', 'tema_agendados'));
         const agora = Date.now();
-        const vigentes = (ag.exists() ? (ag.data().lista || []) : []).filter(x => x && x.dados && (x.inicio == null || agora >= x.inicio) && (x.fim == null || agora < x.fim));
+        const vigentes = (ag && ag.exists() ? (ag.data().lista || []) : []).filter(x => x && x.dados && (x.inicio == null || agora >= x.inicio) && (x.fim == null || agora < x.fim));
         if (vigentes.length) return vigentes.sort((a, b) => (b.inicio || 0) - (a.inicio || 0))[0].dados;
     } catch (e) {}
-    const temaDoc = await getDoc(doc(db, "config", "tema"));
     return temaDoc.exists() ? temaDoc.data() : null;
 }
 
@@ -398,7 +420,7 @@ async function resolverImagemTema(valor) {
     const id = v.slice(7);
     try { const c = localStorage.getItem('favu_img_' + id); if (c) return c; } catch (e) {}
     try {
-        const s = await getDoc(doc(db, 'config', id));
+        const s = await buscarDocRapido('config', id);
         const data = s.exists() ? (s.data().data || '') : '';
         try { if (data) localStorage.setItem('favu_img_' + id, data); } catch (e) {}
         return data;
@@ -487,7 +509,7 @@ function aplicarRodapeSite(r) {
     if (r.assinatura) document.querySelectorAll('footer .desktop-signature span').forEach(s => { s.textContent = r.assinatura; });
 }
 async function carregarDadosSite(id) {
-    try { const d = await getDoc(doc(db, 'config', id)); return d.exists() ? d.data() : null; } catch (e) { return null; }
+    try { const d = await buscarDocRapido('config', id); return d.exists() ? d.data() : null; } catch (e) { return null; }
 }
 
 // Textos do cardápio editáveis no painel (Layout > Cardápio).
@@ -533,8 +555,16 @@ function carregarCardapioAtual() {
 async function descobrirCardapioAtual() {
     const pedido = (new URLSearchParams(location.search).get('menu') || '').trim().toLowerCase();
     try {
-        const snap = await getDoc(doc(db, 'config', 'cardapios'));
-        const lista = snap.exists() && Array.isArray(snap.data().lista) ? snap.data().lista : [];
+        // Lista de cardápios guardada no aparelho: usada na hora e conferida em segundo plano.
+        let guardada = null;
+        try { guardada = JSON.parse(localStorage.getItem('favu_cardapios_cache') || 'null'); } catch (e) {}
+        const doBanco = buscarDocRapido('config', 'cardapios').then(snap => {
+            const l = snap.exists() && Array.isArray(snap.data().lista) ? snap.data().lista : [];
+            try { localStorage.setItem('favu_cardapios_cache', JSON.stringify(l)); } catch (e) {}
+            return l;
+        });
+        doBanco.catch(() => {});
+        const lista = Array.isArray(guardada) ? guardada : await doBanco;
         window.__cardapiosExistentes = new Set(['padrao', ...lista.map(c => c && c.id).filter(Boolean)]);
         const achado = pedido && pedido !== 'padrao' ? lista.find(c => c && c.id === pedido && c.ativo !== false) : null;
         if (achado) window.__cardapioAtual = { id: achado.id, nome: achado.nome || achado.id };
@@ -557,18 +587,219 @@ function cardapioDaCategoria(c) {
 }
 function categoriaNoCardapioAtual(c) { return cardapioDaCategoria(c) === window.__cardapioAtual.id; }
 
+
+// =====================================================================
+// CARREGAMENTO RÁPIDO DO TEMA (2026-11-19)
+// - O tema da visita anterior fica guardado no aparelho e é aplicado na hora;
+//   o tema atualizado é buscado em segundo plano e reaplicado se mudou.
+// - As cores entram primeiro; as imagens (documentos grandes) entram depois,
+//   sem segurar o resto da página.
+// =====================================================================
+const CHAVE_CACHE_TEMA = 'favu_tema_cache';
+function semImagensTema(t) {
+    const o = { ...t };
+    Object.keys(o).forEach(k => { if (typeof o[k] === 'string' && o[k].startsWith('cfgimg:')) o[k] = ''; });
+    if (o.porCardapio) {
+        const pc = {};
+        Object.entries(o.porCardapio).forEach(([id, st]) => {
+            const imgs = {};
+            Object.entries((st && st.imgs) || {}).forEach(([k, v]) => { if (!String(v || '').startsWith('cfgimg:')) imgs[k] = v; });
+            pc[id] = { ...st, imgs };
+        });
+        o.porCardapio = pc;
+    }
+    return o;
+}
+async function aplicarTemaComImagens(t, antesDasImagens) {
+    if (!t) return;
+    try { aplicarTemaSite(semImagensTema(t)); } catch (e) {}
+    try {
+        if (antesDasImagens) await antesDasImagens();
+        aplicarTemaSite(await resolverImagensTema(t));
+    } catch (e) {}
+}
+async function obterTemaComCache(aoMudar) {
+    const previa = new URLSearchParams(location.search).has('tema_previa');
+    let cache = null;
+    if (!previa) { try { cache = JSON.parse(localStorage.getItem(CHAVE_CACHE_TEMA) || 'null'); } catch (e) {} }
+    const buscar = obterTemaParaAplicar().then(t => {
+        if (!previa && t) { try { localStorage.setItem(CHAVE_CACHE_TEMA, JSON.stringify(t)); } catch (e) {} }
+        return t;
+    });
+    if (!cache) return buscar;
+    buscar.then(t => { if (t && aoMudar && JSON.stringify(t) !== JSON.stringify(cache)) aoMudar(t); }).catch(() => {});
+    return cache;
+}
+
+// =====================================================================
+// SEGUNDA VIA DE BUSCA (2026-11-19): o mesmo banco, pelo endereço web direto.
+// Categorias, produtos e lista de cardápios são pedidos pelos dois caminhos ao
+// mesmo tempo; vale o que chegar primeiro. Se um travar, o outro resolve.
+// =====================================================================
+const URL_REST_FS = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents`;
+function valorRestFs(v) {
+    if (!v) return null;
+    if ('stringValue' in v) return v.stringValue;
+    if ('integerValue' in v) return Number(v.integerValue);
+    if ('doubleValue' in v) return Number(v.doubleValue);
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('nullValue' in v) return null;
+    if ('timestampValue' in v) return v.timestampValue;
+    if ('mapValue' in v) return camposRestFs(v.mapValue.fields || {});
+    if ('arrayValue' in v) return (v.arrayValue.values || []).map(valorRestFs);
+    return null;
+}
+function camposRestFs(f) { const o = {}; Object.entries(f || {}).forEach(([k, v]) => { o[k] = valorRestFs(v); }); return o; }
+function snapRestFs(docs) {
+    const lista = docs.map(d => { const dados = camposRestFs(d.fields); const id = String(d.name || '').split('/').pop(); return { id, exists: () => true, data: () => dados }; });
+    return { docs: lista, empty: !lista.length, size: lista.length, forEach: fn => lista.forEach(fn) };
+}
+// 2026-11-20: os itens vêm sem as fotos (as fotos guardadas no banco somavam 16 MB).
+const MASCARA_PRODUTOS = '&mask.fieldPaths=nome&mask.fieldPaths=categoria&mask.fieldPaths=categoriaAnterior&mask.fieldPaths=min&mask.fieldPaths=minimo&mask.fieldPaths=minimoExigido&mask.fieldPaths=descricaoItem&mask.fieldPaths=descricaoPopup&mask.fieldPaths=descricaoResumo&mask.fieldPaths=ativo&mask.fieldPaths=tamanho&mask.fieldPaths=preco&mask.fieldPaths=ordem&mask.fieldPaths=cardapio&mask.fieldPaths=cardapios&mask.fieldPaths=peso&mask.fieldPaths=unidade&mask.fieldPaths=visivel&mask.fieldPaths=oculto&mask.fieldPaths=destaque&mask.fieldPaths=temFoto';
+async function colecaoRestFs(nome) {
+    const docs = []; let token = '';
+    const mascara = nome === 'produtos' ? MASCARA_PRODUTOS : '';
+    const pre = preCarregado(nome);
+    for (let n = 0; n < 20; n++) {
+        let j;
+        if (n === 0 && pre) j = await pre;
+        else {
+            const r = await fetch(`${URL_REST_FS}/${nome}?pageSize=300&key=${firebaseConfig.apiKey}${mascara}${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`);
+            if (!r.ok) throw new Error('rest ' + r.status);
+            j = await r.json();
+        }
+        docs.push(...(j.documents || []));
+        if (!j.nextPageToken) break;
+        token = j.nextPageToken;
+    }
+    return snapRestFs(docs);
+}
+async function docRestFs(colecao, id) {
+    const pre = preCarregado(`${colecao}/${id}`);
+    if (pre) {
+        try {
+            const j = await pre;
+            if (!j || !j.fields) return { id, exists: () => false, data: () => undefined };
+            const dados = camposRestFs(j.fields); return { id, exists: () => true, data: () => dados };
+        } catch (e) { /* segue para o pedido normal abaixo */ }
+    }
+    const r = await fetch(`${URL_REST_FS}/${colecao}/${encodeURIComponent(id)}?key=${firebaseConfig.apiKey}`);
+    if (r.status === 404) return { id, exists: () => false, data: () => undefined };
+    if (!r.ok) throw new Error('rest ' + r.status);
+    const j = await r.json(); const dados = camposRestFs(j.fields);
+    return { id, exists: () => true, data: () => dados };
+}
+// ---------- Cardápio guardado no aparelho (2026-11-19) ----------
+const CHAVE_CACHE_MENU = 'favu_menu_cache_v1';
+function serializarMenu([cat, prod]) {
+    const lista = snap => (snap.docs || []).map(d => ({ id: d.id, d: d.data() }));
+    return { cat: lista(cat), prod: lista(prod) };
+}
+function desserializarMenu(o) {
+    const snap = arr => { const docs = (arr || []).map(x => ({ id: x.id, exists: () => true, data: () => JSON.parse(JSON.stringify(x.d)) })); return { docs, empty: !docs.length, size: docs.length, forEach: fn => docs.forEach(fn) }; };
+    return [snap(o.cat), snap(o.prod)];
+}
+function lerCacheMenu() { try { const o = JSON.parse(localStorage.getItem(CHAVE_CACHE_MENU) || 'null'); return o && Array.isArray(o.cat) && o.cat.length ? o : null; } catch (e) { return null; } }
+function salvarCacheMenu(o) { try { localStorage.setItem(CHAVE_CACHE_MENU, JSON.stringify(o)); } catch (e) {} }
+// Pedidos já disparados pelo cardápio.html antes deste arquivo baixar (window.__preFS).
+function preCarregado(nome) {
+    const p = window.__preFS && window.__preFS[nome];
+    if (p) delete window.__preFS[nome];
+    return p || null;
+}
+
+// ---------- Gravação do pedido com segunda via (2026-11-19) ----------
+// O pedido também é gravado pelo endereço web do banco (funciona mesmo se o
+// Firebase travar no navegador do Instagram).
+function valorParaRestFs(v) {
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === 'boolean') return { booleanValue: v };
+    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+    if (Array.isArray(v)) return { arrayValue: { values: v.map(valorParaRestFs) } };
+    if (typeof v === 'object') { const fields = {}; Object.entries(v).forEach(([k, x]) => { if (x !== undefined) fields[k] = valorParaRestFs(x); }); return { mapValue: { fields } }; }
+    return { stringValue: String(v) };
+}
+async function gravarPedidoRestFs(id, dados) {
+    const r = await fetch(`${URL_REST_FS}/pedidos?documentId=${encodeURIComponent(id)}&key=${firebaseConfig.apiKey}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: valorParaRestFs(dados).mapValue.fields })
+    });
+    if (r.status === 409) return; // já gravado pelo Firebase com o mesmo número
+    if (!r.ok) throw new Error('rest ' + r.status);
+}
+// Grava pelos dois caminhos ao mesmo tempo; vale o primeiro que confirmar.
+// Mesmo número de pedido nos dois, então não duplica.
+async function gravarPedidoSeguro(id, dados) {
+    const viaFirebase = setDoc(doc(db, "pedidos", id), dados);
+    const viaWeb = gravarPedidoRestFs(id, dados);
+    viaFirebase.catch(() => {}); viaWeb.catch(() => {});
+    const limite = new Promise((_, falha) => setTimeout(() => falha(new Error('tempo')), 20000));
+    await Promise.race([primeiroQueChegar([viaFirebase, viaWeb]), limite]);
+}
+
+// O primeiro que responder com sucesso vence.
+function primeiroQueChegar(promessas) {
+    return new Promise((ok, falha) => {
+        let erros = 0;
+        promessas.forEach(p => Promise.resolve(p).then(ok, e => { if (++erros === promessas.length) falha(e); }));
+    });
+}
+function buscarColecaoRapido(nome, consultaSdk, filtro, opcoes) {
+    const viaRest = colecaoRestFs(nome).then(snap => {
+        if (!filtro) return snap;
+        const lista = snap.docs.filter(d => filtro(d.data()));
+        return { docs: lista, empty: !lista.length, size: lista.length, forEach: fn => lista.forEach(fn) };
+    });
+    if (!opcoes || !opcoes.sdkSoSeDemorar) return primeiroQueChegar([getDocs(consultaSdk), viaRest]);
+    const viaSdk = new Promise((ok, falha) => {
+        let iniciou = false;
+        const iniciar = () => { if (iniciou) return; iniciou = true; getDocs(consultaSdk).then(ok, falha); };
+        const espera = setTimeout(iniciar, opcoes.sdkSoSeDemorar);
+        viaRest.then(() => clearTimeout(espera), () => { clearTimeout(espera); iniciar(); });
+    });
+    return primeiroQueChegar([viaSdk, viaRest]);
+}
+function buscarDocRapido(colecao, id) {
+    return primeiroQueChegar([getDoc(doc(db, colecao, id)), docRestFs(colecao, id)]);
+}
+
+// Aviso de carregamento no lugar da tela em branco (2026-11-19).
+function mostrarCarregandoCardapio(lento) {
+    const m = document.getElementById('menu-principal');
+    if (!m || m.querySelector('.categoria-group')) return;
+    m.innerHTML = `<div class="cardapio-carregando"><div class="cardapio-spinner"></div><p>Carregando cardápio…</p>${lento ? '<small>Está demorando mais que o normal. Confira sua internet.</small><button type="button" onclick="location.reload()">Tentar de novo</button>' : ''}</div>`;
+}
+function mostrarErroCardapio() {
+    const m = document.getElementById('menu-principal');
+    if (!m || m.querySelector('.categoria-group')) return;
+    m.innerHTML = '<div class="cardapio-carregando"><p>Não conseguimos carregar o cardápio agora.</p><small>Confira sua internet e tente de novo.</small><button type="button" onclick="location.reload()">Tentar de novo</button></div>';
+}
+
 document.addEventListener("DOMContentLoaded", async function () {
     
-    // Tema Cores + Imagens
-    try {
-        // Página e cardápio aberto marcados no <body> (as regras do tema usam essas marcas).
-        await carregarCardapioAtual();
-        document.body.classList.add('pg-cardapio', `cardapio-${window.__cardapioAtual.id}`);
-        const temaAtual = await obterTemaParaAplicar();
-        window.__temaAtual = temaAtual;
-        aplicarSiteCardapio();
-        if (temaAtual) aplicarTemaSite(await resolverImagensTema(temaAtual));
-    } catch(e) {}
+    // Tema Cores + Imagens — 2026-11-19: roda em paralelo, SEM segurar o cardápio.
+    // Antes o cardápio só começava depois do tema e das imagens (até ~10 s em 4G).
+    const idMenuUrl = (new URLSearchParams(location.search).get('menu') || 'padrao').trim().toLowerCase() || 'padrao';
+    document.body.classList.add('pg-cardapio', `cardapio-${idMenuUrl}`);
+    carregarCardapioAtual().then(() => {
+        if (window.__cardapioAtual.id !== idMenuUrl) {
+            document.body.classList.remove(`cardapio-${idMenuUrl}`);
+            document.body.classList.add(`cardapio-${window.__cardapioAtual.id}`);
+        }
+    }).catch(() => {});
+    (async () => {
+        try {
+            const usar = async t => {
+                window.__temaAtual = t;
+                carregarCardapioAtual().then(() => aplicarSiteCardapio()).catch(() => {});
+                // As imagens do tema (documentos grandes) só começam depois que o cardápio aparece.
+                await aplicarTemaComImagens(t, async () => { await carregarCardapioAtual(); await window.__menuPronto; });
+            };
+            const t = await obterTemaComCache(usar);
+            if (t) await usar(t);
+            else carregarCardapioAtual().then(() => aplicarSiteCardapio()).catch(() => {});
+        } catch (e) {}
+    })();
 
     // Agenda de Horários Globais e Exceções
     window.configGeralAgenda = {}; 
@@ -577,19 +808,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     async function carregarAgenda() {
         try {
             // 1. Puxa a Regra Geral (Dias da semana padrão: Dom a Sáb)
-            const docGeral = await getDoc(doc(db, "config", "agenda_geral"));
+            const docGeral = await buscarDocRapido("config", "agenda_geral");
             if (docGeral.exists()) {
                 window.configGeralAgenda = docGeral.data();
             }
 
             // 2. Puxa as Exceções (Dias específicos fechados ou com horário diferente)
-            const docExcecoes = await getDoc(doc(db, "config", "agenda_excecoes"));
+            const docExcecoes = await buscarDocRapido("config", "agenda_excecoes");
             if (docExcecoes.exists()) {
                 window.regrasAgenda = docExcecoes.data(); 
             }
         } catch(e) { console.error("Erro ao carregar agenda", e); }
     }
-    await carregarAgenda();
+    window.__agendaPronta = carregarAgenda(); // em paralelo, não segura o cardápio
+    let avisarMenuPronto; window.__menuPronto = new Promise(r => { avisarMenuPronto = r; setTimeout(r, 15000); });
 
     
     // === CLIENTE 2026-06-21: ampliar imagens de produtos e comunicados ===
@@ -736,7 +968,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     async function carregarAvisos() {
         try {
             await carregarCardapioAtual();
-            const avisosSnap = await getDocs(collection(db, "avisos"));
+            // 2026-11-20: os comunicados têm fotos pesadas; esperam o cardápio aparecer.
+            if (window.__menuPronto) await window.__menuPronto;
+            const avisosSnap = await buscarColecaoRapido('avisos', collection(db, "avisos"), null, { sdkSoSeDemorar: 7000 });
             const agora = Date.now();
             const avisosAtivos = [];
 
@@ -793,10 +1027,45 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     }
 
-    async function carregarMenu() {
+    // Busca categorias e produtos no banco (dois caminhos ao mesmo tempo).
+    async function buscarDadosMenu() {
+        const [, cat, prod] = await Promise.all([
+            carregarCardapioAtual(),
+            buscarColecaoRapido('categorias', collection(db, "categorias")),
+            buscarColecaoRapido('produtos', query(collection(db, "produtos"), where("ativo", "==", true)), d => d.ativo === true, { sdkSoSeDemorar: 7000 })
+        ]);
+        return [cat, prod];
+    }
+    // 2026-11-19: com o cardápio guardado no aparelho, ele aparece na hora e é
+    // conferido com o banco em segundo plano; se mudou, atualiza mantendo as quantidades.
+    async function iniciarCardapio() {
+        const guardado = lerCacheMenu();
+        if (!guardado) { await carregarMenu(); return; }
+        await carregarMenu(desserializarMenu(guardado));
         try {
-            await carregarCardapioAtual();
-            const catSnapshot = await getDocs(collection(db, "categorias"));
+            const novo = serializarMenu(await buscarDadosMenu());
+            if (JSON.stringify(novo) === JSON.stringify(guardado)) return;
+            salvarCacheMenu(novo);
+            const qtds = {};
+            document.querySelectorAll('.quantidade-input').forEach(i => { const v = parseInt(i.value) || 0; if (v > 0) qtds[i.getAttribute('data-item-id')] = v; });
+            await carregarMenu(desserializarMenu(novo));
+            Object.entries(qtds).forEach(([id, v]) => {
+                const i = document.querySelector(`.quantidade-input[data-item-id="${CSS.escape(id)}"]`);
+                if (i) { i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); }
+            });
+        } catch (e) { console.warn('Atualização do cardápio:', e); }
+    }
+
+    async function carregarMenu(snapsProntos) {
+        if (!snapsProntos) {
+            mostrarCarregandoCardapio();
+            clearTimeout(window.__timerLentidao);
+            window.__timerLentidao = setTimeout(() => mostrarCarregandoCardapio(true), 9000);
+        }
+        try {
+            let catSnapshot, prodSnapshotPronto;
+            if (snapsProntos) { await carregarCardapioAtual(); [catSnapshot, prodSnapshotPronto] = snapsProntos; }
+            else { [catSnapshot, prodSnapshotPronto] = await buscarDadosMenu(); salvarCacheMenu(serializarMenu([catSnapshot, prodSnapshotPronto])); }
             const categoriasAtivas = []; 
             
             catSnapshot.forEach(doc => {
@@ -830,8 +1099,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 }
             });
 
-            const q = query(collection(db, "produtos"), where("ativo", "==", true));
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = prodSnapshotPronto;
             const itensAgrupados = {};
 
             querySnapshot.forEach((doc) => {
@@ -859,8 +1127,18 @@ document.addEventListener("DOMContentLoaded", async function () {
                 itensAgrupados[nomeCategoria].push(item);
             });
 
+            clearTimeout(window.__timerLentidao);
             renderizarCardapio(itensAgrupados);
-        } catch (error) { console.error(error); }
+            if (typeof avisarMenuPronto === 'function') avisarMenuPronto();
+            if (!Object.keys(itensAgrupados).length) {
+                const main = document.getElementById('menu-principal');
+                if (main) main.innerHTML = '<div class="cardapio-carregando"><p>No momento não há itens disponíveis neste cardápio.</p></div>';
+            }
+        } catch (error) {
+            console.error(error);
+            clearTimeout(window.__timerLentidao);
+            mostrarErroCardapio();
+        }
     }
 
     // ALTERADO (2026-10): o resumo do pedido é sempre "Nome | Tamanho", montado na hora
@@ -1068,7 +1346,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 </div>`;
 
             const imagensProdutoItem = getProdutoImagensCliente(item);
-            const temFoto = imagensProdutoItem.length > 0;
+            const temFoto = imagensProdutoItem.length > 0 || Number(item.temFoto) > 0;
             // 2026-10-15: a descrição do produto é a descrição da imagem. Não aparece
             // embaixo do nome: abre na janela da foto, ou pelo ícone (i) quando não há foto.
             const textoDescricaoItem = String(item.descricaoItem || item.descricaoPopup || '').trim();
@@ -1159,7 +1437,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         if(!itemInfo) return;
 
         const imagensProdutoPopup = getProdutoImagensCliente(itemInfo);
-        const temFoto = imagensProdutoPopup.length > 0;
+        const fotoPendente = !imagensProdutoPopup.length && Number(itemInfo.temFoto) > 0;
+        const temFoto = imagensProdutoPopup.length > 0 || fotoPendente;
         const textoDescricao = String(itemInfo.descricaoItem || itemInfo.descricaoPopup || '').trim();
         const temDescPopup = textoDescricao !== '';
         
@@ -1172,6 +1451,23 @@ document.addEventListener("DOMContentLoaded", async function () {
         window.produtoPopupImagens = imagensProdutoPopup;
         window.produtoPopupImagemAtual = 0;
         window.renderProdutoImagemPopup();
+        if (fotoPendente) {
+            // A foto vem do banco só agora, quando o cliente pede para ver.
+            const carrossel = document.getElementById('item-imagem-carousel');
+            if (carrossel) { carrossel.style.display = 'block'; carrossel.classList.add('foto-carregando'); }
+            const idFoto = itemInfo.id || itemId;
+            window.__fotoPedida = idFoto;
+            docRestFs('produtos', idFoto).catch(() => getDoc(doc(db, 'produtos', idFoto))).then(snap => {
+                const d = snap && snap.exists() ? snap.data() : {};
+                itemInfo.imagensUrls = Array.isArray(d.imagensUrls) ? d.imagensUrls : [];
+                itemInfo.imagemUrl = d.imagemUrl || '';
+                if (window.__fotoPedida !== idFoto) return;
+                if (carrossel) carrossel.classList.remove('foto-carregando');
+                window.produtoPopupImagens = getProdutoImagensCliente(itemInfo);
+                window.produtoPopupImagemAtual = 0;
+                window.renderProdutoImagemPopup();
+            }).catch(() => { if (carrossel) { carrossel.classList.remove('foto-carregando'); carrossel.style.display = 'none'; } });
+        }
         
         modal.style.display = 'flex'; 
         modal.classList.add('show'); 
@@ -2063,8 +2359,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         };
         
         try {
-            await setDoc(doc(db, "pedidos", idPedido), dadosPedido);
-            if (cupomAplicado.codigo) await registrarUsoCupomCliente(cupomAplicado.codigo);
+            await gravarPedidoSeguro(idPedido, dadosPedido);
+            // O registro do cupom nunca segura o envio do pedido.
+            if (cupomAplicado.codigo) await Promise.race([registrarUsoCupomCliente(cupomAplicado.codigo).catch(() => {}), new Promise(r => setTimeout(r, 5000))]);
         } catch (error) {
             console.error("Erro ao salvar pedido no Firestore:", error);
             alert("Erro de conexão ao salvar pedido.");
@@ -2086,5 +2383,5 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
     
     // Inicia o cardápio!
-    carregarMenu();
+    iniciarCardapio();
 });
