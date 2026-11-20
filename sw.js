@@ -1,4 +1,4 @@
-const CACHE_NAME = 'favu-app-v170-pedido-5';
+const CACHE_NAME = 'favu-app-v172-pedido-6';
 const urlsToCache = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
+          if (cacheName !== CACHE_NAME && cacheName.startsWith('favu-app')) return caches.delete(cacheName);
         })
       );
     }).then(() => self.clients.claim())

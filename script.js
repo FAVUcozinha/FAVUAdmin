@@ -1,12 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, initializeFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp({
     apiKey: "AIzaSyD5JlV7R2w629uiescD4AiixNAr-Qt0qI0",
     authDomain: "favu-app.firebaseapp.com",
     projectId: "favu-app"
 });
-const db = getFirestore(app);
+// 2026-11-19: conexão simples ("long polling"). O modo padrão do Firebase trava no
+// navegador interno do Instagram/Facebook (de onde vem o link da bio) e o cardápio não abria.
+let db;
+try { db = initializeFirestore(app, { experimentalForceLongPolling: true }); } catch (e) { db = getFirestore(app); }
 
 // ==========================================
 // FORMATADOR DE TEXTO RICO SEGURO
@@ -109,9 +112,11 @@ function aplicarTemaSite(t) {
             r.push(`body { background: ${fundo} !important; background-attachment: fixed !important; }`);
         } else root.style.setProperty('--bg-color', fundo);
     }
-    if (t.card) root.style.setProperty('--card-bg', t.card); else root.style.removeProperty('--card-bg');
-    if (t.txt) root.style.setProperty('--text-dark', t.txt); else root.style.removeProperty('--text-dark');
-    if (t.acc) { root.style.setProperty('--accent-orange', t.acc); root.style.setProperty('--accent-rust', t.acc); }
+    // Cores gerais com degradê: a variável usa a primeira cor do degradê.
+    const corSolida = v => ehDegrade(v) ? primeiraCor(v) : v;
+    if (t.card) root.style.setProperty('--card-bg', corSolida(t.card)); else root.style.removeProperty('--card-bg');
+    if (t.txt) root.style.setProperty('--text-dark', corSolida(t.txt)); else root.style.removeProperty('--text-dark');
+    if (t.acc) { root.style.setProperty('--accent-orange', corSolida(t.acc)); root.style.setProperty('--accent-rust', corSolida(t.acc)); }
     // "__sem__" = o tema pediu para não ter imagem nesse lugar.
     const SEM = '__sem__';
     // Guarda a imagem original para voltar a ela quando o campo fica vazio (prévia ao vivo).
@@ -121,14 +126,21 @@ function aplicarTemaSite(t) {
         else if (v === SEM) img.style.display = 'none';
         else { img.style.display = ''; img.src = v; } }); };
     const trocarFundo = (sel, v) => { const el = document.querySelector(sel); if (!el) return; el.style.backgroundImage = !v ? '' : (v === SEM ? 'none' : `url('${v}')`); };
+    // 2026-10-15: o cardápio tem topo, rodapé e logo do menu próprios (e cada cardápio pode ter os seus).
+    const idCardImg = ehCardapio && window.__cardapioAtual ? window.__cardapioAtual.id : 'padrao';
+    const doCard = (t.porCardapio && t.porCardapio[idCardImg] && t.porCardapio[idCardImg].imgs) || {};
+    const imgTopoUsar = ehCardapio ? (doCard.imgTopoCardapio || t.imgTopoCardapio || t.imgTopo) : t.imgTopo;
+    const imgRodapeUsar = ehCardapio ? (doCard.imgRodapeCardapio || t.imgRodapeCardapio || t.imgRodape) : t.imgRodape;
     trocarImg('.hero-logo-big', t.logoPrincipal);
-    trocarImg('.menu-logo-img', t.logoMenu || t.logoPrincipal);
+    trocarImg('.menu-logo-img', ehCardapio ? (doCard.logoMenuCardapio || t.logoMenuCardapio || t.logoMenu || t.logoPrincipal) : (t.logoMenu || t.logoPrincipal));
     trocarImg('.footer-logo', t.logoRodape);
-    trocarFundo('header', t.imgTopo);
+    trocarFundo('header', imgTopoUsar);
     // Sem imagem no topo: tira também a sombra que marcava o espaço.
     const cab = document.querySelector('header');
-    if (cab) cab.style.boxShadow = t.imgTopo === SEM ? 'none' : '';
-    trocarFundo('footer', t.imgRodape);
+    if (cab) cab.style.boxShadow = imgTopoUsar === SEM ? 'none' : '';
+    trocarFundo('footer', imgRodapeUsar);
+    // Regras próprias do cardápio aberto (body.cardapio-<id>).
+    if (ehCardapio && t.porCardapio && t.porCardapio[idCardImg] && Array.isArray(t.porCardapio[idCardImg].regrasCss)) t.porCardapio[idCardImg].regrasCss.forEach(x => r.push(x));
     trocarImg('#aboutModal .modal-img', t.imgQuemSomos);
     // Regras de cada elemento, já prontas no tema (painel > Temas).
     (Array.isArray(t.regrasCss) ? t.regrasCss : []).forEach(x => r.push(x));
@@ -183,6 +195,11 @@ function prepararPreviaAoVivo() {
             if (menu) menu.classList.toggle('active', abrir === 'menu');
             const about = document.getElementById('aboutModal');
             if (about) { if (abrir === 'quemsomos') { about.classList.add('show'); about.style.display = 'flex'; } else { about.classList.remove('show'); about.style.display = ''; } }
+            // Janelas do pedido na prévia: coloca um item de exemplo para mostrar itens, total e botões.
+            if ((abrir === 'resumo' || abrir === 'info') && ![...document.querySelectorAll('.quantidade-input')].some(i => (parseInt(i.value) || 0) > 0)) {
+                const exemplo = document.querySelector('.quantidade-input');
+                if (exemplo) { exemplo.value = 1; exemplo.dispatchEvent(new Event('input', { bubbles: true })); exemplo.dispatchEvent(new Event('change', { bubbles: true })); }
+            }
             ['resumo', 'info'].forEach(n => {
                 const pop = document.getElementById(n === 'resumo' ? 'popup-resumo' : 'popup-pedido');
                 if (!pop) return;
@@ -220,14 +237,16 @@ async function obterTemaParaAplicar() {
             }
         } catch (e) {}
     }
-    // Tema agendado (painel > Temas > Agendamento): vale dentro do período.
+    // Tema agendado e tema no ar buscados ao mesmo tempo (antes, um depois do outro).
+    const [ag, temaDoc] = await Promise.all([
+        getDoc(doc(db, 'config', 'tema_agendados')).catch(() => null),
+        getDoc(doc(db, "config", "tema"))
+    ]);
     try {
-        const ag = await getDoc(doc(db, 'config', 'tema_agendados'));
         const agora = Date.now();
-        const vigentes = (ag.exists() ? (ag.data().lista || []) : []).filter(x => x && x.dados && (x.inicio == null || agora >= x.inicio) && (x.fim == null || agora < x.fim));
+        const vigentes = (ag && ag.exists() ? (ag.data().lista || []) : []).filter(x => x && x.dados && (x.inicio == null || agora >= x.inicio) && (x.fim == null || agora < x.fim));
         if (vigentes.length) return vigentes.sort((a, b) => (b.inicio || 0) - (a.inicio || 0))[0].dados;
     } catch (e) {}
-    const temaDoc = await getDoc(doc(db, "config", "tema"));
     return temaDoc.exists() ? temaDoc.data() : null;
 }
 
@@ -246,10 +265,19 @@ async function resolverImagemTema(valor) {
     } catch (e) { return ''; }
 }
 async function resolverImagensTema(t) {
-    const campos = ['logoPrincipal', 'logoMenu', 'imgTopo', 'imgRodape', 'logoRodape', 'imgQuemSomos'];
+    const campos = ['logoPrincipal', 'logoMenu', 'imgTopo', 'imgRodape', 'logoRodape', 'imgQuemSomos', 'imgTopoCardapio', 'imgRodapeCardapio', 'logoMenuCardapio'];
     const valores = await Promise.all(campos.map(k => resolverImagemTema(t[k])));
     const out = { ...t };
     campos.forEach((k, i) => { out[k] = valores[i]; });
+    // Imagens de cada cardápio (Natal…).
+    if (t.porCardapio) {
+        out.porCardapio = {};
+        for (const [id, st] of Object.entries(t.porCardapio)) {
+            const imgs = {};
+            for (const [k, v] of Object.entries((st && st.imgs) || {})) imgs[k] = await resolverImagemTema(v);
+            out.porCardapio[id] = { ...st, imgs };
+        }
+    }
     return out;
 }
 
@@ -265,7 +293,7 @@ function hrefAcaoSite(item) {
     const acao = item.acao || 'link';
     const link = String(item.link || '').trim();
     if (acao === 'quem_somos') return { href: '#', abreQuemSomos: true };
-    if (acao === 'cardapio') return { href: link || 'cardapio.html' };
+    if (acao === 'cardapio') return { href: link || (item.cardapio && item.cardapio !== 'padrao' ? `cardapio.html?menu=${encodeURIComponent(item.cardapio)}` : 'cardapio.html') };
     if (acao === 'inicio') return { href: link || 'index.html' };
     if (acao === 'whatsapp') { const n = link.replace(/\D/g, ''); return { href: n ? `https://wa.me/${n}` : link, externo: true }; }
     return { href: link || '#', externo: /^https?:/i.test(link) };
@@ -277,15 +305,27 @@ function linkSiteHtml(item, classe, conteudo) {
     return `<a href="${escSite(a.href)}" class="${classe}"${alvo}${clique}>${conteudo}</a>`;
 }
 const visiveisSite = lista => (Array.isArray(lista) ? lista : []).filter(i => i && i.visivel !== false).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+// Cor própria de um botão (degradê nas letras quando for texto).
+function estiloCorSite(v, tipo) {
+    if (!v) return '';
+    if (tipo === 'fundo') return `background:${v} !important;`;
+    return /gradient\(/i.test(v) ? `background:${v};-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent !important;` : `color:${v} !important;`;
+}
+function aplicarIconeMenuSite(icone) {
+    if (!icone) return;
+    document.querySelectorAll('#mobile-menu-btn i, .menu-btn i').forEach(i => { i.className = icone; });
+}
 function aplicarMenuLateralSite(dados) {
     if (Array.isArray(dados.menuLateral)) {
         const ul = document.querySelector('#side-menu .nav-links');
         if (ul) ul.innerHTML = visiveisSite(dados.menuLateral).map(i => `<li>${linkSiteHtml(i, 'menu-link', escSite(i.titulo))}</li>`).join('');
+        if (ul) visiveisSite(dados.menuLateral).forEach((i, n) => { const a = ul.querySelectorAll('a')[n]; if (a && i.corTexto) a.setAttribute('style', estiloCorSite(i.corTexto, 'texto')); });
     }
     if (Array.isArray(dados.redes)) {
         const box = document.querySelector('#side-menu .menu-socials');
-        if (box) box.innerHTML = visiveisSite(dados.redes).map(i => linkSiteHtml(i, 'menu-social-link', `<i class="${escSite(i.icone || 'fas fa-link')}"></i> ${escSite(i.titulo)}`)).join('');
+        if (box) box.innerHTML = visiveisSite(dados.redes).map(i => linkSiteHtml(i, 'menu-social-link', `<i class="${escSite(i.icone || 'fas fa-link')}" style="${estiloCorSite(i.corIcone, 'texto')}"></i> <span style="${estiloCorSite(i.corTexto, 'texto')}">${escSite(i.titulo)}</span>`)).join('');
     }
+    aplicarIconeMenuSite(dados.menuIcone);
 }
 function aplicarQuemSomosSite(qs) {
     if (!qs) return;
@@ -311,7 +351,9 @@ function aplicarConteudoInicio(c) {
     if (Array.isArray(c.botoesCapa)) {
         const grid = document.getElementById('dynamic-grid-links');
         if (grid) grid.innerHTML = visiveisSite(c.botoesCapa).map(i => linkSiteHtml(i, 'clean-card',
-            `<div class="card-icon"><i class="${escSite(i.icone || 'fas fa-link')}"></i></div><div class="card-info"><h3 class="font-display">${escSite(i.titulo)}</h3><p class="font-body">${window.formatText(i.legenda || '')}</p></div>`)).join('');
+            `<div class="card-icon" style="${estiloCorSite(i.corIcone, 'texto')}"><i class="${escSite(i.icone || 'fas fa-link')}" style="${estiloCorSite(i.corIcone, 'texto')}"></i></div><div class="card-info"><h3 class="font-display" style="${estiloCorSite(i.corTitulo, 'texto')}">${escSite(i.titulo)}</h3>${i.legenda ? `<p class="font-body" style="${estiloCorSite(i.corLegenda, 'texto')}">${window.formatText(i.legenda)}</p>` : ''}</div>`)).join('');
+        // Fundo próprio de cada botão.
+        if (grid) visiveisSite(c.botoesCapa).forEach((i, n) => { const a = grid.children[n]; if (a && i.corFundo) a.setAttribute('style', estiloCorSite(i.corFundo, 'fundo')); });
     }
     aplicarMenuLateralSite(c);
     aplicarQuemSomosSite(c.quemSomos);
@@ -321,13 +363,63 @@ async function carregarDadosSite(id) {
     try { const d = await getDoc(doc(db, 'config', id)); return d.exists() ? d.data() : null; } catch (e) { return null; }
 }
 
+
+// =====================================================================
+// CARREGAMENTO RÁPIDO DO TEMA (2026-11-19)
+// - O tema da visita anterior fica guardado no aparelho e é aplicado na hora;
+//   o tema atualizado é buscado em segundo plano e reaplicado se mudou.
+// - As cores entram primeiro; as imagens (documentos grandes) entram depois,
+//   sem segurar o resto da página.
+// =====================================================================
+const CHAVE_CACHE_TEMA = 'favu_tema_cache';
+function semImagensTema(t) {
+    const o = { ...t };
+    Object.keys(o).forEach(k => { if (typeof o[k] === 'string' && o[k].startsWith('cfgimg:')) o[k] = ''; });
+    if (o.porCardapio) {
+        const pc = {};
+        Object.entries(o.porCardapio).forEach(([id, st]) => {
+            const imgs = {};
+            Object.entries((st && st.imgs) || {}).forEach(([k, v]) => { if (!String(v || '').startsWith('cfgimg:')) imgs[k] = v; });
+            pc[id] = { ...st, imgs };
+        });
+        o.porCardapio = pc;
+    }
+    return o;
+}
+async function aplicarTemaComImagens(t, antesDasImagens) {
+    if (!t) return;
+    try { aplicarTemaSite(semImagensTema(t)); } catch (e) {}
+    try {
+        if (antesDasImagens) await antesDasImagens();
+        aplicarTemaSite(await resolverImagensTema(t));
+    } catch (e) {}
+}
+async function obterTemaComCache(aoMudar) {
+    const previa = new URLSearchParams(location.search).has('tema_previa');
+    let cache = null;
+    if (!previa) { try { cache = JSON.parse(localStorage.getItem(CHAVE_CACHE_TEMA) || 'null'); } catch (e) {} }
+    const buscar = obterTemaParaAplicar().then(t => {
+        if (!previa && t) { try { localStorage.setItem(CHAVE_CACHE_TEMA, JSON.stringify(t)); } catch (e) {} }
+        return t;
+    });
+    if (!cache) return buscar;
+    buscar.then(t => { if (t && aoMudar && JSON.stringify(t) !== JSON.stringify(cache)) aoMudar(t); }).catch(() => {});
+    return cache;
+}
+
 document.addEventListener("DOMContentLoaded", async function () {
+    document.body.classList.add('pg-inicio');
     
     // APLICAR TEMA (CORES + IMAGENS)
+    // 2026-11-19: tema guardado aplicado na hora; imagens não seguram a página.
     try {
-        const temaAtual = await obterTemaParaAplicar();
+        const temaAtual = await obterTemaComCache(t => {
+            window.__temaAtual = t;
+            aplicarTemaComImagens(t);
+            if (t.conteudoInicio) aplicarConteudoInicio(t.conteudoInicio);
+        });
         window.__temaAtual = temaAtual;
-        if (temaAtual) aplicarTemaSite(await resolverImagensTema(temaAtual));
+        if (temaAtual) aplicarTemaComImagens(temaAtual);
     } catch(e) {}
 
     // EDITOR DO SITE: botões e textos vêm do tema no ar (ou do registro antigo do site).
