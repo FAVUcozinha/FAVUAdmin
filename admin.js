@@ -8922,8 +8922,10 @@ window.calcularDivisaoFechamento = function() {
 
     const totalGasto = gCaixa + gAra + gFla;
 
-    // 2026-11-19: só existe lucro positivo — negativo ou zero aparece como R$ 0,00.
-    const lucroLiquido = Math.max(0, totalBase - totalGasto);
+    // 2026-11-19: saldo positivo = "Lucro"; negativo ou zero = "Prejuízo" (vermelho, com "-").
+    // A divisão entre as pessoas usa só o lucro positivo (prejuízo divide R$ 0,00).
+    const saldoFechamento = totalBase - totalGasto;
+    const lucroLiquido = Math.max(0, saldoFechamento);
     document.getElementById('fechamento-lucro-liquido').textContent = lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     const lucroCaixa = lucroLiquido * (percCaixa / 100);
@@ -8939,7 +8941,10 @@ window.calcularDivisaoFechamento = function() {
     const corTaxas = totalTaxasPagamento > 0 ? 'color: #c0392b;' : '';
     const corFaturamento = totalBase > 0 ? 'color: #27ae60;' : totalBase < 0 ? 'color: #c0392b;' : '';
     const corGastos = totalGasto > 0 ? 'color: #c0392b;' : '';
-    const corLucro = lucroLiquido > 0 ? 'color: #27ae60;' : lucroLiquido < 0 ? 'color: #c0392b;' : '';
+    const corLucro = saldoFechamento > 0 ? 'color: #27ae60;' : 'color: #c0392b;';
+    const linhaResultado = saldoFechamento > 0
+        ? `Lucro: <strong style="${corLucro}">${saldoFechamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>`
+        : `Prejuízo: <strong style="${corLucro}">- ${Math.abs(saldoFechamento).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>`;
 
     const corCaixa = finalCaixa > 0 ? 'color: #27ae60;' : finalCaixa < 0 ? 'color: #c0392b;' : '';
     const corAra = finalAra > 0 ? 'color: #27ae60;' : finalAra < 0 ? 'color: #c0392b;' : '';
@@ -8955,7 +8960,7 @@ window.calcularDivisaoFechamento = function() {
             Total de Vendas: <strong style="${corVendas}">${totalVendasBruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
             Total Taxas: <strong style="${corTaxas}">- ${totalTaxasPagamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br>
             Total de Gastos: <strong style="${corGastos}">- ${totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong><br><br>
-            Lucro: <strong style="${corLucro}">${lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong>
+            ${linhaResultado}
             
             <div style="margin: 15px 0; border-top: 1px dashed rgba(0, 0, 0, 0.15);"></div>
             
@@ -8982,6 +8987,7 @@ window.calcularDivisaoFechamento = function() {
         totalFaturamento: totalBase,
         totalGasto: totalGasto,
         lucroLiquido: lucroLiquido,
+        saldoFechamento: saldoFechamento,
         gCaixa: gCaixa,
         gAra: gAra,
         gFla: gFla,
@@ -9035,8 +9041,9 @@ window.enviarFechamentoWA = function(destinatario) {
     const gAra = parseFloat(document.getElementById('gasto-manual-ara').value || 0);
     const gFla = parseFloat(document.getElementById('gasto-manual-fla').value || 0);
     const totalGasto = gCaixa + gAra + gFla;
-    // 2026-11-19: só existe lucro positivo — negativo ou zero aparece como R$ 0,00.
-    const lucroLiquido = Math.max(0, totalFaturamento - totalGasto);
+    // 2026-11-19: saldo positivo = "Lucro"; negativo ou zero = "Prejuízo" com "-".
+    const saldoFechamento = totalFaturamento - totalGasto;
+    const lucroLiquido = Math.max(0, saldoFechamento);
 
     const pCaixa = parseFloat(document.getElementById('perc-caixa').value || 30) / 100;
     const pAra = parseFloat(document.getElementById('perc-ara').value || 35) / 100;
@@ -9051,7 +9058,7 @@ window.enviarFechamentoWA = function(destinatario) {
     const finalFla = lucroFla + gFla;
 
     const dados = {
-        periodo, totalVendido, totalTaxas, totalFaturamento, totalGasto, lucroLiquido,
+        periodo, totalVendido, totalTaxas, totalFaturamento, totalGasto, lucroLiquido, saldoFechamento,
         gCaixa, gAra, gFla,
         finalCaixa, finalAra, finalFla,
         lucroAra, lucroFla
@@ -9064,7 +9071,9 @@ window.enviarFechamentoWA = function(destinatario) {
     txt += `*Total Taxas:* - ${dados.totalTaxas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Faturamento:* ${dados.totalFaturamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
     txt += `*Total de Gastos:* - ${dados.totalGasto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
-    txt += `*Lucro:* ${dados.lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
+    txt += dados.saldoFechamento > 0
+        ? `*Lucro:* ${dados.saldoFechamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`
+        : `*Prejuízo:* - ${Math.abs(dados.saldoFechamento).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
     txt += `*-------------------------------------*\n\n`;
 
     txt += `*Divisão Detalhada:*\n\n`;
