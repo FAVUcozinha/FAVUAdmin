@@ -3878,7 +3878,7 @@ window.handleDragEnd = function(e) { this.classList.remove('dragging'); }
 // images/S01.jpg ... S23.jpg do próprio site — que não dava para editar.
 // O botão "Trazer fotos atuais" cadastra essas fotos na lista para editar.
 // =====================================================================
-window.URL_SITE_CLIENTES = window.URL_SITE_CLIENTES || 'https://favucozinha.github.io/';
+window.URL_SITE_CLIENTES = window.URL_SITE_CLIENTES || 'https://favucozinha.com.br/';
 let carrosselLista = [];
 
 async function loadCarrossel() {
@@ -8922,7 +8922,8 @@ window.calcularDivisaoFechamento = function() {
 
     const totalGasto = gCaixa + gAra + gFla;
 
-    const lucroLiquido = totalBase - totalGasto;
+    // 2026-11-19: só existe lucro positivo — negativo ou zero aparece como R$ 0,00.
+    const lucroLiquido = Math.max(0, totalBase - totalGasto);
     document.getElementById('fechamento-lucro-liquido').textContent = lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     const lucroCaixa = lucroLiquido * (percCaixa / 100);
@@ -9034,7 +9035,8 @@ window.enviarFechamentoWA = function(destinatario) {
     const gAra = parseFloat(document.getElementById('gasto-manual-ara').value || 0);
     const gFla = parseFloat(document.getElementById('gasto-manual-fla').value || 0);
     const totalGasto = gCaixa + gAra + gFla;
-    const lucroLiquido = totalFaturamento - totalGasto;
+    // 2026-11-19: só existe lucro positivo — negativo ou zero aparece como R$ 0,00.
+    const lucroLiquido = Math.max(0, totalFaturamento - totalGasto);
 
     const pCaixa = parseFloat(document.getElementById('perc-caixa').value || 30) / 100;
     const pAra = parseFloat(document.getElementById('perc-ara').value || 35) / 100;
@@ -14791,7 +14793,13 @@ window.filtrarBuscaGastos = function() {
     ['gastos-planilha-body', 'gastos-lancamentos-lista-body'].forEach(id => {
         document.querySelectorAll(`#${id} > tr`).forEach(tr => {
             if (tr.matches('.gastos-rebuild-total-row, .gastos-lancamentos-total-row')) return;
-            const texto = (Array.from(tr.querySelectorAll('input')).map(i => i.value).join(' ') + ' ' + tr.textContent).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            // 2026-11-19: só o que aparece na linha. Antes, o texto das listas de escolha
+            // trazia TODAS as opções (todos os itens e marcas), e nenhuma linha era escondida.
+            const copia = tr.cloneNode(true);
+            const origSelects = tr.querySelectorAll('select'), origInputs = tr.querySelectorAll('input, textarea');
+            copia.querySelectorAll('select').forEach((sel, i) => { const o = origSelects[i]; sel.replaceWith(document.createTextNode(' ' + (o && o.selectedIndex >= 0 ? o.options[o.selectedIndex].text : '') + ' ')); });
+            copia.querySelectorAll('input, textarea').forEach((inp, i) => { const o = origInputs[i]; inp.replaceWith(document.createTextNode(' ' + (o ? o.value : '') + ' ')); });
+            const texto = copia.textContent.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
             tr.style.display = !termo || texto.includes(termo) ? '' : 'none';
         });
     });
@@ -14987,7 +14995,7 @@ window.baseNomeCategoria = baseNomeCategoria;
 // ---------- Gerenciar cardápios ----------
 const slugCardapio = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'cardapio';
 function linkCardapioSite(id) {
-    const base = (window.URL_SITE_CLIENTES || 'https://favucozinha.github.io/').replace(/\/?$/, '/');
+    const base = (window.URL_SITE_CLIENTES || 'https://favucozinha.com.br/').replace(/\/?$/, '/');
     return id === 'padrao' ? `${base}cardapio.html` : `${base}cardapio.html?menu=${id}`;
 }
 window.abrirGerenciarCardapios = function() {
@@ -15344,3 +15352,121 @@ function destacarConteudoNaPrevia(e) {
         try { iframeAoVivo().contentWindow.postMessage({ tipo: 'favu-destacar', seletor, abrir }, location.origin); } catch (er) {}
     });
 }
+
+// =====================================================================
+// DATAS ESPECÍFICAS EM BLOCOS (2026-11-19)
+// Datas seguidas, do mesmo cardápio e com a MESMA regra, aparecem num card só
+// ("01/12/2026 a 12/12/2026"). Editar, copiar e excluir valem para o bloco inteiro.
+// Se um dia do meio ganhar outra regra, o bloco se divide sozinho.
+// =====================================================================
+function isoMaisUmDia(iso) { const d = new Date(`${iso}T12:00:00`); d.setDate(d.getDate() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function assinaturaRegraExcecao(r) { r = r || {}; return JSON.stringify([!!r.indisponivel, String(r.horarios || '').trim(), String(r.mensagem || '').trim(), [...(r.categorias || [])].sort()]); }
+function diasDoPeriodo(ini, fim) {
+    const lista = []; let d = ini;
+    for (let n = 0; d <= (fim || ini) && n < 366; n++) { lista.push(d); d = isoMaisUmDia(d); }
+    return lista;
+}
+function agruparExcecoes(chaves, dados) {
+    const ordenadas = chaves.map(k => ({ k, ...partesExcecao(k) })).sort((a, b) => a.cardapio === b.cardapio ? a.data.localeCompare(b.data) : a.cardapio.localeCompare(b.cardapio));
+    const grupos = [];
+    ordenadas.forEach(x => {
+        const ult = grupos[grupos.length - 1];
+        const ass = assinaturaRegraExcecao(dados[x.k]);
+        if (ult && ult.cardapio === x.cardapio && ult.ass === ass && isoMaisUmDia(ult.fim) === x.data) { ult.fim = x.data; ult.chaves.push(x.k); }
+        else grupos.push({ cardapio: x.cardapio, ini: x.data, fim: x.data, ass, chaves: [x.k] });
+    });
+    return grupos;
+}
+window.renderizarExcecoesAgendaLista = function() {
+    const ativas = document.getElementById('lista-excecoes-container'), passadas = document.getElementById('lista-excecoes-passadas');
+    if (!ativas) return;
+    const dados = window.cacheExcecoesAgenda || {};
+    const hoje = dataHojeAgendaKey();
+    const varios = (window.__cardapios || []).length > 1;
+    const filtro = window.__cardapioAdmin || 'padrao';
+    const chaves = Object.keys(dados).filter(k => filtro === 'todos' || partesExcecao(k).cardapio === filtro);
+    const grupos = agruparExcecoes(chaves, dados);
+    window.__gruposExcecao = grupos;
+    const card = (g) => {
+        const i = grupos.indexOf(g);
+        const regra = dados[g.chaves[0]] || {};
+        const nomeCard = ((window.__cardapios || []).find(c => c.id === g.cardapio) || {}).nome || g.cardapio;
+        const titulo = g.ini === g.fim ? formatarDataAgendaBR(g.ini) : `${formatarDataAgendaBR(g.ini)} a ${formatarDataAgendaBR(g.fim)}`;
+        return `<div class="excecao-card" onclick="window.editarGrupoExcecao(${i})">
+            <div class="excecao-card-main">
+                <strong class="excecao-card-data">${titulo}</strong>
+                ${g.chaves.length > 1 ? `<span class="excecao-card-dias">${g.chaves.length} dias</span>` : ''}
+                ${varios ? `<span class="excecao-card-cardapio">${escapeHtmlPedido(nomeCard)}</span>` : ''}
+                <div class="excecao-card-resumo">${escapeHtmlAgenda(resumoRegraAgenda({ ...regra, categorias: (regra.categorias || []).map(baseNomeCategoria) }))}</div>
+            </div>
+            <div class="excecao-card-actions" onclick="event.stopPropagation();">
+                <button type="button" class="btn-action edit" title="Editar" onclick="window.editarGrupoExcecao(${i})"><i class="fas fa-pencil-alt"></i></button>
+                <button type="button" class="btn-action copy" title="Copiar" onclick="window.copiarGrupoExcecao(${i})"><i class="fas fa-copy"></i></button>
+                <button type="button" class="btn-action del" title="Excluir" onclick="window.deletarGrupoExcecao(${i})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
+    };
+    const at = grupos.filter(g => g.fim >= hoje).sort((a, b) => a.ini.localeCompare(b.ini));
+    const pa = grupos.filter(g => g.fim < hoje).sort((a, b) => b.ini.localeCompare(a.ini));
+    const vazio = msg => `<p class="excecoes-vazio">${msg}</p>`;
+    ativas.innerHTML = at.length ? at.map(card).join('') : vazio('Nenhuma data ativa.');
+    if (passadas) passadas.innerHTML = pa.length ? pa.map(card).join('') : vazio('Nenhuma data passada.');
+};
+function abrirEdicaoGrupo(g, copiar) {
+    const regra = (window.cacheExcecoesAgenda || {})[g.chaves[0]] || {};
+    window.__excEdicaoChaves = copiar ? [] : [...g.chaves];
+    document.getElementById('edit-exc-data').value = copiar ? '' : g.chaves[0];
+    document.getElementById('edit-exc-data-display').value = copiar ? '' : g.ini;
+    const fim = document.getElementById('edit-exc-data-fim'); if (fim) fim.value = copiar || g.fim === g.ini ? '' : g.fim;
+    document.getElementById('edit-exc-fechado').checked = !!regra.indisponivel;
+    document.getElementById('edit-exc-horas').value = regra.horarios || '';
+    document.getElementById('edit-exc-mensagem').value = regra.mensagem || '';
+    selectCardapioExcecao('edit-exc-cardapio-box', 'edit-exc-cardapio-sel', g.cardapio, 'window.trocarCardapioEditExcecao()');
+    renderCategoriasExcecaoCardapio('edit-exc-categorias', g.cardapio, regra.categorias || []);
+    window.toggleEditExcecaoCampos();
+    window.openModal('modal-editar-excecao');
+}
+window.editarGrupoExcecao = i => { const g = (window.__gruposExcecao || [])[i]; if (g) abrirEdicaoGrupo(g, false); };
+window.copiarGrupoExcecao = i => { const g = (window.__gruposExcecao || [])[i]; if (g) abrirEdicaoGrupo(g, true); };
+// Mantém os nomes antigos funcionando (uma data só).
+window.editarExcecaoData = chave => abrirEdicaoGrupo({ ...partesExcecao(chave), ini: partesExcecao(chave).data, fim: partesExcecao(chave).data, chaves: [chave] }, false);
+window.copiarExcecaoData = chave => abrirEdicaoGrupo({ ...partesExcecao(chave), ini: partesExcecao(chave).data, fim: partesExcecao(chave).data, chaves: [chave] }, true);
+window.deletarGrupoExcecao = function(i) {
+    const g = (window.__gruposExcecao || [])[i]; if (!g) return;
+    const nomeCard = g.cardapio !== 'padrao' ? ` (${((window.__cardapios || []).find(c => c.id === g.cardapio) || {}).nome || g.cardapio})` : '';
+    const texto = g.ini === g.fim ? `a data específica ${formatarDataAgendaBR(g.ini)}` : `as datas de ${formatarDataAgendaBR(g.ini)} a ${formatarDataAgendaBR(g.fim)} (${g.chaves.length} dias)`;
+    window.customConfirm(`Remover ${texto}${nomeCard}?`, async () => {
+        window.mostrarLoading(true);
+        try {
+            const apagar = {}; g.chaves.forEach(k => { apagar[k] = deleteField(); });
+            await updateDoc(doc(db, 'config', 'agenda_excecoes'), apagar);
+            window.showToast(g.chaves.length > 1 ? `${g.chaves.length} dias removidos!` : 'Data específica removida!');
+            await window.carregarExcecoesLista();
+        } catch (e) { console.error(e); window.showToast('Erro ao remover.', true); }
+        window.mostrarLoading(false);
+    });
+};
+if (formEditExcecaoAgenda) formEditExcecaoAgenda.onsubmit = async function(e) {
+    e.preventDefault();
+    const ini = document.getElementById('edit-exc-data-display')?.value || '';
+    const fim = document.getElementById('edit-exc-data-fim')?.value || '';
+    const cardapio = document.getElementById('edit-exc-cardapio-sel')?.value || 'padrao';
+    const fechado = document.getElementById('edit-exc-fechado')?.checked;
+    if (!ini) return window.showToast('Informe a data específica.', true);
+    if (fim && fim < ini) return window.showToast('A data "Até" precisa ser depois do início.', true);
+    const payload = { indisponivel: !!fechado, horarios: fechado ? '' : (document.getElementById('edit-exc-horas')?.value.trim() || ''), mensagem: fechado ? (document.getElementById('edit-exc-mensagem')?.value.trim() || '') : '', categorias: lerCategoriasExcecao('edit-exc-categorias') };
+    const novas = {}; diasDoPeriodo(ini, fim).forEach(d => { novas[chaveExcecao(d, cardapio)] = { ...payload }; });
+    const antigas = (window.__excEdicaoChaves || []).filter(k => !(k in novas));
+    window.mostrarLoading(true);
+    try {
+        const ref = doc(db, 'config', 'agenda_excecoes');
+        if (antigas.length) { const apagar = {}; antigas.forEach(k => { apagar[k] = deleteField(); }); await updateDoc(ref, apagar); }
+        await setDoc(ref, novas, { merge: true });
+        window.__excEdicaoChaves = [];
+        window.closeModal('modal-editar-excecao', 'form-edit-excecao');
+        const qtd = Object.keys(novas).length;
+        window.showToast(qtd > 1 ? `Regra salva para ${qtd} dias!` : 'Data específica salva!');
+        await window.carregarExcecoesLista();
+    } catch (er) { console.error(er); window.showToast('Erro ao salvar data específica.', true); }
+    window.mostrarLoading(false);
+};

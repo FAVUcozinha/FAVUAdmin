@@ -5632,6 +5632,61 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .apagado-row { display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; padding:10px; border-radius:10px; border:1px solid #eee; background:#fff; }
 .apagado-row small { color:#888; display:block; font-family: var(--font-numbers); }
 </style>
+
+<style id="ajustes-20261119">
+/* Datas específicas em blocos */
+html body #t-horarios .excecoes-grade .excecao-card-main { width: 100% !important; align-items: stretch !important; text-align: left !important; }
+html body #t-horarios .excecoes-grade .excecao-card-data { display: block !important; width: 100% !important; box-sizing: border-box; }
+html body #t-horarios .excecoes-grade .excecao-card-dias { align-self: flex-start; font-family: var(--font-numbers); font-size: 0.75rem; color: #888; }
+html body #t-horarios .excecoes-grade .excecao-card-cardapio { align-self: flex-start; }
+/* Lançar gastos — computador: Item e Marca com espaço para o nome inteiro */
+@media (min-width: 769px) {
+    html body #modal-gastos-lote .modal-content { width: min(97vw, 1500px) !important; max-width: min(97vw, 1500px) !important; }
+    html body #modal-gastos-lote .table-responsive, html body #modal-gastos-lote table { overflow-x: auto; }
+    html body #modal-gastos-lote table { table-layout: auto !important; width: 100% !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td { padding-left: 4px !important; padding-right: 4px !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Item:"] { min-width: 230px !important; width: auto !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Marca:"] { min-width: 180px !important; width: auto !important; }
+    /* A lista cresce até caber o nome escolhido inteiro (com rolagem lateral se precisar). */
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Item:"] select { field-sizing: content; min-width: 220px !important; max-width: 420px !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Marca:"] select { field-sizing: content; min-width: 170px !important; max-width: 320px !important; }
+    html body #modal-gastos-lote table th { font-size: 0.8rem !important; padding-left: 4px !important; padding-right: 4px !important; white-space: nowrap; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Medida:"] input { width: 80px !important; min-width: 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Quantidade:"] input { width: 64px !important; min-width: 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Unidade:"] input,
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Total:"] input { width: 84px !important; min-width: 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Comprador:"] select { width: 105px !important; min-width: 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Observação:"] input { width: 120px !important; min-width: 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Item:"] select,
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Marca:"] select { width: 100% !important; min-width: 0 !important; max-width: none !important; text-overflow: ellipsis; }
+    html body #modal-gastos-lote .gasto-item-select-wrap, html body #modal-gastos-lote .gasto-marca-select-wrap { display: flex !important; gap: 6px; align-items: center; width: 100% !important; }
+    html body #modal-gastos-lote .gasto-item-select-wrap select, html body #modal-gastos-lote .gasto-marca-select-wrap select { flex: 1 1 auto !important; }
+}
+/* Lançar gastos — celular: campos do topo em duas colunas e campos dos itens um embaixo do outro */
+@media (max-width: 768px) {
+    html body div#modal-gastos-lote.modal .modal-body .gastos-lote-campos-unicos { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-flow: row !important; gap: 10px 10px !important; padding: 12px !important; }
+    html body div#modal-gastos-lote.modal .modal-body .gastos-lote-campos-unicos > div { grid-column: auto !important; flex: none !important; max-width: none !important; }
+    html body div#modal-gastos-lote.modal .modal-body .gastos-lote-campos-unicos > div:nth-child(1),
+    html body div#modal-gastos-lote.modal .modal-body .gastos-lote-campos-unicos > div:nth-child(2),
+    html body div#modal-gastos-lote.modal .modal-body .gastos-lote-campos-unicos > div:nth-child(5) { grid-column: 1 / -1 !important; }
+    html body #modal-gastos-lote .gastos-lote-campos-unicos > div { min-width: 0 !important; width: auto !important; display: flex !important; flex-direction: column !important; gap: 4px; margin: 0 !important; }
+    html body #modal-gastos-lote .gastos-lote-campos-unicos > div:nth-child(1),
+    html body #modal-gastos-lote .gastos-lote-campos-unicos > div:nth-child(2) { grid-column: 1 / -1 !important; }
+    html body #modal-gastos-lote .gastos-lote-campos-unicos label { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; font-size: 0.8rem !important; margin: 0 !important; }
+    html body #modal-gastos-lote .gastos-lote-campos-unicos select,
+    html body #modal-gastos-lote .gastos-lote-campos-unicos input { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; height: 42px !important; }
+    html body #modal-gastos-lote .gasto-local-select-wrap, html body #modal-gastos-lote .gasto-nota-wrap { display: flex !important; gap: 6px; width: 100% !important; }
+    html body #modal-gastos-lote .gasto-local-select-wrap select, html body #modal-gastos-lote .gasto-nota-wrap input { flex: 1 1 auto !important; }
+    html body #modal-gastos-lote .gasto-nota-wrap .gastos-icon-btn { flex: 0 0 42px !important; width: 42px !important; height: 42px !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 4px !important; width: 100% !important; box-sizing: border-box !important; text-align: left !important; padding: 8px 0 !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td::before { width: auto !important; min-width: 0 !important; text-align: left !important; margin: 0 !important; flex: none !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td > *, html body #modal-gastos-lote tr.gasto-lote-row td select, html body #modal-gastos-lote tr.gasto-lote-row td input { width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td .gasto-item-select-wrap, html body #modal-gastos-lote tr.gasto-lote-row td .gasto-marca-select-wrap { display: flex !important; gap: 6px; }
+    html body #modal-gastos-lote tr.gasto-lote-row td .gasto-item-select-wrap select, html body #modal-gastos-lote tr.gasto-lote-row td .gasto-marca-select-wrap select { flex: 1 1 auto !important; width: auto !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td button { width: auto !important; flex: 0 0 auto !important; }
+    html body #modal-gastos-lote tr.gasto-lote-row td[data-label="Ações:"] { align-items: center !important; }
+}
+</style>
 </head>
 <body>
 
@@ -6390,9 +6445,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                     <form id="form-edit-excecao">
                         <input type="hidden" id="edit-exc-data">
                         <div class="input-group exc-cardapio-grupo"><label>Cardápio</label><div id="edit-exc-cardapio-box"></div></div>
-                        <div class="input-group">
-                            <label>Data:</label>
-                            <input type="date" id="edit-exc-data-display">
+                        <div class="form-grid exc-periodo-grade">
+                            <div class="input-group"><label>Data (ou início do período)</label><input type="date" id="edit-exc-data-display"></div>
+                            <div class="input-group"><label>Até (opcional)</label><input type="date" id="edit-exc-data-fim"></div>
                         </div>
                         <label class="agenda-check-fechado">
                             <input type="checkbox" id="edit-exc-fechado" onchange="window.toggleEditExcecaoCampos()">
@@ -13129,7 +13184,7 @@ html body #t-orcamentos > .buttons-area { display: flex; justify-content: flex-e
 #modal-editor-tema .tema-sub-rotulo { font-family: 'Basic Choice', cursive; color: var(--favu-rust); font-size: 0.9rem; text-transform: uppercase; margin: 14px 0 6px; }
 </style>
 
-<script type="module" src="./admin.js?v=20261015-pacote-22"></script>
+<script type="module" src="./admin.js?v=20261119-dominio-1"></script>
 
 
     <div id="modal-gasto-item" class="modal">
