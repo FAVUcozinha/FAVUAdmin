@@ -2750,9 +2750,26 @@ window.saveBulkItems = async() => {
 
 document.getElementById('search-prod').addEventListener('input', () => { window.renderProdsTable(); });
 
+// 2026-11-20: o cardápio dos clientes baixa os itens SEM as fotos (que ficam guardadas no banco
+// e somavam 16 MB). Para ele saber quais itens têm foto, cada item guarda "temFoto" (quantas fotos).
+// O painel confere isso sozinho sempre que carrega os itens e corrige o que estiver diferente.
+async function sincronizarMarcaFotos(lista) {
+    try {
+        const mudar = (lista || []).filter(p => {
+            const fotos = new Set([...(Array.isArray(p.imagensUrls) ? p.imagensUrls : []), p.imagemUrl].filter(Boolean)).size;
+            p.__fotos = fotos;
+            return (Number(p.temFoto) || 0) !== fotos || p.temFoto === undefined;
+        });
+        for (let i = 0; i < mudar.length; i += 20) {
+            await Promise.all(mudar.slice(i, i + 20).map(p => updateDoc(doc(db, "produtos", p.id), { temFoto: p.__fotos }).then(() => { p.temFoto = p.__fotos; }).catch(e => console.warn('temFoto', p.id, e))));
+        }
+        if (mudar.length) console.log(`Marca de fotos atualizada em ${mudar.length} item(ns).`);
+    } catch (e) { console.warn('sincronizarMarcaFotos', e); }
+}
 async function loadProds() {
     const s = await getDocs(collection(db, "produtos"));
     allProducts = []; s.forEach(d => allProducts.push({id: d.id, ...d.data()}));
+    sincronizarMarcaFotos(allProducts);
     renderProdTabs(); window.renderProdsTable(); window.renderOrcamentoMenu(); 
 }
 
