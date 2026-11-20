@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
@@ -12,7 +12,13 @@ const app = initializeApp({
     appId: "1:793414871188:web:07ab447df44d742e022c81"
 });
 
-const db = getFirestore(app);
+// 2026-11-20: o painel guarda uma cópia dos dados neste aparelho. Ao abrir de novo, pedidos,
+// cupons e gastos aparecem na hora e só o que mudou é baixado do banco.
+function iniciarBancoComCache() {
+    try { return initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+    catch (e) { console.warn('Cópia local indisponível; usando o banco direto.', e); return getFirestore(app); }
+}
+const db = iniciarBancoComCache();
 const auth = getAuth(app);
 const storage = getStorage(app);
 // CORREÇÃO (upload travando): por padrão o SDK do Storage fica tentando reenviar
@@ -2560,7 +2566,7 @@ window.confirmarCopiaCategoria = async function(id) {
         await setDoc(doc(db, 'categorias', `${baseNomeCategoria(novoNome).toLowerCase().replace(/\s/g, '-')}${destino === 'padrao' ? '' : '--' + destino}`), { ...dados, nome: novoNome, ordem, cardapios: [destino] });
         if (comProdutos) {
             const produtos = allProducts.filter(p => (p.categoria || '') === origem.nome);
-            for (const p of produtos) { const { id: _ignora, ...resto } = p; await addDoc(collection(db, 'produtos'), { ...resto, categoria: novoNome }); }
+            for (const p of produtos) { const snapP = await getDoc(doc(db, 'produtos', p.id)); const { id: _ignora, __fotos, __fotosCarregadas, ...resto } = snapP.exists() ? { ...snapP.data() } : p; await addDoc(collection(db, 'produtos'), { ...resto, categoria: novoNome }); }
         }
         window.closeModal('modal-copiar-cat');
         customAlert(`Categoria copiada para ${(window.__cardapios.find(c => c.id === destino) || {}).nome || 'o cardápio'}!`);
@@ -2720,8 +2726,10 @@ window.saveBulkItems = async() => {
                     categoria: r.querySelector('.b-cat').value, 
                     min: parseInt(r.querySelector('.b-min').value)||1, 
                     descricaoItem: r.querySelector('.b-dmenu').value.trim(), 
+ 
                     descricaoPopup: '', 
                     imagemUrl: url, 
+                    temFoto: url ? 1 : 0,
                     ativo: true, 
                     tamanho: vr.querySelector('.b-tam').value.trim(), 
                     preco: parseFloat(vr.querySelector('.b-preco').value)||0, 
@@ -2753,9 +2761,91 @@ document.getElementById('search-prod').addEventListener('input', () => { window.
 // 2026-11-20: o cardápio dos clientes baixa os itens SEM as fotos (que ficam guardadas no banco
 // e somavam 16 MB). Para ele saber quais itens têm foto, cada item guarda "temFoto" (quantas fotos).
 // O painel confere isso sozinho sempre que carrega os itens e corrige o que estiver diferente.
+// 2026-11-20: a lista de itens vem SEM as fotos (elas ficam no banco e somam ~16 MB).
+// Cada foto é buscada só quando aparece na tela (ver observarFotosProdutos) ou ao editar o item.
+const MASCARA_PRODUTOS_ADMIN = '&mask.fieldPaths=nome&mask.fieldPaths=categoria&mask.fieldPaths=categoriaAnterior&mask.fieldPaths=min&mask.fieldPaths=minimo&mask.fieldPaths=minimoExigido&mask.fieldPaths=descricaoItem&mask.fieldPaths=descricaoPopup&mask.fieldPaths=descricaoResumo&mask.fieldPaths=ativo&mask.fieldPaths=tamanho&mask.fieldPaths=preco&mask.fieldPaths=ordem&mask.fieldPaths=cardapio&mask.fieldPaths=cardapios&mask.fieldPaths=peso&mask.fieldPaths=unidade&mask.fieldPaths=visivel&mask.fieldPaths=oculto&mask.fieldPaths=destaque&mask.fieldPaths=temFoto';
+function valorRestAdmin(v) {
+    if (!v) return null;
+    if ('stringValue' in v) return v.stringValue;
+    if ('integerValue' in v) return Number(v.integerValue);
+    if ('doubleValue' in v) return v.doubleValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('nullValue' in v) return null;
+    if ('timestampValue' in v) return v.timestampValue;
+    if ('arrayValue' in v) return (v.arrayValue.values || []).map(valorRestAdmin);
+    if ('mapValue' in v) { const o = {}; Object.entries(v.mapValue.fields || {}).forEach(([k, x]) => o[k] = valorRestAdmin(x)); return o; }
+    return null;
+}
+async function carregarProdutosLeve() {
+    try {
+        const lista = []; let token = '';
+        for (let n = 0; n < 30; n++) {
+            const r = await fetch(`https://firestore.googleapis.com/v1/projects/${(app.options || {}).projectId || 'favu-app'}/databases/(default)/documents/produtos?pageSize=300&key=${(app.options || {}).apiKey || 'AIzaSyD5JlV7R2w629uiescD4AiixNAr-Qt0qI0'}${MASCARA_PRODUTOS_ADMIN}${token ? '&pageToken=' + encodeURIComponent(token) : ''}`);
+            if (!r.ok) throw new Error('rest ' + r.status);
+            const j = await r.json();
+            (j.documents || []).forEach(d => { const o = { id: d.name.split('/').pop() }; Object.entries(d.fields || {}).forEach(([k, v]) => o[k] = valorRestAdmin(v)); lista.push(o); });
+            if (!j.nextPageToken) break; token = j.nextPageToken;
+        }
+        window.__produtosSemFotos = true;
+        return lista;
+    } catch (e) {
+        console.warn('Lista leve indisponível; carregando completa.', e);
+        window.__produtosSemFotos = false;
+        const snap = await getDocs(collection(db, "produtos"));
+        const lista = []; snap.forEach(d => lista.push({ id: d.id, ...d.data() })); return lista;
+    }
+}
+// Busca as fotos de um item (com cache) quando ele aparece na tela.
+const fotosProdutoCache = {};
+window.buscarFotosProduto = async function(id) {
+    if (fotosProdutoCache[id]) return fotosProdutoCache[id];
+    fotosProdutoCache[id] = getDoc(doc(db, "produtos", id)).then(snap => {
+        const d = snap.exists() ? snap.data() : {};
+        const p = allProducts.find(x => x.id === id);
+        if (p) { p.imagensUrls = Array.isArray(d.imagensUrls) ? d.imagensUrls : []; p.imagemUrl = d.imagemUrl || ''; p.__fotosCarregadas = true; }
+        return window.getProdutoImagens(d);
+    }).catch(e => { delete fotosProdutoCache[id]; throw e; });
+    return fotosProdutoCache[id];
+};
+// Foto do item na lista: mostra na hora se já tem; senão, um quadrinho que busca a foto ao aparecer.
+window.fotoProdutoAdmin = function(grupo, classe, htmlSemFoto) {
+    const comFoto = grupo.find(x => window.getProdutoImagens(x).length) || grupo.find(x => Number(x.temFoto) > 0 && !x.__fotosCarregadas);
+    const imgs = comFoto ? window.getProdutoImagens(comFoto) : [];
+    if (imgs.length) return window.renderAutoCarouselAdmin(imgs, classe);
+    if (comFoto) return `<div class="foto-lazy-admin img-preview admin-auto-carousel-empty ${classe}" data-foto-id="${comFoto.id}" data-foto-classe="${classe}" style="background:#f1ece4; display:flex; align-items:center; justify-content:center;"><i class="fas fa-spinner fa-spin" style="color:#c9c2b4;"></i></div>`;
+    return htmlSemFoto != null ? htmlSemFoto : window.renderAutoCarouselAdmin([], classe);
+};
+let observadorFotosProdutos = null;
+window.observarFotosProdutos = function(escopo = document) {
+    const caixas = escopo.querySelectorAll('.foto-lazy-admin[data-foto-id]:not([data-observada])');
+    if (!caixas.length) return;
+    const carregar = async el => {
+        try {
+            const imgs = await window.buscarFotosProduto(el.dataset.fotoId);
+            const temp = document.createElement('div');
+            temp.innerHTML = window.renderAutoCarouselAdmin(imgs, el.dataset.fotoClasse || '');
+            const novo = temp.firstElementChild; if (!novo || !el.isConnected) return;
+            el.replaceWith(novo);
+            window.iniciarCarrosseisAutomaticosAdmin?.(novo.parentElement || document);
+        } catch (e) { el.innerHTML = '<i class="fas fa-image" style="color:#ccc;"></i>'; }
+    };
+    if (!('IntersectionObserver' in window)) { caixas.forEach(carregar); return; }
+    if (!observadorFotosProdutos) observadorFotosProdutos = new IntersectionObserver(ents => ents.forEach(en => { if (en.isIntersecting) { observadorFotosProdutos.unobserve(en.target); carregar(en.target); } }), { rootMargin: '300px' });
+    caixas.forEach(el => { el.dataset.observada = '1'; observadorFotosProdutos.observe(el); });
+};
 async function sincronizarMarcaFotos(lista) {
     try {
-        const mudar = (lista || []).filter(p => {
+        let mudar;
+        if (window.__produtosSemFotos) {
+            // Lista leve: só os itens que ainda não têm a marca são conferidos (uma vez).
+            mudar = [];
+            const semMarca = (lista || []).filter(x => x.temFoto === undefined || x.temFoto === null);
+            for (let i = 0; i < semMarca.length; i += 8) {
+                await Promise.all(semMarca.slice(i, i + 8).map(async p => {
+                    try { const snap = await getDoc(doc(db, "produtos", p.id)); const d = snap.exists() ? snap.data() : {}; p.__fotos = new Set([...(Array.isArray(d.imagensUrls) ? d.imagensUrls : []), d.imagemUrl].filter(Boolean)).size; mudar.push(p); } catch (e) {}
+                }));
+            }
+        } else mudar = (lista || []).filter(p => {
             const fotos = new Set([...(Array.isArray(p.imagensUrls) ? p.imagensUrls : []), p.imagemUrl].filter(Boolean)).size;
             p.__fotos = fotos;
             return (Number(p.temFoto) || 0) !== fotos || p.temFoto === undefined;
@@ -2763,12 +2853,11 @@ async function sincronizarMarcaFotos(lista) {
         for (let i = 0; i < mudar.length; i += 20) {
             await Promise.all(mudar.slice(i, i + 20).map(p => updateDoc(doc(db, "produtos", p.id), { temFoto: p.__fotos }).then(() => { p.temFoto = p.__fotos; }).catch(e => console.warn('temFoto', p.id, e))));
         }
-        if (mudar.length) console.log(`Marca de fotos atualizada em ${mudar.length} item(ns).`);
+        if (mudar.length) { console.log(`Marca de fotos atualizada em ${mudar.length} item(ns).`); try { window.renderProdsTable?.(); } catch (e) {} }
     } catch (e) { console.warn('sincronizarMarcaFotos', e); }
 }
 async function loadProds() {
-    const s = await getDocs(collection(db, "produtos"));
-    allProducts = []; s.forEach(d => allProducts.push({id: d.id, ...d.data()}));
+    allProducts = await carregarProdutosLeve();
     sincronizarMarcaFotos(allProducts);
     renderProdTabs(); window.renderProdsTable(); window.renderOrcamentoMenu(); 
 }
@@ -2881,6 +2970,7 @@ function isCategoriaDoProdutoVisivel(p) {
 }
 
 window.renderProdsTable = function() {
+    setTimeout(() => window.observarFotosProdutos?.(), 0);
     const searchTerm = document.getElementById('search-prod').value.toLowerCase();
     const tb = document.querySelector("#tbl-produtos tbody"); tb.innerHTML = "";
     
@@ -2915,8 +3005,7 @@ window.renderProdsTable = function() {
         window.__prodsModoCartao = true;
         grupos.forEach(grupo => {
             const base = grupo[0];
-            const imagensProduto = window.getProdutoImagens(grupo.find(x => window.getProdutoImagens(x).length) || base);
-            const imgTag = imagensProduto.length ? window.renderAutoCarouselAdmin(imagensProduto, 'prod-table-carousel prod-card-carousel') : `<div class="prod-card-sem-foto"><i class="fas fa-image"></i></div>`;
+            const imgTag = window.fotoProdutoAdmin(grupo, 'prod-table-carousel prod-card-carousel', `<div class="prod-card-sem-foto"><i class="fas fa-image"></i></div>`);
             const categoriaVisivel = isCategoriaDoProdutoVisivel(base);
             const algumVisivel = grupo.some(p => p.ativo) && categoriaVisivel;
             const todosAtivos = grupo.every(p => p.ativo);
@@ -2964,8 +3053,7 @@ window.renderProdsTable = function() {
     // os tamanhos do mesmo produto.
     grupos.forEach(grupo => {
         const base = grupo[0];
-        const imagensProduto = window.getProdutoImagens(grupo.find(x => window.getProdutoImagens(x).length) || base);
-        const imgTag = window.renderAutoCarouselAdmin(imagensProduto, 'prod-table-carousel');
+        const imgTag = window.fotoProdutoAdmin(grupo, 'prod-table-carousel');
         const rs = grupo.length;
         const categoriaVisivel = isCategoriaDoProdutoVisivel(base);
 
@@ -3025,7 +3113,7 @@ document.getElementById('form-add-prod').onsubmit = async(e) => {
             await addDoc(collection(db, "produtos"), {
                 nome: nomeBase, categoria: categoriaBase, min: minVariation, 
                 descricaoItem: descMenuBase, descricaoPopup: descPopupBase, 
-                imagemUrl: url, imagensUrls: urlsProduto, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
+                imagemUrl: url, imagensUrls: urlsProduto, temFoto: new Set([url, ...(urlsProduto || [])].filter(Boolean)).size, ativo: true, tamanho: v.querySelector('.v-tam').value.trim(), 
                 preco: parseFloat(v.querySelector('.v-preco').value)||0,
                 descricaoResumo: gerarDescricaoResumoProduto(nomeBase, descMenuBase, v.querySelector('.v-tam').value.trim()) || descResumoBase
             });
@@ -3158,9 +3246,11 @@ document.getElementById('form-edit-prod').onsubmit = async(e) => {
         if (urlsEditProduto.length) {
             comuns.imagemUrl = urlsEditProduto[0] || "";
             comuns.imagensUrls = urlsEditProduto;
+            comuns.temFoto = urlsEditProduto.length;
         } else if (document.getElementById('e-remove-img').value === 'true') {
             comuns.imagemUrl = "";
             comuns.imagensUrls = [];
+            comuns.temFoto = 0;
         }
 
         const tamAtual = document.getElementById('e-tam').value.trim();
@@ -3184,12 +3274,13 @@ document.getElementById('form-edit-prod').onsubmit = async(e) => {
             };
             if (t.id && t.removido) ops.push(deleteDoc(doc(db, "produtos", t.id)));
             else if (t.id) ops.push(updateDoc(doc(db, "produtos", t.id), dadosTam));
-            else if (dadosTam.tamanho) ops.push(addDoc(collection(db, "produtos"), {
-                ...dadosTam,
-                imagemUrl: comuns.imagemUrl ?? produtoAtual.imagemUrl ?? '',
-                imagensUrls: comuns.imagensUrls ?? produtoAtual.imagensUrls ?? [],
-                ativo: true
-            }));
+            else if (dadosTam.tamanho) ops.push((async () => {
+                let fotosBase = produtoAtual;
+                if (comuns.imagensUrls === undefined && window.__produtosSemFotos && !produtoAtual.__fotosCarregadas) { try { const sp = await getDoc(doc(db, "produtos", idAtual)); if (sp.exists()) fotosBase = sp.data(); } catch (e) {} }
+                const imgsNovas = comuns.imagensUrls ?? fotosBase.imagensUrls ?? [];
+                const imgNova = comuns.imagemUrl ?? fotosBase.imagemUrl ?? '';
+                return addDoc(collection(db, "produtos"), { ...dadosTam, imagemUrl: imgNova, imagensUrls: imgsNovas, temFoto: new Set([imgNova, ...imgsNovas].filter(Boolean)).size, ativo: true });
+            })());
         });
 
         await Promise.all(ops);
@@ -3524,7 +3615,7 @@ window.renderOrcamentoMenu = function() {
 
         listaItens.forEach((p, index) => {
             const inputHtml = `<div class="quantidade-input-group"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', -1)">-</button><input type="number" value="${window.getOrcQtd(p.id)}" oninput="window.inputQtdOrcamento(this, '${p.id}')" class="quantidade-input orc-qtd-input" data-item-id="${p.id}"><button type="button" class="qtd-btn-table" onclick="window.alterarQtdOrcamento('${p.id}', 1)">+</button></div>`;
-            const iconeHint = p.imagemUrl ? `<i class="fas fa-camera foto-hint"></i>` : '';
+            const iconeHint = (p.imagemUrl || Number(p.temFoto) > 0) ? `<i class="fas fa-camera foto-hint"></i>` : '';
             const celulaNomeHTML = `<div class="item-nome-texto" style="line-height: 1.2;">${window.formatText((p.nome || 'Sem Nome').trim())}</div>${p.descricaoItem ? `<div class="descricao descricao-orc" style="text-align: left;">${window.formatText(p.descricaoItem)}</div>` : ''}`;
             
             // Mantém a mesma apresentação do Cardápio: tamanho em duas linhas quando houver peso, ex.: P / (1 kg).
