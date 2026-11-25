@@ -13090,9 +13090,9 @@ const CAMPOS_IMG_TEMA = [
     ['logoRodape', 'Rodapé — logo', 'Rodapé no celular', 'inicio', 800, 471, 'Rodapé', '.footer-logo', '', 'logoroda.png'],
     ['logoMenu', 'Menu — logo', 'Logo do menu (12) · em branco = logo central', 'menu', 800, 471, 'Menu lateral', '.menu-logo-img', 'menu', 'favu.png'],
     ['imgQuemSomos', 'Janela — imagem', 'Imagem no topo da janela (19)', 'quemsomos', 600, 600, 'Janela Quem somos', '#aboutModal .modal-img', 'quemsomos', 'BS.png'],
-    ['imgTopoCardapio', 'Topo — faixa (imagem)', 'Cabeçalho do cardápio (27)', 'cardapio', 1376, 196, 'Topo', 'header', '', 'topo.png'],
-    ['imgRodapeCardapio', 'Rodapé — faixa (imagem)', 'Rodapé do cardápio (29)', 'cardapio', 1376, 196, 'Rodapé', 'footer', '', 'roda.png'],
-    ['logoMenuCardapio', 'Menu — logo', 'Logo do menu do cardápio', 'menuc', 800, 471, 'Menu lateral', '.menu-logo-img', 'menu', 'favu.png']
+    ['imgTopoCardapio', 'Topo — faixa (imagem)', 'Cabeçalho do cardápio · em branco = faixa padrão (não copia a da página inicial)', 'cardapio', 1376, 196, 'Topo', 'header', '', 'topo.png'],
+    ['imgRodapeCardapio', 'Rodapé — faixa (imagem)', 'Rodapé do cardápio · em branco = faixa padrão (não copia a da página inicial)', 'cardapio', 1376, 196, 'Rodapé', 'footer', '', 'roda.png'],
+    ['logoMenuCardapio', 'Menu — logo', 'Logo do menu do cardápio · em branco = logo padrão', 'menuc', 800, 471, 'Menu lateral', '.menu-logo-img', 'menu', 'favu.png']
 ];
 const CHAVES_IMG_TEMA = CAMPOS_IMG_TEMA.map(c => c[0]);
 const ROTULO_IMG_TEMA = Object.fromEntries(CAMPOS_IMG_TEMA.map(c => [c[0], [c[1], `${c[2]} · ideal ${c[4]} × ${c[5]} px${/logo|imgQuemSomos/i.test(c[0]) ? ', PNG transparente' : ''}`]]));
