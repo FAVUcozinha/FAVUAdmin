@@ -13621,6 +13621,25 @@ let __timerConteudoVivo = null;
 function avisarConteudoAoVivo() { clearTimeout(__timerConteudoVivo); __timerConteudoVivo = setTimeout(() => window.enviarTemaAoVivo?.(), 350); }
 document.addEventListener('input', e => { if (e.target.closest?.('#modal-editor-tema .tema-conteudo-pagina')) avisarConteudoAoVivo(); });
 document.addEventListener('change', e => { if (e.target.closest?.('#modal-editor-tema .tema-conteudo-pagina')) avisarConteudoAoVivo(); });
+// 2026-11-25: incluir, ocultar, liberar, mover ou apagar botões também atualiza a prévia na hora
+// (antes só textos digitados e listas de seleção atualizavam).
+(function() {
+    let observador = null;
+    const ligar = () => {
+        const modal = document.getElementById('modal-editor-tema');
+        if (!modal || observador) return;
+        observador = new MutationObserver(lista => {
+            if (lista.some(m => m.target.closest?.('.tema-conteudo-pagina') || [...m.addedNodes].some(n => n.nodeType === 1 && (n.matches?.('.tema-conteudo-pagina') || n.closest?.('.tema-conteudo-pagina'))))) avisarConteudoAoVivo();
+        });
+        observador.observe(modal, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'checked', 'data-oculto', 'data-ativo'] });
+    };
+    document.addEventListener('click', e => {
+        if (e.target.closest?.('#modal-editor-tema .tema-conteudo-pagina')) { ligar(); setTimeout(avisarConteudoAoVivo, 50); }
+    }, true);
+    document.addEventListener('DOMContentLoaded', ligar);
+    setTimeout(ligar, 1500);
+})();
+
 window.destacarElementoTema = function(campo) {
     const e = ELEMENTOS_TEMA.find(x => x[0] === campo), im = CAMPOS_IMG_TEMA.find(x => x[0] === campo);
     const seletor = e ? (e[7] === 'body' ? '' : e[7]) : (im ? im[7] : '');
