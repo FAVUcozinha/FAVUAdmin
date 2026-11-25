@@ -13989,6 +13989,26 @@ window.trocarPreviaTema = function(tipo, valor) {
     if (iframe) iframe.src = url;
 };
 
+
+// 2026-11-25: a janela "Prévia" mostra o site como numa tela de computador de verdade (1366 × 768),
+// reduzida para caber. Antes o site era espremido na altura da janela e o logo passava por cima dos botões.
+window.ajustarMolduraPrevia = function() {
+    const iframe = document.getElementById('previa-tema-iframe'); const m = iframe?.parentElement; const p = window.__previa;
+    if (!iframe || !m || !p) return;
+    if (p.aparelho === 'celular') { ['width', 'height', 'transform', 'transformOrigin', 'flex', 'marginLeft'].forEach(k => iframe.style[k] = ''); m.style.height = ''; m.style.display = ''; m.style.overflow = ''; return; }
+    const larg = Math.max(200, m.clientWidth - 20);
+    const alt = Math.max(220, window.innerHeight - m.getBoundingClientRect().top - 60);
+    const s = Math.min(1, larg / 1366, alt / 768);
+    Object.assign(iframe.style, { width: '1366px', height: '768px', transform: `scale(${s})`, transformOrigin: 'top left', flex: 'none', marginLeft: `${Math.max(0, (larg - 1366 * s) / 2)}px` });
+    Object.assign(m.style, { display: 'block', overflow: 'hidden', height: `${Math.round(768 * s) + 20}px` });
+};
+['abrirPreviaTema', 'trocarPreviaTema'].forEach(nome => {
+    const original = window[nome];
+    if (typeof original !== 'function' || original.__comMoldura) return;
+    window[nome] = function(...args) { const r = original.apply(this, args); setTimeout(window.ajustarMolduraPrevia, 0); return r; };
+    window[nome].__comMoldura = true;
+});
+window.addEventListener('resize', () => { if (document.getElementById('modal-previa-tema')?.style.display !== 'none') window.ajustarMolduraPrevia(); });
 setTimeout(() => { if (document.getElementById('lista-temas')) carregarTemas(); }, 1500);
 
 // =====================================================================
